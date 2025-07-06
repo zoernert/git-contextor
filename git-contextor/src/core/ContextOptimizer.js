@@ -1,0 +1,99 @@
+const { getEmbedding } = require('../utils/embeddings');
+const { countTokens } = require('../utils/tokenizer');
+const logger = require('../cli/utils/logger');
+
+/**
+ * Optimizes context from search results to fit within LLM token limits.
+ */
+class ContextOptimizer {
+  /**
+   * @param {VectorStore} vectorStore - An instance of the VectorStore class.
+   * @param {object} config - The application configuration object.
+   */
+  constructor(vectorStore, config) {
+    this.vectorStore = vectorStore;
+    this.config = config;
+  }
+
+  /**
+   * Performs a search and optimizes the results for a given token limit.
+   * @param {string} query - The search query.
+   * @param {object} [options={}] - Search options.
+   * @param {number} [options.maxTokens=2048] - The maximum number of tokens for the context.
+   * @param {object} [options.filter=null] - A filter to apply to the search.
+   * @param {string} [options.llmType='claude-sonnet'] - The LLM type for token counting.
+   * @returns {Promise<object>} The search results and optimized context.
+   */
+  async search(query, options = {}) {
+    const {
+      maxTokens = 2048,
+      filter = null,
+      llmType = 'claude-sonnet'
+    } = options;
+
+    logger.info(`Performing search for query: "${query}" with maxTokens: ${maxTokens}`);
+
+    const queryVector = await getEmbedding(query, this.config.embedding);
+    if (!queryVector) {
+        logger.error('Could not generate query embedding.');
+        return { error: 'Could not generate query embedding.' };
+    }
+
+    const searchLimit = 50; 
+    const searchResults = await this.vectorStore.search(queryVector, searchLimit, filter);
+
+    if (!searchResults || searchResults.length === 0) {
+      logger.warn('No results found for query.');
+      return { query, optimizedContext: '', results: [] };
+    }
+
+    const { optimizedContext, includedResults } = this.packContext(searchResults, maxTokens, llmType);
+
+    const finalTokenCount = countTokens(optimizedContext, llmType);
+    logger.info(`Returning ${includedResults.length} results with ${finalTokenCount} tokens.`);
+
+    return {
+      query,
+      optimizedContext,
+      results: includedResults,
+      tokenCount: finalTokenCount
+    };
+  }
+
+  /**
+   * Packs the most relevant context into a string that respects the token limit.
+   * @param {Array<object>} results - Search results from the vector store.
+   * @param {number} maxTokens - The maximum number of tokens allowed.
+   * @param {string} llmType - The LLM type for tokenization.
+   * @returns {{optimizedContext: string, includedResults: Array<object>}}
+   * @private
+   */
+  packContext(results, maxTokens, llmType) {
+    let currentTokens = 0;
+    let combinedContext = '';
+    const includedResults = [];
+    
+    for (const result of results) {
+      const chunkContent = result.payload.content;
+      const contextHeader = `--- File: ${result.payload.filePath} (Score: ${result.score.toFixed(2)}) ---\n`;
+      const fullChunk = contextHeader + chunkContent + '\n\n';
+      const chunkTokens = countTokens(fullChunk, llmType);
+
+      if (currentTokens + chunkTokens <= maxTokens) {
+        combinedContext += fullChunk;
+        currentTokens += chunkTokens;
+        includedResults.push({
+          filePath: result.payload.filePath,
+          score: result.score,
+          chunk: chunkContent,
+        });
+      } else {
+        break;
+      }
+    }
+    
+    return { optimizedContext: combinedContext.trim(), includedResults };
+  }
+}
+
+module.exports = ContextOptimizer;
