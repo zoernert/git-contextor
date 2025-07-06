@@ -31,6 +31,12 @@ async function start(options) {
       configChanged = true;
   }
 
+  const keepCollection = !!options.keepCollection;
+  if (config.services.keepCollectionOnExit !== keepCollection) {
+      updates.services.keepCollectionOnExit = keepCollection;
+      configChanged = true;
+  }
+
   if (configChanged) {
     await configManager.updateConfig(updates);
     logger.info('Configuration updated.');
