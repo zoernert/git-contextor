@@ -13,7 +13,7 @@ module.exports = (serviceManager) => {
      * Performs a semantic search across the indexed repository.
      */
     router.post('/', async (req, res, next) => {
-        const { query, maxTokens, filter } = req.body;
+        const { query, maxTokens, filter, llmType } = req.body;
 
         if (!query) {
             return res.status(400).json({ error: 'Missing required field: query' });
@@ -22,7 +22,8 @@ module.exports = (serviceManager) => {
         try {
             const options = {
                 maxTokens: maxTokens ? parseInt(maxTokens, 10) : undefined,
-                filter
+                filter,
+                llmType
             };
             const result = await contextOptimizer.search(query, options);
             res.json(result);
