@@ -30,6 +30,7 @@
 | Feature | Description | Why It Matters |
 |---------|-------------|----------------|
 | 🧠 **Semantic Search** | Find code by what it does, not what it's called | `"user authentication"` finds OAuth, JWT, sessions |
+| 💬 **AI Chat & Sharing** | Chat with your repo; securely share AI access | Get answers, not just snippets; collaborate safely |
 | 🔄 **Real-time Sync** | Auto-updates as you write code | Always current, never stale |
 | 🌐 **Universal API** | Works with any AI tool or IDE | VS Code, n8n, custom scripts |
 | 🔒 **Privacy First** | Runs locally, your code never leaves | Your IP stays protected |
@@ -60,10 +61,14 @@ npx git-contextor start
 ## 🎮 Try It Now
 
 ```bash
-# Search by meaning, not keywords, directly from your terminal
+# Search by meaning, not keywords
 npx git-contextor query "how is user authentication handled?"
-npx git-contextor query "database connection logic"
-npx git-contextor query "error handling patterns"
+
+# Chat with your repository's AI
+npx git-contextor chat "Explain the auth flow step-by-step"
+
+# Create a temporary, shareable link for AI-powered code review
+npx git-contextor share create --tunnel localtunnel --duration 2h
 ```
 
 ## 🔥 Real-World Examples
@@ -132,6 +137,15 @@ POST http://localhost:3333/api/search
   }
 }
 ```
+
+## 💬 AI Chat & Secure Sharing
+
+Go beyond search. Have a conversation with your codebase and securely share its context with collaborators.
+
+- **`git-contextor chat`**: Ask complex questions and get AI-generated answers.
+- **`git-contextor share`**: Create temporary, secure links for external AI-powered code reviews.
+
+[➡️ Learn more about Chat & Sharing in the documentation](docs/features/sharing-and-chat.md)
 
 ## 🔌 Integrations
 
