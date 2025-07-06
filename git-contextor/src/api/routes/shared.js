@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 
 /**
  * Creates and returns the shared access router.
@@ -8,6 +9,13 @@ const express = require('express');
 module.exports = (services) => {
     const router = express.Router();
     const { contextOptimizer, sharingService } = services;
+
+    // Route to serve the dedicated HTML page for a share.
+    // This does not require an API key to view.
+    router.get('/:shareId', (req, res) => {
+        const publicPath = path.resolve(__dirname, '../../ui/public');
+        res.sendFile(path.join(publicPath, 'shared.html'));
+    });
 
     // Middleware to validate shared access
     router.use('/:shareId/*', async (req, res, next) => {

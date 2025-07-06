@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Git Contextor - Shared Access</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Git Contextor Shared Access</h1>
+        </header>
+        <main>
+            <section id="share-info" class="card">
+                <h2>Share Details</h2>
+                <p><strong>Description:</strong> <span id="share-description">Enter API key to view details.</span></p>
+                <p><strong>Expires:</strong> <span id="share-expires"></span></p>
+            </section>
+
+            <section id="chat-interface" class="card">
+                <h2>Ask the AI</h2>
+                <form id="shared-chat-form">
+                    <div class="form-group">
+                        <label for="share-api-key">Share API Key:</label>
+                        <input type="password" id="share-api-key" placeholder="Paste your share key here" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="chat-query">Your Question:</label>
+                        <textarea id="chat-query" placeholder="Ask about the repository..." required rows="4"></textarea>
+                    </div>
+                    <button type="submit">Ask</button>
+                </form>
+                <div id="chat-results-container" style="display: none;">
+                    <h3>🤖 AI Response</h3>
+                    <div id="chat-results"></div>
+                </div>
+            </section>
+        </main>
+        <footer>
+            <p>Powered by Git Contextor</p>
+        </footer>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="/js/shared.js"></script>
+</body>
+</html>
