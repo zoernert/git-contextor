@@ -19,12 +19,15 @@ Git Contextor is a developer tool designed to create and manage contextually-awa
     - Node.js (>=16.0.0)
     - Docker (for running the Qdrant vector database)
 
-2.  **Installation:**
+2.  **Installation & Configuration:**
     ```bash
     git clone https://github.com/your-username/git-contextor.git
     cd git-contextor
     npm install
+    # Create a .env file from the example to configure API keys
+    cp .env.example .env
     ```
+    Then, edit the `.env` file to add your API keys (e.g., `GOOGLE_API_KEY` or `OPENAI_API_KEY`). You can also configure the Qdrant connection if it's not running on `localhost:6333`.
 
 3.  **Start the Vector Database:**
     ```bash

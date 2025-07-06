@@ -14,7 +14,7 @@ class VectorStore {
   constructor(config) {
     this.config = config;
     this.client = new QdrantClient({
-      url: `http://localhost:${config.services.qdrantPort}`,
+      url: `http://${config.services.qdrantHost}:${config.services.qdrantPort}`,
     });
     this.collectionName = `gctx-${this.config.repository.name}`.replace(/[^a-zA-Z0-9-]/g, '_').toLowerCase();
   }
