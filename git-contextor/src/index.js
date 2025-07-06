@@ -73,13 +73,13 @@ class GitContextor {
    * The standalone `stop` CLI command will manage service shutdown independently.
    * @returns {Promise<void>}
    */
-  async stop() {
+  async stop(options = {}) {
     // For in-process stop, we need a ServiceManager instance.
     // The CLI stop command will use a different mechanism for daemons.
     if (!this.serviceManager) {
         await this.initialize();
     }
-    await this.serviceManager.stop();
+    await this.serviceManager.stop(options);
   }
 
   /**

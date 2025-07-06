@@ -51,20 +51,36 @@ async function start(options) {
     logger.info('Git Contextor daemon started. Use "git-contextor status" to check its state and "git-contextor stop" to terminate it.');
     process.exit(0);
   } else {
-    spinner.succeed('Git Contextor starting in foreground.');
+    spinner.text = 'Starting Git Contextor in foreground...';
+    const contextor = new GitContextor(repoPath);
+    
+    const shutdown = async () => {
+        console.log(''); // Newline for cleaner exit
+        const shutdownSpinner = ora('Shutting down Git Contextor...').start();
+        try {
+            await contextor.stop({ silent: true });
+            shutdownSpinner.succeed('Shutdown complete.');
+            process.exit(0);
+        } catch (err) {
+            shutdownSpinner.fail('Shutdown failed.');
+            logger.error(err);
+            process.exit(1);
+        }
+    };
+    
+    process.on('SIGINT', shutdown);
+    process.on('SIGTERM', shutdown);
+
     try {
-      const contextor = new GitContextor(repoPath);
-      await contextor.start();
-      logger.info('Git Contextor running. Press Ctrl+C to stop.');
-      // Keep process alive for foreground mode
-      process.stdin.resume();
+        await contextor.start();
+        spinner.succeed('Git Contextor running. Press Ctrl+C to stop.');
     } catch (error) {
-      logger.error('Failed to start Git Contextor:');
-      logger.error(error.message);
-      if (error.stack) {
-        logger.debug(error.stack);
-      }
-      process.exit(1);
+        spinner.fail('Failed to start Git Contextor.');
+        logger.error(error.message);
+        if (error.stack) {
+            logger.debug(error.stack);
+        }
+        process.exit(1);
     }
   }
 }

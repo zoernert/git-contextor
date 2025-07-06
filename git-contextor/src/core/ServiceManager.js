@@ -44,17 +44,17 @@ class ServiceManager {
         } catch (error) {
             logger.error('Failed to start Git Contextor services:', error);
             // Attempt to clean up if startup failed
-            await this.stop(true);
+            await this.stop({ silent: true });
             throw error;
         }
     }
 
-    async stop(isStartupError = false) {
-        if (!isStartupError) {
+    async stop({ silent = false } = {}) {
+        if (!silent) {
              logger.info('Stopping Git Contextor services...');
         }
 
-        if (!await this.isRunning() && !isStartupError) {
+        if (!await this.isRunning() && !silent) {
             logger.warn('Git Contextor is not running.');
             // Clean up stale pid file if it exists but process is dead
             try {
@@ -86,7 +86,7 @@ class ServiceManager {
             }
         }
         
-        if (!isStartupError) {
+        if (!silent) {
             logger.info('Git Contextor services stopped.');
         }
     }
