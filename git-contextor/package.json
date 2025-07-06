@@ -15,22 +15,31 @@
     "postinstall": "node scripts/postinstall.js"
   },
   "keywords": [
-    "git",
-    "vector",
-    "search",
-    "code",
-    "context",
     "ai",
     "llm",
     "rag",
     "semantic-search",
+    "code-search",
     "developer-tools",
     "vscode",
     "copilot",
-    "code-assistant"
+    "claude",
+    "openai",
+    "embeddings",
+    "vector-search",
+    "qdrant",
+    "typescript",
+    "javascript",
+    "python",
+    "code-assistant",
+    "productivity"
   ],
   "author": "STROMDAO GmbH",
   "license": "MIT",
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/stromdao"
+  },
   "homepage": "https://github.com/stromdao/git-contextor#readme",
   "repository": {
     "type": "git",
@@ -71,7 +80,8 @@
     "supertest": "^6.3.3"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
   },
   "files": [
     "bin/",
