@@ -15,46 +15,31 @@ Git Contextor is a developer tool designed to create and manage contextually-awa
 
 ## Quick Start
 
-1.  **Prerequisites:**
-    - Node.js (>=16.0.0)
-    - Docker (for running the Qdrant vector database)
-
-2.  **Installation & Configuration:**
+1.  **Run in your project directory:**
     ```bash
-    git clone https://github.com/your-username/git-contextor.git
-    cd git-contextor
-    npm install
-    # Create a .env file from the example to configure API keys
-    cp .env.example .env
+    npx git-contextor init
     ```
-    Then, edit the `.env` file to add your API keys (e.g., `GOOGLE_API_KEY` or `OPENAI_API_KEY`). You can also configure the Qdrant connection if it's not running on `localhost:6333`.
+    This creates a `.gitcontextor` configuration directory. _(If git-contextor is not on npm, use `node /path/to/git-contextor/bin/git-contextor.js init`)_
 
-3.  **Start the Vector Database:**
-    ```bash
-    docker-compose -f docker/docker-compose.yml up -d
+2.  **Add an Embedding API Key:**
+    Create a `.env` file in your project and add your key:
+    ```
+    # For Google Gemini
+    GOOGLE_API_KEY=your_api_key_here
+    
+    # Or for OpenAI
+    # OPENAI_API_KEY=your_api_key_here
     ```
 
-4.  **Initialize in your project:**
-    Navigate to the root directory of the git repository you want to index.
+3.  **Start the service:**
     ```bash
-    # From your project's root directory
-    /path/to/git-contextor/bin/git-contextor.js init
+    npx git-contextor start
     ```
-    This creates a `.gitcontextor` directory in your project.
+    The tool will check for the Qdrant vector database and offer to start it via Docker if it's not found.
 
-5.  **Start the Service:**
-    ```bash
-    /path/to/git-contextor/bin/git-contextor.js start
-    ```
-    This will start the API server and begin the initial indexing of your repository.
-
-6.  **Use the Web UI:**
-    Open your browser and navigate to `http://localhost:3000` to see the dashboard.
-
-7.  **Query via CLI:**
-    ```bash
-    /path/to/git-contextor/bin/git-contextor.js query "how to implement authentication"
-    ```
+4.  **Use the tool:**
+    - **Web UI:** Open [http://localhost:3000](http://localhost:3000) to search your repository.
+    - **CLI:** `npx git-contextor query "your search query"`
 
 ## CLI Commands
 

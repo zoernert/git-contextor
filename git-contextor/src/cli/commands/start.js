@@ -5,6 +5,7 @@ const path = require('path');
 const { spawn } = require('child_process');
 const fs = require('fs').promises;
 const ora = require('ora');
+const { checkQdrant } = require('../utils/checkQdrant');
 
 async function start(options) {
   const repoPath = process.cwd();
@@ -34,6 +35,9 @@ async function start(options) {
     await configManager.updateConfig(updates);
     logger.info('Configuration updated with new port settings.');
   }
+
+  // Check if Qdrant is running before starting services
+  await checkQdrant(configManager);
 
   if (options.daemon) {
     spinner.succeed('Starting Git Contextor as a daemon.');
