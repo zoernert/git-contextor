@@ -41,6 +41,20 @@ function initDashboard(API_BASE_URL) {
     const apiSnippetContainer = document.getElementById('api-snippet-container');
     const snippetTabs = document.querySelector('#api-snippet-container .tabs');
     const apiKey = sessionStorage.getItem('gctx_apiKey');
+
+    // Chat elements
+    const chatForm = document.getElementById('chat-form');
+    const chatQuery = document.getElementById('chat-query');
+    const chatResultsContainer = document.getElementById('chat-results-container');
+    const chatResults = document.getElementById('chat-results');
+
+    // Sharing elements
+    const shareForm = document.getElementById('share-form');
+    const shareDescription = document.getElementById('share-description');
+    const shareDuration = document.getElementById('share-duration');
+    const shareCreateResult = document.getElementById('share-create-result');
+    const activeSharesList = document.getElementById('active-shares-list');
+    const refreshSharesButton = document.getElementById('refresh-shares-btn');
     
     async function fetchStatus() {
         try {
@@ -189,7 +203,111 @@ else:
 
     searchForm.addEventListener('submit', performSearch);
     
+    // --- Chat Functions ---
+    async function performChat(event) {
+        event.preventDefault();
+        const query = chatQuery.value;
+        if (!query) return;
+
+        chatResults.innerHTML = '<p class="loading">Thinking...</p>';
+        chatResultsContainer.style.display = 'block';
+        chatForm.querySelector('button').disabled = true;
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
+                body: JSON.stringify({ query: query })
+            });
+
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error || `HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            if (window.marked) {
+                chatResults.innerHTML = marked.parse(result.response || 'No response from AI.');
+            } else {
+                chatResults.textContent = result.response || 'No response from AI.';
+            }
+
+        } catch (error) {
+            console.error('Error during chat:', error);
+            chatResults.innerHTML = `<p class="error">Error: ${error.message}</p>`;
+        } finally {
+            chatForm.querySelector('button').disabled = false;
+        }
+    }
+
+    // --- Sharing Functions ---
+    async function createShare(event) {
+        event.preventDefault();
+        const description = shareDescription.value;
+        const duration = shareDuration.value;
+        
+        shareForm.querySelector('button').disabled = true;
+        shareCreateResult.style.display = 'none';
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/share`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
+                body: JSON.stringify({ description, duration: duration })
+            });
+
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error || `HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            const resultText = `Share URL: ${window.location.origin}${result.access_url}\nAPI Key: ${result.api_key}\nExpires: ${new Date(result.expires_at).toLocaleString()}`;
+            shareCreateResult.querySelector('pre').textContent = resultText;
+            shareCreateResult.style.display = 'block';
+
+            await fetchShares(); // Refresh the list
+
+        } catch (error) {
+            console.error('Error creating share:', error);
+            shareCreateResult.querySelector('pre').textContent = `Error: ${error.message}`;
+            shareCreateResult.style.display = 'block';
+        } finally {
+            shareForm.querySelector('button').disabled = false;
+        }
+    }
+
+    async function fetchShares() {
+        activeSharesList.innerHTML = '<li>Loading...</li>';
+        try {
+            const response = await fetch(`${API_BASE_URL}/share`, { headers: { 'x-api-key': apiKey } });
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const data = await response.json();
+
+            activeSharesList.innerHTML = '';
+            if (data.shares && data.shares.length > 0) {
+                data.shares.forEach(share => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<strong>${share.description || 'No Description'}</strong> (ID: ${share.id.substring(0, 8)}...)<br>
+                    Expires: ${new Date(share.expires_at).toLocaleString()}<br>
+                    Usage: ${share.access_count} / ${share.max_queries}`;
+                    activeSharesList.appendChild(li);
+                });
+            } else {
+                activeSharesList.innerHTML = '<li>No active shares.</li>';
+            }
+        } catch (error) {
+            console.error('Error fetching shares:', error);
+            activeSharesList.innerHTML = `<li>Error loading shares.</li>`;
+        }
+    }
+
+    chatForm.addEventListener('submit', performChat);
+    shareForm.addEventListener('submit', createShare);
+    refreshSharesButton.addEventListener('click', fetchShares);
+    
     fetchStatus();
+    fetchShares();
     setInterval(fetchStatus, 5000); // Poll every 5 seconds
 }
 

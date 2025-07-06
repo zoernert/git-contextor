@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Git Contextor - Dashboard</title>
     <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -62,6 +63,54 @@
                         <pre id="snippet-curl" class="snippet active"></pre>
                         <pre id="snippet-node" class="snippet"></pre>
                         <pre id="snippet-python" class="snippet"></pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="chat-interface" class="card">
+                <h2>AI Chat</h2>
+                <form id="chat-form">
+                    <div class="search-input-group">
+                        <textarea id="chat-query" placeholder="Ask the AI about your repository..." required rows="3"></textarea>
+                    </div>
+                    <button type="submit">Ask</button>
+                </form>
+                <div id="chat-results-container" style="display: none;">
+                    <h3>🤖 AI Response</h3>
+                    <div id="chat-results"></div>
+                </div>
+            </section>
+
+            <section id="sharing-interface" class="card">
+                <h2>Repository Sharing</h2>
+                <div class="sharing-grid">
+                    <div id="create-share-form-container">
+                        <h3>Create a New Share</h3>
+                        <form id="share-form">
+                            <div class="form-group">
+                                <label for="share-description">Description:</label>
+                                <input type="text" id="share-description" placeholder="E.g., External code review" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="share-duration">Duration:</label>
+                                <select id="share-duration">
+                                    <option value="1h" selected>1 Hour</option>
+                                    <option value="24h">24 Hours</option>
+                                    <option value="7d">7 Days</option>
+                                </select>
+                            </div>
+                            <button type="submit">Create Share</button>
+                        </form>
+                        <div id="share-create-result" style="display:none;">
+                            <h4>Share Created!</h4>
+                            <pre></pre>
+                        </div>
+                    </div>
+                    <div id="active-shares-container">
+                        <h3>Active Shares <button id="refresh-shares-btn" title="Refresh List">🔄</button></h3>
+                        <ul id="active-shares-list">
+                            <li>Loading...</li>
+                        </ul>
                     </div>
                 </div>
             </section>
