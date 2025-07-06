@@ -16,8 +16,8 @@ async function query(searchQuery, options) {
     process.exit(1);
   }
 
-  const { apiPort, apiKey } = configManager.config.services;
-  const url = `http://localhost:${apiPort}/api/search`;
+  const { port, apiKey } = configManager.config.services;
+  const url = `http://localhost:${port}/api/search`;
   
   try {
     const searchOptions = {

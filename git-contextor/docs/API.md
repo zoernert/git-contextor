@@ -2,7 +2,7 @@
 
 This document outlines the REST API endpoints provided by Git Contextor.
 
-**Base URL:** `http://localhost:3000` (configurable)
+**Base URL:** `http://localhost:3000` (The port is configurable)
 **Authentication:** All endpoints require an API key passed in the `x-api-key` header.
 
 ---

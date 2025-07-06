@@ -2,7 +2,6 @@ const path = require('path');
 const fs = require('fs').promises;
 const logger = require('../cli/utils/logger');
 const apiServer = require('../api/server');
-const uiServer = require('../ui/server');
 
 class ServiceManager {
     constructor(repoPath, config, services) {
@@ -27,7 +26,6 @@ class ServiceManager {
         try {
             // Start API and UI servers
             await apiServer.start(this.config, this.services);
-            await uiServer.start(this.config);
 
             // Run initial index of the repository
             logger.info('Performing initial repository index...');
@@ -75,7 +73,6 @@ class ServiceManager {
 
         // Stop API and UI servers
         await apiServer.stop();
-        await uiServer.stop();
 
         // Remove PID file
         try {

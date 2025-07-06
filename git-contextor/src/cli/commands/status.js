@@ -16,8 +16,8 @@ async function status() {
     process.exit(0);
   }
   
-  const { apiPort, apiKey } = configManager.config.services;
-  const url = `http://localhost:${apiPort}/api/status`;
+  const { port, apiKey } = configManager.config.services;
+  const url = `http://localhost:${port}/api/status`;
 
   try {
     const response = await fetch(url, {

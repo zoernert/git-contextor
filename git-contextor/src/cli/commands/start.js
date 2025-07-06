@@ -25,12 +25,8 @@ async function start(options) {
   const updates = { services: { ...config.services } };
   let configChanged = false;
 
-  if (options.port && config.services.apiPort !== parseInt(options.port, 10)) {
-      updates.services.apiPort = parseInt(options.port, 10);
-      configChanged = true;
-  }
-  if (options.uiPort && config.services.uiPort !== parseInt(options.uiPort, 10)) {
-      updates.services.uiPort = parseInt(options.uiPort, 10);
+  if (options.port && config.services.port !== parseInt(options.port, 10)) {
+      updates.services.port = parseInt(options.port, 10);
       configChanged = true;
   }
 

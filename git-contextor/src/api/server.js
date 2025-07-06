@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const path = require('path');
 const logger =require('../cli/utils/logger');
 const { apiKeyAuth } = require('../utils/security');
 
@@ -20,10 +21,10 @@ function start(config, services) {
     app.use(cors());
     app.use(helmet());
     app.use(express.json());
-    
+
     // Public health check endpoint
     app.use('/health', healthRoutes);
-    
+
     // API routes
     const apiRouter = express.Router();
     apiRouter.use(apiKeyAuth(config)); // Protect all /api routes
@@ -31,12 +32,15 @@ function start(config, services) {
     apiRouter.use('/status', statusRoutes(services));
     apiRouter.use('/metrics', metricsRoutes(services));
     apiRouter.use('/reindex', reindexRoutes(services));
-    
     app.use('/api', apiRouter);
 
-    // Not found handler
-    app.use((req, res, next) => {
-        res.status(404).json({ error: 'Not Found' });
+    // Serve static UI files from the 'public' directory
+    const publicPath = path.join(__dirname, '../ui/public');
+    app.use(express.static(publicPath));
+
+    // Fallback to index.html for single-page applications
+    app.get('*', (req, res) => {
+        res.sendFile(path.join(publicPath, 'index.html'));
     });
 
     // Global error handler
@@ -47,9 +51,9 @@ function start(config, services) {
     });
     
     return new Promise((resolve) => {
-        const port = config.services.apiPort;
+        const port = config.services.port;
         server = app.listen(port, () => {
-            logger.info(`API server listening on http://localhost:${port}`);
+            logger.info(`Application server with UI running at http://localhost:${port}`);
             resolve();
         });
     });

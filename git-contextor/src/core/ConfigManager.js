@@ -49,8 +49,7 @@ class ConfigManager {
         followSymlinks: false
       },
       services: {
-        apiPort: 3000,
-        uiPort: 3001,
+        port: 3000,
         qdrantPort: 6333,
         apiKey: this.generateApiKey()
       },

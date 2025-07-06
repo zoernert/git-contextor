@@ -31,8 +31,7 @@ program
 program
   .command('start')
   .description('Start the Git Contextor service')
-  .option('-p, --port <port>', 'API port (default from config)')
-  .option('-u, --ui-port <port>', 'UI port (default from config)')
+  .option('-p, --port <port>', 'Port for API and UI (default from config)')
   .option('-d, --daemon', 'Run as daemon')
   .action(startCommand);
 

@@ -14,8 +14,8 @@ async function reindex(options) {
   }
   
   const spinner = ora().start();
-  const { apiPort, apiKey } = configManager.config.services;
-  const url = `http://localhost:${apiPort}/api/reindex`;
+  const { port, apiKey } = configManager.config.services;
+  const url = `http://localhost:${port}/api/reindex`;
 
   try {
     const body = options.file ? { file: options.file } : {};
