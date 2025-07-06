@@ -47,9 +47,23 @@ async function config(options) {
     updates.embedding = { ...configManager.config.embedding, ...embeddingUpdates };
   }
 
+  const chunkingUpdates = {};
   if (options.maxChunkSize) {
-    updates.chunking = { ...configManager.config.chunking, maxChunkSize: options.maxChunkSize };
+    chunkingUpdates.maxChunkSize = options.maxChunkSize;
     updated = true;
+  }
+  if (options.chunkOverlap) {
+    if (options.chunkOverlap >= 0 && options.chunkOverlap < 1) {
+        chunkingUpdates.overlap = options.chunkOverlap;
+        updated = true;
+    } else {
+        spinner.fail('Invalid overlap value. Must be between 0 and 1 (e.g., 0.25 for 25%).');
+        return;
+    }
+  }
+
+  if (Object.keys(chunkingUpdates).length > 0) {
+      updates.chunking = { ...configManager.config.chunking, ...chunkingUpdates };
   }
   if (options.excludePattern) {
     const currentPatterns = configManager.config.indexing.excludePatterns;

@@ -26,35 +26,54 @@ function getParserForFile(filePath) {
 
 // Generic chunker for text-based files or fallback
 function chunkText(content, relativePath, config) {
-    const { maxChunkSize, overlap } = config;
+    const { maxChunkSize, overlap } = config; // overlap is a percentage, e.g., 0.25
     const chunks = [];
     const lines = content.split('\n');
-    let currentChunk = '';
+    let currentChunkLines = [];
     let startLine = 1;
 
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
-        if (currentChunk.length + line.length + 1 > maxChunkSize && currentChunk) {
+        const currentChunkContent = currentChunkLines.join('\n');
+
+        // Check if adding the next line would exceed the max chunk size.
+        // The `+1` accounts for the newline character.
+        if (currentChunkLines.length > 0 && currentChunkContent.length + line.length + 1 > maxChunkSize) {
             chunks.push({
-                content: currentChunk,
+                content: currentChunkContent,
                 metadata: {
                     filePath: relativePath,
                     start_line: startLine,
                     end_line: i,
                 },
             });
-            // Handle overlap by stepping back a few lines
-            const overlapLinesCount = Math.floor(overlap / 80); // Rough estimate of lines for overlap
-            const overlapStartIndex = Math.max(0, i - overlapLinesCount);
-            currentChunk = lines.slice(overlapStartIndex, i).join('\n');
-            startLine = overlapStartIndex + 1;
-        }
-        currentChunk += (currentChunk ? '\n' : '') + line;
-    }
 
-    if (currentChunk) {
+            // Create overlap for the next chunk
+            const overlapChars = Math.floor(maxChunkSize * overlap);
+            let overlapCharLength = 0;
+            let overlapLines = [];
+
+            // Work backwards from the end of the last chunk to create overlap
+            for (let j = currentChunkLines.length - 1; j >= 0; j--) {
+                const overlapLine = currentChunkLines[j];
+                const newLength = overlapCharLength + overlapLine.length + 1; // +1 for newline
+                if (newLength > overlapChars && overlapLines.length > 0) {
+                    break;
+                }
+                overlapCharLength = newLength;
+                overlapLines.unshift(overlapLine);
+            }
+            
+            currentChunkLines = overlapLines;
+            startLine = i - currentChunkLines.length + 1;
+        }
+        currentChunkLines.push(line);
+    }
+    
+    // Add the final chunk if any content remains
+    if (currentChunkLines.length > 0) {
         chunks.push({
-            content: currentChunk,
+            content: currentChunkLines.join('\n'),
             metadata: {
                 filePath: relativePath,
                 start_line: startLine,
@@ -62,6 +81,7 @@ function chunkText(content, relativePath, config) {
             },
         });
     }
+
     return chunks;
 }
 

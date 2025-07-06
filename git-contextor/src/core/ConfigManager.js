@@ -24,7 +24,7 @@ class ConfigManager {
       chunking: {
         strategy: 'function',
         maxChunkSize: 1024,
-        overlap: 50,
+        overlap: 0.25,
         includeComments: true
       },
       indexing: {

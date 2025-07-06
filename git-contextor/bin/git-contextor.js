@@ -56,6 +56,7 @@ program
   .option('--api-key <key>', 'Set API key for embedding provider')
   .option('--exclude-pattern <pattern>', 'Add exclude pattern')
   .option('--max-chunk-size <size>', 'Set maximum chunk size', parseInt)
+  .option('--chunk-overlap <percentage>', 'Set chunk overlap percentage (0-1)', parseFloat)
   .option('--show', 'Show current configuration')
   .action(configCommand);
 
