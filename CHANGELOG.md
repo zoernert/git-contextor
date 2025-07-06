@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 This is the initial public release of Git Contextor.
 
 ### Added
+- Conversational AI with your codebase via the `chat` command.
+- Secure, time-limited repository AI sharing with the `share` command.
+- Built-in tunneling support (`localtunnel`, `ngrok`) for easy external collaboration.
 - Core indexing engine for Git repositories using a vector database.
 - Real-time file watcher to keep the index synchronized.
 - Web-based dashboard for monitoring, search, and configuration.
