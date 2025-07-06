@@ -25,7 +25,7 @@
   "author": "Your Name",
   "license": "MIT",
   "dependencies": {
-    "@qdrant/js-client-rest": "^1.14.1",
+    "@qdrant/js-client-rest": "^1.9.0",
     "@xenova/transformers": "^2.6.0",
     "chalk": "^4.1.2",
     "chokidar": "^3.5.3",

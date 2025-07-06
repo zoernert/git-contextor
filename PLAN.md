@@ -114,7 +114,7 @@ git-contextor/
     "commander": "^11.1.0",
     "express": "^4.18.2",
     "chokidar": "^3.5.3",
-    "qdrant-client": "^1.7.0",
+    "@qdrant/js-client-rest": "^1.9.0",
     "openai": "^4.20.1",
     "@xenova/transformers": "^2.6.0",
     "tiktoken": "^1.0.10",
@@ -882,7 +882,7 @@ describe('FileWatcher', () => {
 
 **3. Placeholder for other tests:**
 - `test/unit/indexer.test.js`: Should test file reading, chunking logic, and interaction with `VectorStore`. Mocks `fs`, `VectorStore`, and `chunking` utilities.
-- `test/unit/vectorStore.test.js`: Should test interaction with Qdrant client, collection creation, point upsertion, and search queries. Mocks `qdrant-client`.
+- `test/unit/vectorStore.test.js`: Should test interaction with Qdrant client, collection creation, point upsertion, and search queries. Mocks `@qdrant/js-client-rest`.
 - `test/integration/api.test.js`: Uses `supertest` to make requests to the running API server, testing all endpoints (`/search`, `/status`, `/metrics`, `/health`). Requires a setup that starts the server.
 - `test/integration/e2e.test.js`: A full end-to-end test. It would initialize a temporary git repo, run `git-contextor init`, `start`, make some file changes, and then use `query` or the API to verify the context is updated correctly.
 
