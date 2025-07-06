@@ -33,7 +33,11 @@ function initDashboard(API_BASE_URL) {
     const activityLog = document.getElementById('activity-log');
     const searchForm = document.getElementById('search-form');
     const searchQuery = document.getElementById('search-query');
+    const maxTokensInput = document.getElementById('max-tokens');
+    const searchResultsContainer = document.getElementById('search-results-container');
     const searchResults = document.getElementById('search-results');
+    const apiSnippetContainer = document.getElementById('api-snippet-container');
+    const snippetTabs = document.querySelector('#api-snippet-container .tabs');
     const apiKey = sessionStorage.getItem('gctx_apiKey');
     
     async function fetchStatus() {
@@ -84,9 +88,12 @@ function initDashboard(API_BASE_URL) {
     async function performSearch(event) {
         event.preventDefault();
         const query = searchQuery.value;
+        const maxTokens = parseInt(maxTokensInput.value, 10);
         if (!query) return;
 
         searchResults.textContent = 'Searching...';
+        searchResultsContainer.style.display = 'block';
+        apiSnippetContainer.style.display = 'none';
 
         try {
             const response = await fetch(`${API_BASE_URL}/search`, {
@@ -95,7 +102,7 @@ function initDashboard(API_BASE_URL) {
                     'Content-Type': 'application/json',
                     'x-api-key': apiKey
                 },
-                body: JSON.stringify({ query: query })
+                body: JSON.stringify({ query: query, maxTokens: maxTokens })
             });
 
             if (!response.ok) {
@@ -105,12 +112,78 @@ function initDashboard(API_BASE_URL) {
 
             const result = await response.json();
             searchResults.textContent = result.optimizedContext || 'No relevant context found.';
+            
+            generateApiSnippets(query, maxTokens, apiKey);
+            apiSnippetContainer.style.display = 'block';
 
         } catch (error) {
             console.error('Error during search:', error);
             searchResults.textContent = `Error: ${error.message}`;
+            apiSnippetContainer.style.display = 'none';
         }
     }
+
+    function generateApiSnippets(query, maxTokens, apiKey) {
+        const url = `${window.location.origin}${API_BASE_URL}/search`;
+        const payload = { query, maxTokens };
+        const payloadString = JSON.stringify(payload, null, 2);
+        const curlPayload = payloadString.replace(/'/g, "'\\''");
+
+        const curlSnippet = `curl -X POST '${url}' \\\n-H 'Content-Type: application/json' \\\n-H 'x-api-key: ${apiKey}' \\\n-d '${curlPayload}'`;
+        
+        const nodeSnippet = `const url = '${url}';
+const options = {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': '${apiKey}'
+    },
+    body: JSON.stringify(${payloadString})
+};
+fetch(url, options)
+    .then(res => res.json())
+    .then(json => console.log(json))
+    .catch(err => console.error('error:' + err));`;
+
+        const pythonSnippet = `import requests
+import json
+
+url = '${url}'
+api_key = '${apiKey}'
+
+headers = {
+    'Content-Type': 'application/json',
+    'x-api-key': api_key
+}
+
+payload = ${payloadString}
+
+response = requests.post(url, headers=headers, data=json.dumps(payload))
+
+if response.status_code == 200:
+    print(response.json())
+else:
+    print(f"Error: {response.status_code}", response.text)`;
+    
+        document.getElementById('snippet-curl').textContent = curlSnippet;
+        document.getElementById('snippet-node').textContent = nodeSnippet;
+        document.getElementById('snippet-python').textContent = pythonSnippet;
+    }
+
+    snippetTabs.addEventListener('click', (e) => {
+        if (!e.target.matches('.tab-button')) return;
+
+        const lang = e.target.dataset.lang;
+
+        snippetTabs.querySelector('.active').classList.remove('active');
+        e.target.classList.add('active');
+
+        const activeSnippet = document.querySelector('#snippet-content .snippet.active');
+        if (activeSnippet) {
+            activeSnippet.classList.remove('active');
+        }
+        document.getElementById(`snippet-${lang}`).classList.add('active');
+    });
 
     searchForm.addEventListener('submit', performSearch);
     

@@ -38,12 +38,31 @@
             <section id="search-interface" class="card">
                 <h2>Semantic Search</h2>
                 <form id="search-form">
-                    <input type="text" id="search-query" placeholder="Enter your search query..." required>
+                    <div class="search-input-group">
+                        <input type="text" id="search-query" placeholder="Enter your search query..." required>
+                        <div class="search-options">
+                            <label for="max-tokens">Max Tokens:</label>
+                            <input type="number" id="max-tokens" value="2048" min="256" step="256">
+                        </div>
+                    </div>
                     <button type="submit">Search</button>
                 </form>
-                <div id="search-results-container">
+                <div id="search-results-container" style="display: none;">
                     <h3>Results</h3>
-                    <pre id="search-results">Search results will appear here.</pre>
+                    <pre id="search-results"></pre>
+                </div>
+                <div id="api-snippet-container" style="display: none;">
+                    <h3>API Snippets</h3>
+                    <div class="tabs">
+                        <button class="tab-button active" data-lang="curl">cURL</button>
+                        <button class="tab-button" data-lang="node">Node.js</button>
+                        <button class="tab-button" data-lang="python">Python</button>
+                    </div>
+                    <div id="snippet-content">
+                        <pre id="snippet-curl" class="snippet active"></pre>
+                        <pre id="snippet-node" class="snippet"></pre>
+                        <pre id="snippet-python" class="snippet"></pre>
+                    </div>
                 </div>
             </section>
         </main>
