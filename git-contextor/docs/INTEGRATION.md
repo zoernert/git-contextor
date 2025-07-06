@@ -1,28 +1,28 @@
-# Integration von Git Contextor mit anderen Werkzeugen
+# Integrating Git Contextor with Other Tools
 
-Git Contextor ist als flexibler Dienst konzipiert, der in verschiedene Arbeitsabläufe und Anwendungen integriert werden kann. Dieses Handbuch bietet einen Überblick, wie Sie Git Contextor mit anderen gängigen Werkzeugen verbinden können.
+Git Contextor is designed to be a flexible service that can be integrated into various workflows and applications. This guide provides an overview of how to connect it with other popular tools.
 
-**API-Grundlagen:**
-- **URL:** `http://localhost:3000/api` (Port ist konfigurierbar)
-- **Authentifizierung:** Alle API-Endpunkte (außer `/health`, `/api/uiconfig`, `/api/docs`) erfordern einen `x-api-key`-Header. Sie finden Ihren Schlüssel in der Datei `.gitcontextor/config.json`.
+**API Basics:**
+- **URL:** `http://localhost:3000/api` (port is configurable)
+- **Authentication:** All API endpoints (except `/health`, `/api/uiconfig`, `/api/docs`) require an `x-api-key` header. You can find your key in the `.gitcontextor/config.json` file.
 
 ---
 
-## Integrationsanleitungen
+## Integration Guides
 
-Wählen Sie eine Anleitung unten für detaillierte Anweisungen zur Integration von Git Contextor in Ihr bevorzugtes Werkzeug oder Ihren Workflow.
+Select a guide below for detailed instructions on how to integrate Git Contextor with your preferred tool or workflow.
 
-*   **Programmatischer Zugriff (Node.js & Python)**
-    *   Erfahren Sie, wie Sie direkte API-Aufrufe von Ihren Skripten aus durchführen.
+*   [**Programmatic Access (Node.js & Python)**](./integrations/programmatic.md)
+    *   Learn how to make direct API calls from your scripts.
 
-*   **LangChain (Python)**
-    *   Erstellen Sie einen benutzerdefinierten LangChain `Retriever`, um Git Contextor als Kontextquelle für Ihre RAG (Retrieval-Augmented Generation) Chains zu verwenden.
+*   [**LangChain (Python)**](./integrations/langchain.md)
+    *   Create a custom LangChain `Retriever` to use Git Contextor as a context source for your RAG (Retrieval-Augmented Generation) chains.
 
-*   **n8n**
-    *   Verwenden Sie den `HTTP Request`-Knoten in n8n, um Git Contextor einfach in Ihre Automatisierungs-Workflows zu integrieren.
+*   [**n8n**](./integrations/n8n.md)
+    *   Use the `HTTP Request` node in n8n to easily incorporate Git Contextor into your automation workflows.
 
-*   **Node-RED**
-    *   Verbinden Sie Git Contextor mit Ihren Node-RED-Flows über den `http request`-Knoten.
+*   [**Node-RED**](./integrations/node-red.md)
+    *   Connect Git Contextor to your Node-RED flows using the `http request` node.
 
-*   **Monitoring mit Kibana**
-    *   Leiten Sie Protokolle an einen ELK-Stack (Elasticsearch, Logstash, Kibana) weiter, um den Anwendungsstatus, Fehler und Aktivitäten in Echtzeit zu überwachen.
+*   [**Monitoring with Kibana**](./integrations/kibana.md)
+    *   Forward logs to an ELK Stack (Elasticsearch, Logstash, Kibana) to monitor application status, errors, and activity in real-time.
