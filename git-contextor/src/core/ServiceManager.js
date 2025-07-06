@@ -3,12 +3,14 @@ const fs = require('fs').promises;
 const logger = require('../cli/utils/logger');
 const apiServer = require('../api/server');
 const simpleGit = require('simple-git');
+const SharingService = require('./SharingService');
 
 class ServiceManager {
     constructor(repoPath, config, services) {
         this.repoPath = repoPath;
         this.config = config;
         this.services = services; // { fileWatcher, indexer, vectorStore, contextOptimizer }
+        this.sharingService = new SharingService(this.repoPath, this.config);
         this.pidFile = path.join(this.repoPath, '.gitcontextor', 'daemon.pid');
     }
 
@@ -50,6 +52,10 @@ class ServiceManager {
         await fs.writeFile(this.pidFile, process.pid.toString());
 
         try {
+            // Initialize sharing service
+            await this.sharingService.init();
+            this.services.sharingService = this.sharingService;
+
             // Start API and UI servers
             await apiServer.start(this.config, this.services);
 

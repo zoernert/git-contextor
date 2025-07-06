@@ -14,6 +14,11 @@ const reindexRoutes = require('./routes/reindex');
 const uiconfigRoutes = require('./routes/uiconfig');
 const docsRoutes = require('./routes/docs');
 
+// Import routes for chat and sharing
+const chatRoutes = require('./routes/chat');
+const shareRoutes = require('./routes/share');
+const sharedRoutes = require('./routes/shared');
+
 let server;
 
 function start(config, services) {
@@ -43,7 +48,12 @@ function start(config, services) {
     apiRouter.use('/status', statusRoutes(services));
     apiRouter.use('/metrics', metricsRoutes(services));
     apiRouter.use('/reindex', reindexRoutes(services));
+    apiRouter.use('/chat', chatRoutes(services));
+    apiRouter.use('/share', shareRoutes(services));
     app.use('/api', apiRouter);
+
+    // Shared access routes (public, but with their own validation)
+    app.use('/shared', sharedRoutes(services));
 
     // Determine path to the 'docs' directory to serve markdown files directly
     let packagePath;
