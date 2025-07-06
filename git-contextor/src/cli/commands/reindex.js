@@ -1,45 +1,54 @@
-const GitContextor = require('../../index');
+const ConfigManager = require('../../core/ConfigManager');
 const logger = require('../utils/logger');
 const ora = require('ora');
-const path = require('path');
-const fs = require('fs').promises;
 
 async function reindex(options) {
   const repoPath = process.cwd();
-  
+  const configManager = new ConfigManager(repoPath);
+
   try {
-    await fs.access(path.join(repoPath, '.gitcontextor'));
+    await configManager.load();
   } catch (error) {
     logger.error('Reindex failed. Git Contextor not initialized. Run "git-contextor init" first.');
     process.exit(1);
   }
-
-  const spinner = ora().start();
   
-  try {
-    const contextor = new GitContextor(repoPath);
-    await contextor.initialize();
+  const spinner = ora().start();
+  const { apiPort, apiKey } = configManager.config.services;
+  const url = `http://localhost:${apiPort}/api/reindex`;
 
-    if (options.file) {
-      const filePath = path.resolve(repoPath, options.file);
-      spinner.text = `Reindexing file: ${options.file}...`;
-      await contextor.indexer.indexFile(filePath);
-      spinner.succeed(`Successfully reindexed ${options.file}.`);
-    } else {
-      spinner.text = 'Starting full repository reindex... (This may take a while)';
-      // Assuming runFullIndex exists on indexer and returns stats
-      const stats = await contextor.indexer.runFullIndex();
-      spinner.succeed('Full repository reindex complete.');
-      if (stats) {
-        logger.info(`- Files indexed: ${stats.files}`);
-        logger.info(`- Chunks created: ${stats.chunks}`);
-        logger.info(`- Errors: ${stats.errors}`);
-      }
+  try {
+    const body = options.file ? { file: options.file } : {};
+    
+    spinner.text = options.file ? `Reindexing file: ${options.file}...` : 'Starting full repository reindex...';
+
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey
+        },
+        body: JSON.stringify(body)
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown API error' }));
+        throw new Error(`API Error (${response.status}): ${errorData.error}`);
     }
+
+    const result = await response.json();
+    spinner.succeed(result.message);
+    if (response.status === 202) {
+        logger.info('The reindex is running in the background. Use "git-contextor status" to monitor progress.');
+    }
+
   } catch (error) {
-    spinner.fail('Reindex failed.');
-    logger.error(error.message);
-    if(error.stack) logger.debug(error.stack);
+    if (error.code === 'ECONNREFUSED') {
+        spinner.fail('Reindex failed. Is the Git Contextor service running? (run "git-contextor start")');
+    } else {
+        spinner.fail('Reindex failed.');
+        logger.error(error.message);
+    }
     process.exit(1);
   }
 }

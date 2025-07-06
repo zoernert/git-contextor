@@ -9,6 +9,7 @@ const searchRoutes = require('./routes/search');
 const statusRoutes = require('./routes/status');
 const metricsRoutes = require('./routes/metrics');
 const healthRoutes = require('./routes/health');
+const reindexRoutes = require('./routes/reindex');
 
 let server;
 
@@ -29,6 +30,7 @@ function start(config, services) {
     apiRouter.use('/search', searchRoutes(services));
     apiRouter.use('/status', statusRoutes(services));
     apiRouter.use('/metrics', metricsRoutes(services));
+    apiRouter.use('/reindex', reindexRoutes(services));
     
     app.use('/api', apiRouter);
 
