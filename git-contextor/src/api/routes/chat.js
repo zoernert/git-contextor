@@ -9,7 +9,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
  */
 module.exports = (services) => {
     const router = express.Router();
-    const { contextOptimizer, config } = services;
+    const { contextOptimizer } = services;
 
     /**
      * Handles conversational queries about the repository
@@ -35,7 +35,7 @@ module.exports = (services) => {
                 query, 
                 searchResult.optimizedContext, 
                 context_type,
-                config.embedding
+                contextOptimizer.config.embedding
             );
 
             res.json({
