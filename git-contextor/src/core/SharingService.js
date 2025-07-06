@@ -148,6 +148,21 @@ class SharingService {
             }));
     }
 
+    _parseTunnelOutput(output) {
+        // Match URL, which can appear on stdout or stderr
+        const urlMatch = output.match(/your url is: (https:\/\/[^\s]+)/);
+        if (urlMatch && urlMatch[1] && !this.tunnelUrl) { // Set URL only once
+            this.tunnelUrl = urlMatch[1];
+            this.tunnelStatus = 'running';
+        }
+
+        // Match password, which can appear on stderr and in different formats.
+        const passwordMatch = output.match(/(?:your password is:|Password:)\s*(\w+)/i);
+        if (passwordMatch && passwordMatch[1]) {
+            this.tunnelPassword = passwordMatch[1];
+        }
+    }
+
     getTunnelStatus() {
         return {
             status: this.tunnelStatus,
@@ -199,26 +214,14 @@ class SharingService {
 
         this.tunnelProcess.stdout.on('data', (data) => {
             const output = data.toString();
-            // localtunnel outputs: "your url is: https://..."
-            const urlMatch = output.match(/your url is: (https:\/\/[^\s]+)/);
-            if (urlMatch && urlMatch[1]) {
-                this.tunnelUrl = urlMatch[1];
-                this.tunnelStatus = 'running';
-            }
-            const passwordMatch = output.match(/your password is: (\w+)/);
-            if (passwordMatch && passwordMatch[1]) {
-                this.tunnelPassword = passwordMatch[1];
-            }
+            this._parseTunnelOutput(output);
         });
 
         this.tunnelProcess.stderr.on('data', (data) => {
             const output = data.toString();
-            console.error(`Tunnel service error: ${output}`);
-            // Password can also be on stderr
-            const passwordMatch = output.match(/your password is: (\w+)/);
-            if (passwordMatch && passwordMatch[1]) {
-                this.tunnelPassword = passwordMatch[1];
-            }
+            // Log stderr for debugging, but still parse it for info like URL or password
+            console.error(`Tunnel service output on stderr: ${output}`);
+            this._parseTunnelOutput(output);
         });
 
         this.tunnelProcess.on('error', (err) => {
