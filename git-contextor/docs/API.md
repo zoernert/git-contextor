@@ -89,7 +89,7 @@ This document outlines the REST API endpoints provided by Git Contextor.
     "filter": {
       "fileTypes": ["js", "py"]
     },
-    "llmType": "claude-sonnet"
+    "llmType": "gemini-1.5-flash-latest"
   }
   ```
 - **Success Response (200 OK):**

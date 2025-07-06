@@ -116,6 +116,7 @@ git-contextor/
     "chokidar": "^3.5.3",
     "@qdrant/js-client-rest": "^1.9.0",
     "openai": "^4.20.1",
+    "@google/generative-ai": "^0.15.0",
     "@xenova/transformers": "^2.6.0",
     "tiktoken": "^1.0.10",
     "ignore": "^5.3.0",
@@ -210,7 +211,7 @@ program
   .command('query <search>')
   .description('Search for code context')
   .option('-t, --max-tokens <tokens>', 'Maximum tokens to return', '2048')
-  .option('-l, --llm-type <type>', 'LLM type for token optimization', 'claude-sonnet')
+  .option('-l, --llm-type <type>', 'LLM type for token optimization', 'gemini-1.5-flash-latest')
   .option('-f, --filter <filter>', 'File type filter (js,ts,py)')
   .action(queryCommand);
 
@@ -369,10 +370,10 @@ class ConfigManager {
         branch: 'main'
       },
       embedding: {
-        provider: 'openai',
-        model: 'text-embedding-3-small',
+        provider: 'gemini',
+        model: 'text-embedding-004',
         apiKey: null,
-        dimensions: 1536
+        dimensions: 768
       },
       chunking: {
         strategy: 'function',

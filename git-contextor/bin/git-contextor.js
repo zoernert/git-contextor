@@ -49,7 +49,7 @@ program
 program
   .command('config')
   .description('Manage configuration')
-  .option('--embedding-provider <provider>', 'Set embedding provider (openai|local)')
+  .option('--embedding-provider <provider>', 'Set embedding provider (gemini|openai|local)')
   .option('--embedding-model <model>', 'Set embedding model name')
   .option('--embedding-dimensions <dim>', 'Set embedding dimensions', parseInt)
   .option('--api-key <key>', 'Set API key for embedding provider')
