@@ -45,6 +45,18 @@ function start(config, services) {
     apiRouter.use('/reindex', reindexRoutes(services));
     app.use('/api', apiRouter);
 
+    // Determine path to the 'docs' directory to serve markdown files directly
+    let packagePath;
+    try {
+        // This works when git-contextor is an installed dependency (e.g., via npx)
+        packagePath = path.dirname(require.resolve('git-contextor/package.json'));
+    } catch (error) {
+        // This is a fallback for local development, assuming server.js is in src/api
+        packagePath = path.resolve(__dirname, '../../..');
+    }
+    const docsDir = path.join(packagePath, 'docs');
+    app.use(express.static(docsDir));
+
     // Serve static UI files from the 'public' directory
     const publicPath = path.join(__dirname, '../ui/public');
     app.use(express.static(publicPath));
