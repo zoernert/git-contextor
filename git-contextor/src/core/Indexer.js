@@ -3,6 +3,7 @@ const path = require('path');
 const logger = require('../cli/utils/logger');
 const { chunkFile } = require('../utils/chunking');
 const { listGitFiles } = require('../utils/git');
+const ignore = require('ignore');
 
 /**
  * Handles reading files, chunking them, and sending them to the VectorStore for embedding and storage.
@@ -33,7 +34,7 @@ class Indexer {
     logger.info(`Indexing file: ${path.relative(this.repoPath, filePath)}`);
     try {
       // Assuming chunkFile returns an array of { content, metadata } objects
-      const chunks = await chunkFile(filePath, this.config.chunking);
+      const chunks = await chunkFile(filePath, this.repoPath, this.config.chunking);
       if (chunks && chunks.length > 0) {
         await this.vectorStore.upsertChunks(chunks);
         this.totalChunks += chunks.length;
@@ -79,9 +80,18 @@ class Indexer {
       this.totalFiles = 0;
       this.totalChunks = 0;
 
-      const filesToIndex = await listGitFiles(this.repoPath, this.config.indexing.includeExtensions);
-      this.totalFiles = filesToIndex.length;
+      const allGitFiles = await listGitFiles(this.repoPath);
+      const ig = ignore().add(this.config.indexing.excludePatterns);
+
+      const filesToIndex = allGitFiles.filter(file => {
+        if (ig.ignores(file)) {
+            return false;
+        }
+        const ext = path.extname(file).toLowerCase();
+        return this.config.indexing.includeExtensions.includes(ext);
+      });
       
+      this.totalFiles = filesToIndex.length;
       logger.info(`Found ${this.totalFiles} files to index.`);
       
       const batchSize = this.config.performance.batchSize;

@@ -1,0 +1,138 @@
+const fs = require('fs').promises;
+const path = require('path');
+const Parser = require('tree-sitter');
+const JavaScript = require('tree-sitter-javascript');
+const Python = require('tree-sitter-python');
+const logger = require('../cli/utils/logger');
+
+// More languages can be added here
+const parsers = {
+    '.js': JavaScript,
+    '.jsx': JavaScript,
+    '.ts': JavaScript,
+    '.tsx': JavaScript,
+    '.py': Python,
+};
+
+function getParserForFile(filePath) {
+    const ext = path.extname(filePath);
+    if (parsers[ext]) {
+        const parser = new Parser();
+        parser.setLanguage(parsers[ext]);
+        return parser;
+    }
+    return null;
+}
+
+// Generic chunker for text-based files or fallback
+function chunkText(content, relativePath, config) {
+    const { maxChunkSize, overlap } = config;
+    const chunks = [];
+    const lines = content.split('\n');
+    let currentChunk = '';
+    let startLine = 1;
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (currentChunk.length + line.length + 1 > maxChunkSize && currentChunk) {
+            chunks.push({
+                content: currentChunk,
+                metadata: {
+                    filePath: relativePath,
+                    start_line: startLine,
+                    end_line: i,
+                },
+            });
+            // Handle overlap by stepping back a few lines
+            const overlapLinesCount = Math.floor(overlap / 80); // Rough estimate of lines for overlap
+            const overlapStartIndex = Math.max(0, i - overlapLinesCount);
+            currentChunk = lines.slice(overlapStartIndex, i).join('\n');
+            startLine = overlapStartIndex + 1;
+        }
+        currentChunk += (currentChunk ? '\n' : '') + line;
+    }
+
+    if (currentChunk) {
+        chunks.push({
+            content: currentChunk,
+            metadata: {
+                filePath: relativePath,
+                start_line: startLine,
+                end_line: lines.length,
+            },
+        });
+    }
+    return chunks;
+}
+
+
+// Tree-sitter powered chunking for code
+async function chunkCode(content, relativePath, parser, config) {
+    const tree = parser.parse(content);
+    const chunks = [];
+    const language = parser.getLanguage();
+
+    // Queries for functions and classes. Can be expanded.
+    const queryString = `
+      [(function_declaration) (function_definition) (method_definition) (arrow_function) (function)] @func
+      [(class_declaration) (class_definition)] @class
+    `;
+    const query = new Parser.Query(language, queryString);
+    const matches = query.captures(tree.rootNode);
+    
+    const nodes = matches.map(m => m.node);
+    const sortedNodes = nodes.sort((a, b) => a.startIndex - b.startIndex);
+    
+    for (const node of sortedNodes) {
+        const chunkContent = node.text;
+        if (chunkContent.length > config.maxChunkSize) {
+            const subChunks = chunkText(chunkContent, relativePath, config);
+            subChunks.forEach(sc => {
+                sc.metadata.start_line += node.startPosition.row;
+                sc.metadata.end_line += node.startPosition.row;
+            });
+            chunks.push(...subChunks);
+        } else {
+            chunks.push({
+                content: chunkContent,
+                metadata: {
+                    filePath: relativePath,
+                    start_line: node.startPosition.row + 1,
+                    end_line: node.endPosition.row + 1,
+                },
+            });
+        }
+    }
+
+    if (chunks.length === 0) {
+        return chunkText(content, relativePath, config);
+    }
+    return chunks;
+}
+
+/**
+ * Chunks a file based on its type and the provided configuration.
+ * @param {string} filePath - Absolute path to the file.
+ * @param {string} repoPath - Absolute path to the repository root.
+ * @param {object} config - The chunking configuration.
+ * @returns {Promise<Array<object>>} An array of chunk objects.
+ */
+async function chunkFile(filePath, repoPath, config) {
+    try {
+        const content = await fs.readFile(filePath, 'utf8');
+        const relativePath = path.relative(repoPath, filePath);
+        const parser = getParserForFile(filePath);
+
+        if (parser && config.strategy === 'function') {
+            return await chunkCode(content, relativePath, parser, config);
+        } else {
+            return chunkText(content, relativePath, config);
+        }
+    } catch (error) {
+        logger.error(`Error chunking file ${filePath}:`, error.message);
+        logger.debug(error.stack);
+        return [];
+    }
+}
+
+module.exports = { chunkFile };
