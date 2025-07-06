@@ -22,17 +22,33 @@ module.exports = (config) => {
     }
     const docsDir = path.join(packagePath, 'docs');
 
-    // GET /api/docs - list available documentation files
+    // Helper function to recursively find all markdown files
+    const findMarkdownFiles = async (dir, rootDir = dir) => {
+        const dirents = await fs.readdir(dir, { withFileTypes: true });
+        const files = await Promise.all(dirents.map(async (dirent) => {
+            const res = path.resolve(dir, dirent.name);
+            if (dirent.isDirectory()) {
+                return findMarkdownFiles(res, rootDir);
+            }
+            if (dirent.isFile() && dirent.name.endsWith('.md')) {
+                // Return path relative to the root 'docs' directory, using forward slashes
+                return path.relative(rootDir, res).replace(/\\/g, '/');
+            }
+            return null;
+        }));
+        return files.flat().filter(Boolean);
+    };
+
+    // GET /api/docs - list available documentation files recursively
     router.get('/', async (req, res, next) => {
         try {
-            const files = await fs.readdir(docsDir);
-            const markdownFiles = files
-                .filter(file => file.endsWith('.md'))
-                .map(file => ({
-                    // Create a human-readable name from the filename
-                    name: path.basename(file, '.md').replace(/_/g, ' ').replace(/-/g, ' ').toUpperCase(),
-                    filename: file,
-                }));
+            const files = await findMarkdownFiles(docsDir);
+            const markdownFiles = files.map(file => ({
+                // Create a human-readable name from the file path
+                // e.g., 'integrations/n8n.md' becomes 'INTEGRATIONS N8N'
+                name: file.replace('.md', '').replace(/[\\/]/g, ' ').replace(/_/g, ' ').replace(/-/g, ' ').trim().toUpperCase(),
+                filename: file,
+            }));
             res.json(markdownFiles);
         } catch (error) {
             if (error.code === 'ENOENT') {
@@ -44,28 +60,30 @@ module.exports = (config) => {
         }
     });
 
-    // GET /api/docs/:filename - get content of a documentation file
-    router.get('/:filename', async (req, res, next) => {
-        const { filename } = req.params;
-        // Basic security check
-        if (!filename || !filename.endsWith('.md') || filename.includes('..')) {
-            return res.status(400).send('Invalid filename');
+    // GET /api/docs/* - get content of a documentation file, supporting subdirectories
+    router.get('/*', async (req, res, next) => {
+        const requestedFile = req.params[0];
+
+        // Basic security check to prevent path traversal and invalid requests
+        if (!requestedFile || !requestedFile.endsWith('.md') || requestedFile.includes('..')) {
+            return res.status(400).send('Invalid request');
         }
 
-        const filePath = path.join(docsDir, filename);
+        const filePath = path.join(docsDir, requestedFile);
 
         try {
-            // Security check to ensure file is within docsDir
-            if (path.dirname(filePath) !== docsDir) {
+            // Advanced security check: resolve the path and ensure it's still within docsDir.
+            const resolvedPath = path.resolve(filePath);
+            if (!resolvedPath.startsWith(path.resolve(docsDir))) {
                 return res.status(403).send('Forbidden');
             }
-            const content = await fs.readFile(filePath, 'utf-8');
+            const content = await fs.readFile(resolvedPath, 'utf-8');
             res.type('text/markdown').send(content);
         } catch (error) {
             if (error.code === 'ENOENT') {
                 return res.status(404).send('Documentation file not found.');
             }
-            logger.error(`Could not read documentation file ${filename}:`, error);
+            logger.error(`Could not read documentation file ${requestedFile}:`, error);
             next(error);
         }
     });
