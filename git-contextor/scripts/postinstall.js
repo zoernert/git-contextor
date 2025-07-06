@@ -3,10 +3,8 @@
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
+const net = require('net');
 
-console.log('🚀 Setting up Git Contextor...');
-
-// Check if Docker is available
 function checkDocker() {
   try {
     execSync('docker --version', { stdio: 'ignore' });
@@ -16,9 +14,8 @@ function checkDocker() {
   }
 }
 
-// Create example .env file if it doesn't exist
 function createExampleEnv() {
-  const envPath = path.join(process.cwd(), '.env.example');
+  const envPath = path.resolve(process.cwd(), '.env.example');
   if (!fs.existsSync(envPath)) {
     const envContent = `# Git Contextor Environment Variables
 # Uncomment and set the appropriate API key for your embedding provider
@@ -34,71 +31,61 @@ QDRANT_HOST=localhost
 QDRANT_PORT=6333
 `;
     fs.writeFileSync(envPath, envContent);
-    console.log('✅ Created .env.example file');
+    console.log('✅ Created .env.example file.');
   }
 }
 
-// Display setup instructions
-function showInstructions() {
-  const hasDocker = checkDocker();
-  
-  console.log('\n🎉 Git Contextor installed successfully!');
-  console.log('\nNext steps:');
-  console.log('1. Navigate to your git repository');
-  console.log('2. Run: npx git-contextor init');
-  
-  if (hasDocker) {
-    console.log('3. Start Qdrant: docker run -p 6333:6333 qdrant/qdrant');
-  } else {
-    console.log('3. Install Docker and run: docker run -p 6333:6333 qdrant/qdrant');
-    console.log('   Or install Qdrant locally: https://qdrant.tech/documentation/quick_start/');
-  }
-  
-  console.log('4. Run: npx git-contextor start');
-  console.log('5. Open http://localhost:3000 in your browser');
-  
-  console.log('\n📚 Documentation: https://github.com/stromdao/git-contextor#readme');
-  console.log('💬 Need help? Open an issue: https://github.com/stromdao/git-contextor/issues');
+function checkPort(port) {
+    return new Promise((resolve) => {
+        const server = net.createServer();
+        server.once('error', (err) => {
+            if (err.code === 'EADDRINUSE') {
+                resolve(false); // Port is in use
+            } else {
+                resolve(true); // Other error, assume port is available
+            }
+        });
+        server.once('listening', () => {
+            server.close(() => resolve(true)); // Port is free
+        });
+        server.listen(port);
+    });
 }
 
-// Main setup
-try {
-  createExampleEnv();
-  showInstructions();
-} catch (error) {
-  console.error('❌ Setup failed:', error.message);
-  process.exit(1);
-}const net = require('net');
+async function main() {
+    console.log('🚀 Running Git Contextor post-install checks...');
+    try {
+        createExampleEnv();
+        
+        const hasDocker = checkDocker();
+        const isPortFree = await checkPort(3000);
 
-function checkCommonIssues() {
-  // Check if port 3000 is available, as it's the default
-  const defaultPort = 3000;
-  const server = net.createServer();
+        console.log('\n🎉 Git Contextor installed successfully!');
+        console.log('\nNext steps:');
+        console.log('1. Navigate to your git repository: cd /path/to/your-project');
+        console.log('2. Initialize the project: npx git-contextor init');
+        
+        if (hasDocker) {
+            console.log('3. Start the vector database: docker run -p 6333:6333 -p 6334:6334 qdrant/qdrant');
+        } else {
+            console.log('3. ⚠️ Docker not found. Please install Docker and then run: docker run -p 6333:6333 -p 6334:6334 qdrant/qdrant');
+            console.log('   Alternatively, install Qdrant locally: https://qdrant.tech/documentation/quick_start/');
+        }
+        
+        console.log('4. Start the service: npx git-contextor start');
+        if (!isPortFree) {
+            console.warn('   ⚠️ Port 3000 may be in use. The start command might fail. Use a different port if needed:');
+            console.warn('      npx git-contextor start --port 3001');
+        }
+        console.log('5. Open the dashboard: http://localhost:3000 (if using the default port)');
+        
+        console.log('\n💡 Tip: For verbose logs, use the DEBUG environment variable, e.g., DEBUG=git-contextor:* npx git-contextor start');
+        console.log('📚 For more details, check the README: https://github.com/stromdao/git-contextor#readme');
+        console.log('💬 Need help? Open an issue: https://github.com/stromdao/git-contextor/issues\n');
 
-  server.once('error', (err) => {
-    if (err.code === 'EADDRINUSE') {
-      console.warn(`\n⚠️  Warning: Port ${defaultPort} is currently in use.`);
-      console.warn(`   If you start git-contextor, it may fail. You can specify a different port with:`);
-      console.warn(`   git-contextor start --port <other_port>\n`);
+    } catch (error) {
+        console.error('❌ Post-install setup failed:', error.message);
     }
-  });
-
-  server.once('listening', () => {
-    server.close();
-  });
-
-  server.listen(defaultPort);
-
-  // Provide general advice
-  console.log('\n💡 Git Contextor Tips:');
-  console.log('   - Ensure Docker is running before you start the service to use Qdrant.');
-  console.log('   - Check your firewall to ensure ports 3000 (API) and 6333 (Qdrant) are accessible.');
-  console.log('   - For verbose logs, run commands with the DEBUG environment variable, e.g., DEBUG=git-contextor:* git-contextor start\n');
 }
 
-console.log('Running Git Contextor post-install checks...');
-try {
-    checkCommonIssues();
-} catch (error) {
-    console.warn('Could not run post-install checks:', error.message);
-}
+main();
