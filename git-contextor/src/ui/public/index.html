@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Git Contextor - Dashboard</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Git Contextor Dashboard</h1>
+            <nav>
+                <a href="/index.html" class="active">Dashboard</a>
+                <a href="/metrics.html">Metrics</a>
+                <a href="/config.html">Configuration</a>
+            </nav>
+        </header>
+        <main>
+            <section id="status-overview" class="card">
+                <h2>Status Overview</h2>
+                <div class="status-grid">
+                    <div><strong>Repository:</strong> <span id="repo-name">Loading...</span></div>
+                    <div><strong>Path:</strong> <span id="repo-path">Loading...</span></div>
+                    <div><strong>Service Status:</strong> <span id="service-status">Loading...</span></div>
+                    <div><strong>Indexed Files:</strong> <span id="indexed-files">Loading...</span></div>
+                    <div><strong>Total Chunks:</strong> <span id="total-chunks">Loading...</span></div>
+                </div>
+            </section>
+
+            <section id="live-feed" class="card">
+                <h2>Live Activity Feed</h2>
+                <ul id="activity-log">
+                    <li>Waiting for events...</li>
+                </ul>
+            </section>
+
+            <section id="search-interface" class="card">
+                <h2>Semantic Search</h2>
+                <form id="search-form">
+                    <input type="text" id="search-query" placeholder="Enter your search query..." required>
+                    <button type="submit">Search</button>
+                </form>
+                <div id="search-results-container">
+                    <h3>Results</h3>
+                    <pre id="search-results">Search results will appear here.</pre>
+                </div>
+            </section>
+        </main>
+        <footer>
+            <p>Git Contextor &copy; 2025</p>
+        </footer>
+    </div>
+    <script src="/js/app.js"></script>
+</body>
+</html>

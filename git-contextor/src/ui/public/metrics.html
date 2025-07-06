@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Git Contextor - Metrics</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Git Contextor Metrics</h1>
+            <nav>
+                <a href="/index.html">Dashboard</a>
+                <a href="/metrics.html" class="active">Metrics</a>
+                <a href="/config.html">Configuration</a>
+            </nav>
+        </header>
+        <main>
+            <section class="card">
+                <h2>Indexing Performance</h2>
+                <canvas id="indexing-chart"></canvas>
+            </section>
+            <section class="card">
+                <h2>Vector Store Statistics</h2>
+                <canvas id="vector-store-chart"></canvas>
+            </section>
+            <section class="card">
+                <h2>System Performance</h2>
+                <canvas id="system-perf-chart"></canvas>
+            </section>
+        </main>
+        <footer>
+            <p>Git Contextor &copy; 2025</p>
+        </footer>
+    </div>
+    <script src="/js/charts.js"></script>
+</body>
+</html>
