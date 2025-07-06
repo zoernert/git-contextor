@@ -10,7 +10,9 @@ const logger = require('../../cli/utils/logger');
  */
 module.exports = (config) => {
     const router = express.Router();
-    const docsDir = path.resolve(config.repository.path, 'docs');
+    // Load docs from the git-contextor package, not the target repository.
+    const packagePath = path.dirname(require.resolve('git-contextor/package.json'));
+    const docsDir = path.join(packagePath, 'docs');
 
     // GET /api/docs - list available documentation files
     router.get('/', async (req, res, next) => {
@@ -25,6 +27,10 @@ module.exports = (config) => {
                 }));
             res.json(markdownFiles);
         } catch (error) {
+            if (error.code === 'ENOENT') {
+                logger.warn(`Documentation directory not found at ${docsDir}. No docs will be served.`);
+                return res.json([]);
+            }
             logger.error('Could not list documentation files:', error);
             next(error);
         }
