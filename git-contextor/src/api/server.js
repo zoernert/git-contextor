@@ -20,7 +20,14 @@ function start(config, services) {
 
     // Middleware
     app.use(cors());
-    app.use(helmet());
+    app.use(helmet({
+        contentSecurityPolicy: {
+            directives: {
+                ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+                "script-src": ["'self'", "https://cdn.jsdelivr.net"],
+            },
+        },
+    }));
     app.use(express.json());
 
     // Public health check endpoint
