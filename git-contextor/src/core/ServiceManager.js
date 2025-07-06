@@ -27,10 +27,18 @@ class ServiceManager {
             // Start API and UI servers
             await apiServer.start(this.config, this.services);
 
-            // Run initial index of the repository
-            logger.info('Performing initial repository index...');
-            await this.services.indexer.reindexAll();
-            logger.info('Initial index complete.');
+            // Run initial index of the repository only if the collection is empty
+            const vectorStoreStatus = await this.services.vectorStore.getStatus();
+            if (!vectorStoreStatus.vectorCount || vectorStoreStatus.vectorCount === 0) {
+                logger.info('Vector store is empty. Performing initial repository index...');
+                await this.services.indexer.reindexAll();
+                logger.info('Initial index complete.');
+            } else {
+                logger.info(`Found ${vectorStoreStatus.vectorCount} vectors in existing collection. Skipping initial index.`);
+                // Sync the indexer's internal state with the data from the vector store
+                const indexerStatus = await this.services.indexer.getStatus();
+                logger.info(`Indexer state loaded: ${indexerStatus.totalFiles} files, ${indexerStatus.totalChunks} chunks.`);
+            }
 
             // Start the file watcher if enabled
             if (this.config.monitoring.watchEnabled) {
