@@ -9,7 +9,8 @@ async function init(options) {
     await configManager.init(options.force);
     spinner.succeed('Git Contextor initialized successfully.');
     logger.info(`Configuration file created at ${configManager.configFile}`);
-    logger.info('Run "git-contextor start" to begin monitoring the repository.');
+    logger.warn(`\nIMPORTANT: Please edit this file to add your embedding provider API key (e.g., for OpenAI or Gemini).`);
+    logger.info('\nRun "git-contextor start" to begin monitoring the repository.');
   } catch (error) {
     spinner.fail('Initialization failed.');
     logger.error(error.message);

@@ -17,9 +17,9 @@ async function getLocalEmbedding(text, model) {
 
 async function getOpenAIEmbedding(text, { model, apiKey }) {
     if (!openAIClient) {
-        const finalApiKey = apiKey || process.env.OPENAI_API_KEY;
+        const finalApiKey = apiKey;
         if (!finalApiKey) {
-            throw new Error('OpenAI API key is not configured. Set it in .env or via "git-contextor config --api-key YOUR_KEY"');
+            throw new Error('OpenAI API key is not configured. Set it in .gitcontextor/config.json or via "git-contextor config --api-key YOUR_KEY"');
         }
         openAIClient = new OpenAI({ apiKey: finalApiKey });
     }

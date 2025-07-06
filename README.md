@@ -21,14 +21,15 @@ Git Contextor is a developer tool designed to create and manage contextually-awa
     ```
     This creates a `.gitcontextor` configuration directory. _(If git-contextor is not on npm, use `node /path/to/git-contextor/bin/git-contextor.js init`)_
 
-2.  **Add an Embedding API Key:**
-    Create a `.env` file in your project and add your key:
-    ```
-    # For Google Gemini
-    GOOGLE_API_KEY=your_api_key_here
-    
-    # Or for OpenAI
-    # OPENAI_API_KEY=your_api_key_here
+2.  **Configure your API Key:**
+    After initialization, edit the new `.gitcontextor/config.json` file. Find the `embedding` section and add your API key:
+    ```json
+    "embedding": {
+      "provider": "gemini", // or "openai", "local"
+      "model": "text-embedding-004",
+      "apiKey": "YOUR_API_KEY_HERE", // <-- ADD YOUR KEY HERE
+      "dimensions": 768
+    },
     ```
 
 3.  **Start the service:**
