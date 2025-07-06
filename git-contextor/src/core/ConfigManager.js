@@ -1,6 +1,7 @@
 const fs = require('fs').promises;
 const path = require('path');
 const crypto = require('crypto');
+const { merge } = require('lodash');
 
 class ConfigManager {
   constructor(repoPath) {
@@ -94,7 +95,7 @@ class ConfigManager {
     try {
       const configData = await fs.readFile(this.configFile, 'utf8');
       const loadedConfig = JSON.parse(configData);
-      this.config = { ...this.defaultConfig, ...loadedConfig };
+      this.config = merge({}, this.defaultConfig, loadedConfig);
     } catch (error) {
       if (error.code === 'ENOENT') {
         throw new Error('Git Contextor not initialized. Run "git-contextor init" first.');
@@ -108,7 +109,7 @@ class ConfigManager {
   }
 
   async updateConfig(updates) {
-    this.config = { ...this.config, ...updates };
+    this.config = merge(this.config, updates);
     await this.save();
   }
 
