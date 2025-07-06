@@ -1,78 +1,78 @@
-# Git Contextor - Benutzerhandbuch
+# Git Contextor - User Guide
 
-Willkommen bei Git Contextor! Dieses Handbuch führt Sie durch die Einrichtung, Konfiguration und Nutzung des Tools.
+Welcome to Git Contextor! This guide will walk you through setting up, configuring, and using the tool.
 
-## 1. Was ist Git Contextor?
+## 1. What is Git Contextor?
 
-Git Contextor ist ein Entwicklerwerkzeug, das als lokaler Dienst läuft und ein Git-Repository kontinuierlich überwacht. Es analysiert Ihren Code, zerlegt ihn in sinnvolle, sprachspezifische Blöcke (Chunks) und wandelt diese in numerische Vektoren (Embeddings) um. Diese Vektoren werden in einer Vektordatenbank (Qdrant) gespeichert.
+Git Contextor is a developer tool that runs as a local service, continuously monitoring a Git repository. It analyzes your code, breaks it down into meaningful, language-specific chunks, and converts these chunks into numerical vectors (embeddings). These vectors are stored in a vector database (Qdrant).
 
-Der Hauptzweck besteht darin, eine API für die semantische Suche bereitzustellen. Anstatt nach Schlüsselwörtern zu suchen, können Sie eine Frage oder Beschreibung eingeben, und Git Contextor findet die relevantesten Code-Abschnitte, die die kontextuelle Bedeutung Ihrer Anfrage am besten erfassen.
+The primary purpose is to provide a semantic search API. Instead of searching for keywords, you can ask a question or provide a description, and Git Contextor will find the most relevant code sections that best capture the contextual meaning of your query.
 
-## 2. Erste Schritte
+## 2. Getting Started
 
-### Initialisierung
-Navigieren Sie in Ihr Projektverzeichnis und führen Sie aus:
+### Initialization
+Navigate to your project directory and run:
 ```bash
 npx git-contextor init
 ```
-Dieser Befehl erstellt ein `.gitcontextor`-Verzeichnis in Ihrem Projekt, das die Konfigurationsdatei `config.json` enthält.
+This command creates a `.gitcontextor` directory in your project, containing the `config.json` configuration file.
 
-### Konfiguration
-Öffnen Sie die neu erstellte `.gitcontextor/config.json`. Der wichtigste Schritt ist die Konfiguration Ihres Embedding-Providers. Git Contextor unterstützt `gemini` (Google), `openai` und `local` (über Transformers.js, keine API erforderlich).
+### Configuration
+Open the newly created `.gitcontextor/config.json`. The most important step is to configure your embedding provider. Git Contextor supports `gemini` (Google), `openai`, and `local` (via Transformers.js, no API key required).
 
-**Beispiel für Gemini:**
+**Example for Gemini:**
 ```json
 "embedding": {
   "provider": "gemini",
   "model": "text-embedding-004",
-  "apiKey": "IHR_GEMINI_API_SCHLÜSSEL_HIER",
+  "apiKey": "YOUR_GEMINI_API_KEY_HERE",
   "dimensions": 768
 }
 ```
-Stellen Sie sicher, dass Sie Ihren API-Schlüssel einfügen.
+Make sure to insert your API key.
 
-### Starten des Dienstes
-Führen Sie den folgenden Befehl aus, um den Dienst zu starten:
+### Starting the Service
+Run the following command to start the service:
 ```bash
 npx git-contextor start
 ```
-Beim ersten Start prüft Git Contextor, ob eine Verbindung zur Vektordatenbank Qdrant hergestellt werden kann. Wenn nicht, werden Sie gefragt, ob Sie Qdrant über Docker starten möchten.
+On first launch, Git Contextor checks if it can connect to the Qdrant vector database. If not, it will ask if you want to start Qdrant via Docker.
 
-Sobald der Dienst läuft, beginnt er mit der initialen Indizierung Ihres gesamten Repositorys.
+Once the service is running, it will begin the initial indexing of your entire repository.
 
-## 3. Die Web-UI verwenden
+## 3. Using the Web UI
 
-Öffnen Sie [http://localhost:3000](http://localhost:3000) (oder den von Ihnen konfigurierten Port) in Ihrem Browser.
+Open [http://localhost:3000](http://localhost:3000) (or the port you configured) in your browser.
 
 ### Dashboard
-Das Dashboard bietet eine Statusübersicht, einschließlich des Repository-Namens, des Indizierungsstatus und eines Live-Aktivitäts-Feeds, der Dateiänderungen in Echtzeit anzeigt.
+The dashboard provides a status overview, including the repository name, indexing status, and a live activity feed showing file changes in real-time.
 
-Hier können Sie auch die semantische Suche nutzen:
-1.  Geben Sie Ihre Suchanfrage in das Suchfeld ein (z. B. "wie implementiere ich die Benutzerauthentifizierung").
-2.  Passen Sie bei Bedarf die maximalen Token an.
-3.  Klicken Sie auf "Suchen".
+Here you can also use the semantic search:
+1.  Enter your search query into the search box (e.g., "how to implement user authentication").
+2.  Adjust the max tokens if needed.
+3.  Click "Search".
 
-Die Ergebnisse werden als optimierter Kontext-String angezeigt, der direkt in eine LLM-Eingabeaufforderung kopiert werden kann. Darunter finden Sie API-Snippets, um die gleiche Suche programmatisch durchzuführen.
+The results are displayed as an optimized context string, ready to be copied directly into an LLM prompt. Below that, you will find API snippets to perform the same search programmatically.
 
-### Metriken & Konfiguration
-- **Metriken:** Visualisiert Leistungsdaten wie die Anzahl der indizierten Chunks und die Speichernutzung.
-- **Konfiguration:** Zeigt einen Teil der aktuellen Konfiguration an und bietet "Gefahrenzonen"-Aktionen wie die Neuindizierung des gesamten Repositorys oder das Löschen aller Daten aus dem Vektor-Store.
+### Metrics & Configuration
+- **Metrics:** Visualizes performance data like the number of indexed chunks and memory usage.
+- **Configuration:** Displays a portion of the current configuration and provides "danger zone" actions like re-indexing the entire repository or deleting all data from the vector store.
 
-## 4. Die CLI verwenden
+## 4. Using the CLI
 
-- `git-contextor status`: Zeigt den aktuellen Status des Dienstes an.
-- `git-contextor query "Ihre Anfrage"`: Führt eine semantische Suche von der Kommandozeile aus durch.
-- `git-contextor reindex`: Löst eine vollständige Neuindizierung aus.
-- `git-contextor config --show`: Zeigt die gesamte `config.json` an.
-- `git-contextor config --<key> <value>`: Aktualisiert einen Konfigurationswert (z.B. `--embedding-provider local`).
-- `git-contextor stop`: Stoppt den Dienst (insbesondere den Daemon).
+- `git-contextor status`: Displays the current status of the service.
+- `git-contextor query "Your query"`: Performs a semantic search from the command line.
+- `git-contextor reindex`: Triggers a full re-index.
+- `git-contextor config --show`: Displays the entire `config.json`.
+- `git-contextor config --<key> <value>`: Updates a configuration value (e.g., `--embedding-provider local`).
+- `git-contextor stop`: Stops the service (specifically the daemon).
 
-## 5. API-Nutzung
+## 5. API Usage
 
-Git Contextor stellt eine REST-API bereit. Alle Endpunkte (außer Health, UI-Config und Docs) erfordern einen `x-api-key`-Header. Ihren Schlüssel finden Sie in `config.json`.
+Git Contextor provides a REST API. All endpoints (except Health, UI-Config, and Docs) require an `x-api-key` header. You can find your key in `config.json`.
 
-- `GET /api/status`: Ruft den Dienststatus ab.
-- `POST /api/search`: Führt eine semantische Suche durch.
-- `POST /api/reindex`: Startet die Neuindizierung.
+- `GET /api/status`: Retrieves the service status.
+- `POST /api/search`: Performs a semantic search.
+- `POST /api/reindex`: Starts the re-indexing process.
 
-Detaillierte Informationen zu Endpunkten, Anfragen und Antworten finden Sie auf der Seite **API** in der Dokumentations-UI.
+For detailed information on endpoints, requests, and responses, please visit the **API** page in the documentation UI.
