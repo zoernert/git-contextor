@@ -140,4 +140,5 @@ vite.config.ts.timestamp-*
 .aider*
 
 # Git Contextor
-.gitcontextor/
+/git-contextor/.gitcontextor/
+/git-contextor/qdrant_storage/

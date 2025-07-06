@@ -2,12 +2,12 @@ const express = require('express');
 
 /**
  * Creates and returns the search router.
- * @param {import('../../core/ServiceManager')} serviceManager - The service manager instance.
+ * @param {object} services - The core services of the application.
  * @returns {express.Router} The configured router.
  */
-module.exports = (serviceManager) => {
+module.exports = (services) => {
     const router = express.Router();
-    const contextOptimizer = serviceManager.services.contextOptimizer;
+    const { contextOptimizer } = services;
 
     /**
      * Performs a semantic search across the indexed repository.
