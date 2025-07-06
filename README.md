@@ -39,23 +39,20 @@
 ## 🚀 Quick Start (60 seconds)
 
 ```bash
-# 1. Install globally
-npm install -g git-contextor
-
-# 2. Navigate to your project
+# 1. Navigate to your project directory
 cd your-awesome-project
 
-# 3. Initialize (creates .gitcontextor/config.json)
-git-contextor init
+# 2. Initialize the project (this will also install Git Contextor locally if needed)
+npx git-contextor@latest init
 
-# 4. Start Qdrant (vector database)
+# 3. Start the vector database (Qdrant)
 docker run -p 6333:6333 qdrant/qdrant
 
-# 5. Start indexing and monitoring
-git-contextor start --port 3333
+# 4. Start the indexing service and dashboard
+npx git-contextor start
 
-# 6. Open the dashboard
-open http://localhost:3333
+# That's it! Your dashboard is now running.
+# Open http://localhost:3333 in your browser to see it.
 ```
 
 **That's it!** Your entire codebase is now semantically searchable.
@@ -63,10 +60,10 @@ open http://localhost:3333
 ## 🎮 Try It Now
 
 ```bash
-# Search by meaning, not keywords
-git-contextor query "how is user authentication handled?"
-git-contextor query "database connection logic"
-git-contextor query "error handling patterns"
+# Search by meaning, not keywords, directly from your terminal
+npx git-contextor query "how is user authentication handled?"
+npx git-contextor query "database connection logic"
+npx git-contextor query "error handling patterns"
 ```
 
 ## 🔥 Real-World Examples
@@ -77,7 +74,7 @@ git-contextor query "error handling patterns"
 {
     "label": "Ask Git Contextor",
     "type": "shell", 
-    "command": "git-contextor query \"${selectedText}\"",
+    "command": "npx git-contextor query \"${selectedText}\"",
     "group": "build"
 }
 ```

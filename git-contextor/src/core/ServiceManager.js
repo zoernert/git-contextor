@@ -143,11 +143,11 @@ class ServiceManager {
             pid: pid,
             repoPath: this.repoPath,
             api: {
-                port: this.config.services.apiPort,
+                port: this.config.services.port,
                 status: 'running' // Simplified for now
             },
             ui: {
-                port: this.config.services.uiPort,
+                port: this.config.services.port,
                 status: 'running' // Simplified for now
             },
             watcher: {
