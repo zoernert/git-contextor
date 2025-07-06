@@ -57,8 +57,12 @@ class ServiceManager {
             const vectorStoreStatus = await this.services.vectorStore.getStatus();
             if (!vectorStoreStatus.vectorCount || vectorStoreStatus.vectorCount === 0) {
                 logger.info('Vector store is empty. Performing initial repository index...');
-                await this.services.indexer.reindexAll();
-                logger.info('Initial index complete.');
+                try {
+                    await this.services.indexer.reindexAll();
+                    logger.info('Initial index complete.');
+                } catch (error) {
+                    logger.error('Initial repository index failed. Continuing startup, but the index may be incomplete.', error);
+                }
             } else {
                 logger.info(`Found ${vectorStoreStatus.vectorCount} vectors in existing collection. Skipping initial index.`);
                 // Sync the indexer's internal state with the data from the vector store

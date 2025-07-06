@@ -47,7 +47,8 @@ class Indexer {
       logger.error(`Failed to index file ${filePath}:`, error);
       this.errorCount++;
       this.status = 'error';
-      return false;
+      // Re-throw the error so that the caller can handle it, e.g., for batch processing.
+      throw error;
     }
   }
 
@@ -121,8 +122,14 @@ class Indexer {
       
       const batchSize = this.config.performance.batchSize;
       for (let i = 0; i < filesToIndex.length; i += batchSize) {
-        const batch = filesToIndex.slice(i, i + batchSize);
-        await Promise.all(batch.map(file => this.indexFile(path.join(this.repoPath, file))));
+        const batch = filesToIndex.slice(i, i + batchSize).map(file => path.join(this.repoPath, file));
+        const results = await Promise.allSettled(batch.map(file => this.indexFile(file)));
+
+        results.forEach((result, index) => {
+            if (result.status === 'rejected') {
+                logger.error(`File failed to index during re-index: ${batch[index]}`);
+            }
+        });
       }
 
       logger.info('Full re-index completed.');
