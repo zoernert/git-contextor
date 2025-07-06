@@ -282,3 +282,113 @@ footer {
     background-color: #d0021b;
     border-color: #d0021b;
 }
+
+.docs-container {
+    display: flex;
+    gap: 30px;
+    align-items: flex-start;
+}
+
+.docs-nav {
+    flex: 0 0 220px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    position: sticky;
+    top: 20px;
+}
+
+.docs-nav a {
+    text-decoration: none;
+    padding: 10px 15px;
+    border-radius: 6px;
+    color: var(--text-color);
+    font-weight: 500;
+    transition: background-color 0.2s, color 0.2s;
+    border: 1px solid transparent;
+}
+
+.docs-nav a:hover {
+    background-color: #e9f2fd;
+    border-color: #d0e3f8;
+}
+
+.docs-nav a.active {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.docs-content {
+    flex: 1 1 auto;
+    min-width: 0; /* Important for flex-shrink */
+}
+
+/* Basic styles for rendered markdown */
+.docs-content h1, .docs-content h2, .docs-content h3, .docs-content h4 {
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 8px;
+    margin-top: 24px;
+    margin-bottom: 16px;
+}
+.docs-content h1 { font-size: 2em; }
+.docs-content h2 { font-size: 1.75em; }
+.docs-content h3 { font-size: 1.5em; }
+
+.docs-content p {
+    margin-bottom: 16px;
+}
+
+.docs-content ul, .docs-content ol {
+    padding-left: 20px;
+    margin-bottom: 16px;
+}
+
+.docs-content code {
+    background-color: #eef1f3;
+    padding: 0.2em 0.4em;
+    margin: 0;
+    font-size: 85%;
+    border-radius: 3px;
+    font-family: monospace;
+}
+
+.docs-content pre {
+    background-color: #f6f8fa;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 16px;
+    overflow: auto;
+}
+
+.docs-content pre code {
+    background: none;
+    padding: 0;
+    margin: 0;
+    font-size: 100%;
+    border-radius: 0;
+    border: none;
+}
+
+.docs-content blockquote {
+    border-left: 4px solid var(--border-color);
+    padding-left: 16px;
+    color: var(--subtle-text-color);
+    margin-left: 0;
+}
+
+.docs-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 16px;
+}
+
+.docs-content th, .docs-content td {
+    border: 1px solid var(--border-color);
+    padding: 8px 12px;
+}
+
+.docs-content th {
+    background-color: #f6f8fa;
+    font-weight: bold;
+}

@@ -18,6 +18,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         initDashboard(API_BASE_URL);
     } else if (page.endsWith('config.html')) {
         initConfigPage(API_BASE_URL);
+    } else if (page.endsWith('docs.html')) {
+        initDocsPage(API_BASE_URL);
     }
     // The charts page is handled by its own script, which can now use the API key
 });
@@ -263,4 +265,79 @@ function initConfigPage(API_BASE_URL) {
     }
 
     fetchConfig();
+}
+
+function initDocsPage(API_BASE_URL) {
+    const navEl = document.getElementById('docs-nav');
+    const contentEl = document.getElementById('docs-content');
+    // API key is not strictly needed for public docs endpoint, but good practice to have available
+    const apiKey = sessionStorage.getItem('gctx_apiKey');
+
+    async function loadDoc(filename) {
+        try {
+            contentEl.innerHTML = '<p>Loading...</p>';
+            const response = await fetch(`${API_BASE_URL}/docs/${filename}`);
+            if (!response.ok) throw new Error(`Failed to load doc: ${response.statusText}`);
+            const markdown = await response.text();
+            contentEl.innerHTML = marked.parse(markdown);
+
+            // Update active link in the navigation
+            document.querySelectorAll('#docs-nav a').forEach(a => {
+                if (a.dataset.filename === filename) {
+                    a.classList.add('active');
+                } else {
+                    a.classList.remove('active');
+                }
+            });
+
+        } catch (error) {
+            console.error('Error loading documentation:', error);
+            contentEl.innerHTML = `<p>Error loading document: ${error.message}</p>`;
+        }
+    }
+
+    async function init() {
+        try {
+            navEl.innerHTML = '<p>Loading nav...</p>';
+            const response = await fetch(`${API_BASE_URL}/docs`);
+            if (!response.ok) throw new Error(`Failed to load doc list: ${response.statusText}`);
+            const files = await response.json();
+            
+            navEl.innerHTML = '';
+            // Sort to have GUIDE and API first
+            files.sort((a, b) => {
+                if (a.filename === 'GUIDE.md') return -1;
+                if (b.filename === 'GUIDE.md') return 1;
+                if (a.filename === 'API.md') return -1;
+                if (b.filename === 'API.md') return 1;
+                return a.name.localeCompare(b.name);
+            });
+            
+            files.forEach(file => {
+                const link = document.createElement('a');
+                link.href = '#';
+                link.textContent = file.name;
+                link.dataset.filename = file.filename;
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    loadDoc(file.filename);
+                });
+                navEl.appendChild(link);
+            });
+
+            // Load the first document by default
+            if (files.length > 0) {
+                loadDoc(files[0].filename);
+            } else {
+                contentEl.innerHTML = '<p>No documentation files found.</p>';
+            }
+
+        } catch (error) {
+            console.error('Error initializing docs page:', error);
+            navEl.innerHTML = `<p>Error</p>`;
+            contentEl.innerHTML = `<p>Could not load documentation: ${error.message}</p>`;
+        }
+    }
+
+    init();
 }
