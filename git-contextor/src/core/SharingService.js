@@ -2,6 +2,29 @@ const crypto = require('crypto');
 const fs = require('fs').promises;
 const path = require('path');
 
+function parseDuration(duration) {
+    // Already in milliseconds
+    if (typeof duration === 'number') {
+        return duration;
+    }
+    // Default to 24h if invalid
+    if (typeof duration !== 'string') {
+        return 24 * 60 * 60 * 1000;
+    }
+
+    const match = duration.match(/^(\d+)([hdwm])$/);
+    if (!match) return 24 * 60 * 60 * 1000; // Default 24h for invalid strings
+    
+    const [, amount, unit] = match;
+    const multipliers = { 
+        h: 60 * 60 * 1000, 
+        d: 24 * 60 * 60 * 1000, 
+        w: 7 * 24 * 60 * 60 * 1000, 
+        m: 30 * 24 * 60 * 60 * 1000 
+    };
+    return parseInt(amount, 10) * multipliers[unit];
+}
+
 class SharingService {
     constructor(repoPath, config) {
         this.repoPath = repoPath;
@@ -17,10 +40,11 @@ class SharingService {
 
     async createShare(options = {}) {
         const shareId = crypto.randomBytes(16).toString('hex');
+        const durationMs = parseDuration(options.duration);
         const shareConfig = {
             id: shareId,
             created_at: new Date().toISOString(),
-            expires_at: new Date(Date.now() + (options.duration || 24 * 60 * 60 * 1000)).toISOString(),
+            expires_at: new Date(Date.now() + durationMs).toISOString(),
             scope: options.scope || ['general'],
             description: options.description || 'Repository AI Access',
             access_count: 0,
