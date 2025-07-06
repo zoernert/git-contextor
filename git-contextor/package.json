@@ -1,0 +1,51 @@
+{
+  "name": "git-contextor",
+  "version": "1.0.0",
+  "description": "Git-aware code context tool with vector search and real-time monitoring",
+  "main": "src/index.js",
+  "bin": {
+    "git-contextor": "./bin/git-contextor.js"
+  },
+  "scripts": {
+    "start": "node bin/git-contextor.js start",
+    "test": "jest",
+    "dev": "nodemon bin/git-contextor.js start",
+    "lint": "eslint src/**/*.js",
+    "build": "echo 'No build step required'"
+  },
+  "keywords": ["git", "vector", "search", "code", "context", "ai", "llm"],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^11.1.0",
+    "express": "^4.18.2",
+    "chokidar": "^3.5.3",
+    "qdrant-client": "^1.7.0",
+    "openai": "^4.20.1",
+    "@xenova/transformers": "^2.6.0",
+    "tiktoken": "^1.0.10",
+    "ignore": "^5.3.0",
+    "simple-git": "^3.19.1",
+    "tree-sitter": "^0.20.4",
+    "tree-sitter-javascript": "^0.20.1",
+    "tree-sitter-python": "^0.20.4",
+    "chalk": "^4.1.2",
+    "ora": "^5.4.1",
+    "inquirer": "^8.2.6",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "dotenv": "^16.3.1",
+    "uuid": "^9.0.1",
+    "lodash": "^4.17.21",
+    "crypto": "^1.0.1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.1",
+    "eslint": "^8.52.0",
+    "supertest": "^6.3.3"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
