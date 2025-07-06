@@ -31,7 +31,8 @@ async function start(options) {
       configChanged = true;
   }
 
-  const keepCollection = !!options.keepCollection;
+  // The --clean flag will force deletion of the collection. The default is to keep it.
+  const keepCollection = !options.clean;
   if (config.services.keepCollectionOnExit !== keepCollection) {
       updates.services.keepCollectionOnExit = keepCollection;
       configChanged = true;

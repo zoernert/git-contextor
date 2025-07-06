@@ -9,7 +9,7 @@
   "scripts": {
     "start": "node bin/git-contextor.js start",
     "test": "jest",
-    "dev": "nodemon bin/git-contextor.js start --keep-collection",
+    "dev": "nodemon bin/git-contextor.js start",
     "lint": "eslint src/**/*.js",
     "build": "echo 'No build step required'"
   },

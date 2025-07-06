@@ -54,7 +54,7 @@ class ConfigManager {
         qdrantHost: 'localhost',
         qdrantPort: 6333,
         apiKey: this.generateApiKey(),
-        keepCollectionOnExit: false
+        keepCollectionOnExit: true
       },
       monitoring: {
         watchEnabled: true,
