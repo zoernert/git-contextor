@@ -84,7 +84,14 @@ async function checkQdrant(configManager) {
     if (action === 'start_docker') {
         const spinner = ora('Attempting to start Qdrant Docker container...').start();
         try {
-            const packagePath = path.dirname(require.resolve('git-contextor/package.json'));
+            let packagePath;
+            try {
+                // This works when git-contextor is an installed dependency
+                packagePath = path.dirname(require.resolve('git-contextor/package.json'));
+            } catch (e) {
+                // This is a fallback for local development
+                packagePath = path.resolve(__dirname, '../../..');
+            }
             const composeFile = path.join(packagePath, 'docker', 'docker-compose.yml');
 
             if (!fs.existsSync(composeFile)) {

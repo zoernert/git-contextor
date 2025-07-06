@@ -11,7 +11,15 @@ const logger = require('../../cli/utils/logger');
 module.exports = (config) => {
     const router = express.Router();
     // Load docs from the git-contextor package, not the target repository.
-    const packagePath = path.dirname(require.resolve('git-contextor/package.json'));
+    let packagePath;
+    try {
+        // This works when git-contextor is an installed dependency (e.g., via npx)
+        packagePath = path.dirname(require.resolve('git-contextor/package.json'));
+    } catch (error) {
+        // This is a fallback for local development, where the package isn't in node_modules.
+        // It assumes docs.js is in src/api/routes from the project root.
+        packagePath = path.resolve(__dirname, '../../..');
+    }
     const docsDir = path.join(packagePath, 'docs');
 
     // GET /api/docs - list available documentation files
