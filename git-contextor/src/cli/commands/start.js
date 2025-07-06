@@ -7,6 +7,21 @@ const fs = require('fs').promises;
 const ora = require('ora');
 const { checkQdrant } = require('../utils/checkQdrant');
 
+async function waitForService(port, maxRetries = 30) {
+    for (let i = 0; i < maxRetries; i++) {
+        try {
+            const response = await fetch(`http://localhost:${port}/health`, {
+                signal: AbortSignal.timeout(1000)
+            });
+            if (response.ok) return true;
+        } catch (error) {
+            // Service not ready yet
+        }
+        await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+    return false;
+}
+
 async function start(options) {
   const repoPath = process.cwd();
   const spinner = ora('Starting Git Contextor...').start();
@@ -80,7 +95,12 @@ async function start(options) {
 
     try {
         await contextor.start();
-        spinner.succeed('Git Contextor running. Press Ctrl+C to stop.');
+        if (!await waitForService(config.services.port)) {
+            spinner.fail('Service failed to start within 30 seconds');
+            process.exit(1);
+        } else {
+            spinner.succeed(`Git Contextor running at http://localhost:${config.services.port}`);
+        }
     } catch (error) {
         spinner.fail('Failed to start Git Contextor.');
         logger.error(error.message);
