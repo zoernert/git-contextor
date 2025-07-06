@@ -60,8 +60,10 @@ class ServiceManager {
             // Clean up stale pid file if it exists but process is dead
             try {
                 await fs.unlink(this.pidFile);
-            } catch (e) {
-                // ignore
+            } catch (error) {
+                if (error.code !== 'ENOENT') {
+                    logger.warn(`Could not remove stale PID file: ${this.pidFile}`, error);
+                }
             }
             return;
         }
