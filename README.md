@@ -1,104 +1,104 @@
 
 # Git Contextor
 
-[![NPM-Version](https://img.shields.io/npm/v/git-contextor.svg?style=flat)](https://www.npmjs.com/package/git-contextor)
-[![Build-Status](https://img.shields.io/github/actions/workflow/status/stromdao/git-contextor/main.yml?branch=main)](https://github.com/stromdao/git-contextor/actions)
-[![Lizenz: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![NPM Version](https://img.shields.io/npm/v/git-contextor.svg?style=flat)](https://www.npmjs.com/package/git-contextor)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/stromdao/git-contextor/main.yml?branch=main)](https://github.com/stromdao/git-contextor/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Git Contextor indiziert automatisch Ihr Git-Repository und erstellt eine leistungsstarke, echtzeitfähige und kontextsensitive Wissensdatenbank. Es wurde entwickelt, um KI-Entwicklerwerkzeuge zu beschleunigen, indem es ihnen mühelos den vollständigen Kontext Ihres Projekts zur Verfügung stellt.
+Git Contextor automatically indexes your Git repository, creating a powerful, real-time, context-aware knowledge base. It's designed to supercharge AI developer tools by effortlessly providing them with the full context of your project.
 
-## ✨ Warum Git Contextor?
+## ✨ Why Git Contextor?
 
-Im Zeitalter der KI-gestützten Entwicklung ist die Bereitstellung des richtigen Kontexts der Schlüssel zu nützlichen Ergebnissen. Das manuelle Kopieren und Einfügen von Code-Schnipseln ist ineffizient und schränkt das Verständnis der KI ein. Git Contextor löst dieses Problem durch:
+In the age of AI-driven development, providing the right context is the key to useful results. Manually copying and pasting code snippets is inefficient and limits the AI's understanding. Git Contextor solves this problem by:
 
--   **Automatisierung des Kontexts:** Es indiziert Ihre gesamte Codebasis und hält sie synchron.
--   **Tiefgreifende Einblicke:** Ermöglicht Werkzeugen, die Repository-Struktur, Abhängigkeiten und die Semantik des Codes zu verstehen.
--   **Erschließung neuer Möglichkeiten:** Basiert erweiterte Funktionen wie Fragen und Antworten über das gesamte Repository, intelligente Codegenerierung und automatisierte Refactoring-Vorschläge.
+-   **Automating Context:** It indexes your entire codebase and keeps it in sync.
+-   **Deep Insights:** Allows tools to understand repository structure, dependencies, and code semantics.
+-   **Unlocking New Capabilities:** Powers advanced features like repository-wide Q&A, intelligent code generation, and automated refactoring suggestions.
 
-## 🚀 Hauptmerkmale
+## 🚀 Key Features
 
--   **🤖 Automatische Indizierung:** Scannt Ihre von Git verfolgten Dateien und indiziert sie in einer Vektor-Datenbank.
--   **⏱️ Echtzeit-Synchronisierung:** Überwacht Dateiänderungen (`add`, `change`, `delete`) und aktualisiert den Index sofort.
--   **🔌 Austauschbare Embeddings:** Unterstützt lokale Embeddings (über `Xenova/transformers.js`) für Datenschutz und Offline-Nutzung sowie OpenAI für leistungsstarke Modelle.
--   **⚡️ Schnell & Effizient:** Basiert auf Node.js und verwendet die hochleistungsfähige [Qdrant](https://qdrant.tech/) Vektor-Datenbank.
--   **📡 REST-API:** Eine einfache API zur Abfrage von kontextrelevanten Informationen.
--   **💻 Benutzerfreundliches CLI:** Verwalten Sie den Dienst mit einfachen Befehlen: `init`, `start`, `stop`, `status`.
+-   **🤖 Automatic Indexing:** Scans your Git-tracked files and indexes them in a vector database.
+-   **⏱️ Real-time Sync:** Watches for file changes (`add`, `change`, `delete`) and updates the index instantly.
+-   **🔌 Pluggable Embeddings:** Supports local embeddings (via `Xenova/transformers.js`) for privacy and offline use, as well as OpenAI for powerful models.
+-   **⚡️ Fast & Efficient:** Built on Node.js and uses the high-performance [Qdrant](https://qdrant.tech/) vector database.
+-   **📡 REST API:** A simple API to query for context-relevant information.
+-   **💻 User-Friendly CLI:** Manage the service with simple commands: `init`, `start`, `stop`, `status`.
 
-## 🏁 Erste Schritte
+## 🏁 Getting Started
 
-### Voraussetzungen
+### Prerequisites
 
--   [Node.js](https://nodejs.org/) (v18 oder höher)
--   [npm](https://www.npmjs.com/) oder [yarn](https://yarnpkg.com/)
--   [Docker](https://www.docker.com/) (zum Ausführen der Qdrant Vektor-Datenbank)
+-   [Node.js](https://nodejs.org/) (v18 or higher)
+-   [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
+-   [Docker](https://www.docker.com/) (to run the Qdrant vector database)
 
-### 1. Git Contextor installieren
+### 1. Install Git Contextor
 
-Installieren Sie das CLI-Tool global von npm (Hinweis: Paketname ist eine Annahme).
+Install the CLI tool globally from npm (Note: package name is an assumption).
 
 ```bash
 npm install -g git-contextor
 ```
 
-### 2. Qdrant starten
+### 2. Start Qdrant
 
-Git Contextor benötigt eine laufende Qdrant-Instanz. Sie können eine einfach mit Docker starten:
+Git Contextor requires a running Qdrant instance. You can easily start one using Docker:
 
 ```bash
 docker run -p 6333:6333 -p 6334:6334 qdrant/qdrant
 ```
-Dies startet Qdrant und macht seine gRPC- und HTTP-Ports verfügbar.
+This starts Qdrant and exposes its gRPC and HTTP ports.
 
-### 3. In Ihrem Repository initialisieren
+### 3. Initialize in Your Repository
 
-Navigieren Sie zum Stammverzeichnis Ihres Projekts und führen Sie `init` aus.
+Navigate to your project's root directory and run `init`.
 
 ```bash
-cd /pfad/zu/ihrem/repo
+cd /path/to/your/repo
 git-contextor init
 ```
 
-Dies erstellt ein `.gitcontextor`-Verzeichnis mit einer `config.json`-Datei. Hier können Sie Einstellungen anpassen, wie den Embedding-Anbieter oder zu ignorierende Dateien.
+This creates a `.gitcontextor` directory with a `config.json` file. Here you can customize settings like the embedding provider or files to ignore.
 
-### 4. Dienst starten
+### 4. Start the Service
 
-Starten Sie den Indizierungs- und Überwachungs-Daemon-Prozess.
+Start the indexing and monitoring daemon process.
 
 ```bash
 git-contextor start
 ```
 
-Git Contextor beginnt nun mit der initialen Indizierung Ihres Repositorys. Sie können den Fortschritt mit dem `status`-Befehl überprüfen.
+Git Contextor will now start the initial indexing of your repository. You can check the progress with the `status` command.
 
 ```bash
 git-contextor status
 ```
 
-## ⚙️ Konfiguration
+## ⚙️ Configuration
 
-Die Hauptkonfiguration befindet sich unter `.gitcontextor/config.json`. Wichtige Optionen sind:
--   `embedding.provider`: Wechseln Sie zwischen `local` und `openai`.
--   `embedding.model`: Geben Sie das zu verwendende Modell an.
--   `indexing.includeExtensions`: Definieren Sie, welche Dateitypen indiziert werden sollen.
+The main configuration is located at `.gitcontextor/config.json`. Key options include:
+-   `embedding.provider`: Switch between `local` and `openai`.
+-   `embedding.model`: Specify the model to use.
+-   `indexing.includeExtensions`: Define which file types should be indexed.
 
-## 🤝 Mitwirken
+## 🤝 Contributing
 
-Beiträge sind willkommen! Zögern Sie nicht, ein Issue zu eröffnen oder einen Pull Request einzureichen.
+Contributions are welcome! Feel free to open an issue or submit a pull request.
 
-1.  Forken Sie das Repository.
-2.  Erstellen Sie Ihren Feature-Branch (`git checkout -b feature/TollesFeature`).
-3.  Committen Sie Ihre Änderungen (`git commit -m 'Füge ein tolles Feature hinzu'`).
-4.  Pushen Sie zum Branch (`git push origin feature/TollesFeature`).
-5.  Öffnen Sie einen Pull Request.
+1.  Fork the repository.
+2.  Create your feature branch (`git checkout -b feature/AmazingFeature`).
+3.  Commit your changes (`git commit -m 'Add some AmazingFeature'`).
+4.  Push to the branch (`git push origin feature/AmazingFeature`).
+5.  Open a Pull Request.
 
-## 📄 Lizenz
+## 📄 License
 
-Dieses Projekt ist unter der MIT-Lizenz lizenziert.
+This project is licensed under the MIT License.
 
-## 🏢 Betreiber / Impressum
+## 🏢 Maintainer / Imprint
 
 <details>
-<summary>Kontaktinformationen</summary>
+<summary>Contact Information</summary>
 <addr>
 STROMDAO GmbH  <br/>
 Gerhard Weiser Ring 29  <br/>
@@ -109,7 +109,7 @@ Germany  <br/>
 <br/>
 dev@stromdao.com  <br/>
 <br/>
-Handelsregister: HRB 728691 (Amtsgericht Mannheim)<br/>
+Commercial Register: HRB 728691 (Amtsgericht Mannheim)<br/>
 <br/>
 https://stromdao.de/<br/>
 </addr>
