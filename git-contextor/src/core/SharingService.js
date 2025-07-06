@@ -37,6 +37,7 @@ class SharingService {
         this.tunnelUrl = null;
         this.tunnelService = null;
         this.tunnelStatus = 'stopped'; // stopped, starting, running, error
+        this.tunnelPassword = null;
     }
 
     async init() {
@@ -151,7 +152,8 @@ class SharingService {
         return {
             status: this.tunnelStatus,
             url: this.tunnelUrl,
-            service: this.tunnelService
+            service: this.tunnelService,
+            password: this.tunnelPassword
         };
     }
 
@@ -166,6 +168,7 @@ class SharingService {
             this.tunnelUrl = null;
             this.tunnelService = null;
             this.tunnelStatus = 'stopped';
+            this.tunnelPassword = null;
             resolve();
         });
     }
@@ -178,6 +181,7 @@ class SharingService {
         this.tunnelStatus = 'starting';
         this.tunnelService = service;
         this.tunnelUrl = null;
+        this.tunnelPassword = null;
 
         const port = this.config.services.port;
         let command, args;
@@ -196,15 +200,25 @@ class SharingService {
         this.tunnelProcess.stdout.on('data', (data) => {
             const output = data.toString();
             // localtunnel outputs: "your url is: https://..."
-            const match = output.match(/your url is: (https:\/\/[^\s]+)/);
-            if (match && match[1]) {
-                this.tunnelUrl = match[1];
+            const urlMatch = output.match(/your url is: (https:\/\/[^\s]+)/);
+            if (urlMatch && urlMatch[1]) {
+                this.tunnelUrl = urlMatch[1];
                 this.tunnelStatus = 'running';
+            }
+            const passwordMatch = output.match(/your password is: (\w+)/);
+            if (passwordMatch && passwordMatch[1]) {
+                this.tunnelPassword = passwordMatch[1];
             }
         });
 
         this.tunnelProcess.stderr.on('data', (data) => {
-            console.error(`Tunnel service error: ${data}`);
+            const output = data.toString();
+            console.error(`Tunnel service error: ${output}`);
+            // Password can also be on stderr
+            const passwordMatch = output.match(/your password is: (\w+)/);
+            if (passwordMatch && passwordMatch[1]) {
+                this.tunnelPassword = passwordMatch[1];
+            }
         });
 
         this.tunnelProcess.on('error', (err) => {
@@ -218,6 +232,7 @@ class SharingService {
                 this.tunnelStatus = code === 0 ? 'stopped' : 'error';
                 this.tunnelUrl = null;
                 this.tunnelProcess = null;
+                this.tunnelPassword = null;
             }
         });
     }

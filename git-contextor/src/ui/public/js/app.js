@@ -62,6 +62,8 @@ function initDashboard(API_BASE_URL) {
     const tunnelStatusContainer = document.getElementById('tunnel-status-container');
     const tunnelStatusSpan = document.getElementById('tunnel-status');
     const tunnelUrlSpan = document.getElementById('tunnel-url');
+    const tunnelPasswordContainer = document.getElementById('tunnel-password-container');
+    const tunnelPasswordSpan = document.getElementById('tunnel-password');
     
     async function fetchStatus() {
         try {
@@ -341,17 +343,26 @@ else:
             tunnelToggleBtn.disabled = false;
             tunnelServiceSelect.disabled = false;
             tunnelStatusContainer.style.display = 'none';
+            tunnelPasswordContainer.style.display = 'none'; // Ensure hidden
 
             if (data.status === 'error') {
                 tunnelStatusSpan.textContent = 'Error - check server logs for details.';
                 tunnelStatusContainer.style.display = 'block';
                 tunnelUrlSpan.textContent = 'N/A';
             }
-        } else {
+        } else { // 'starting' or 'running'
             tunnelStatusContainer.style.display = 'block';
             tunnelServiceSelect.disabled = true;
             if (data.service) {
                 tunnelServiceSelect.value = data.service;
+            }
+
+            // Show password if available
+            if (data.password) {
+                tunnelPasswordSpan.textContent = data.password;
+                tunnelPasswordContainer.style.display = 'block';
+            } else {
+                tunnelPasswordContainer.style.display = 'none';
             }
 
             if (data.status === 'starting') {
