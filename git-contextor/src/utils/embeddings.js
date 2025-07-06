@@ -1,8 +1,10 @@
 const { OpenAI } = require('openai');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 const logger = require('../cli/utils/logger');
 
 let embeddingPipeline = null;
 let openAIClient = null;
+let geminiClient = null;
 
 async function getLocalEmbedding(text, model) {
     if (!embeddingPipeline) {
@@ -17,19 +19,36 @@ async function getLocalEmbedding(text, model) {
 
 async function getOpenAIEmbedding(text, { model, apiKey }) {
     if (!openAIClient) {
-        const finalApiKey = apiKey;
+        const finalApiKey = apiKey || process.env.OPENAI_API_KEY;
         if (!finalApiKey) {
-            throw new Error('OpenAI API key is not configured. Set it in .gitcontextor/config.json or via "git-contextor config --api-key YOUR_KEY"');
+            throw new Error('OpenAI API key is not configured. Set it in .gitcontextor/config.json, via "git-contextor config --api-key YOUR_KEY", or in OPENAI_API_KEY environment variable');
         }
         openAIClient = new OpenAI({ apiKey: finalApiKey });
     }
     
     const response = await openAIClient.embeddings.create({
-        model: model,
-        input: text.replace(/\n/g, ' '),
+        model: model || 'text-embedding-3-small',
+        input: text.replace(/\n/g, ' ').substring(0, 8000), // Respect token limits
     });
 
     return response.data[0].embedding;
+}
+
+async function getGeminiEmbedding(text, { model, apiKey }) {
+    if (!geminiClient) {
+        const finalApiKey = apiKey || process.env.GOOGLE_API_KEY;
+        if (!finalApiKey) {
+            throw new Error('Google API key is not configured. Set it in .gitcontextor/config.json, via "git-contextor config --api-key YOUR_KEY", or in GOOGLE_API_KEY environment variable');
+        }
+        geminiClient = new GoogleGenerativeAI(finalApiKey);
+    }
+    
+    const embeddingModel = geminiClient.getGenerativeModel({ 
+        model: model || 'text-embedding-004' 
+    });
+    
+    const result = await embeddingModel.embedContent(text.substring(0, 30000)); // Respect token limits
+    return result.embedding.values;
 }
 
 /**
@@ -40,13 +59,23 @@ async function getOpenAIEmbedding(text, { model, apiKey }) {
  */
 async function getEmbedding(text, config) {
     try {
-        if (config.provider === 'local') {
-            const model = config.model || 'Xenova/all-MiniLM-L6-v2';
-            return await getLocalEmbedding(text, model);
-        } else if (config.provider === 'openai') {
-            return await getOpenAIEmbedding(text, config);
-        } else {
-            throw new Error(`Unsupported embedding provider: ${config.provider}`);
+        if (!text || text.trim().length === 0) {
+            throw new Error('Cannot generate embedding for empty text');
+        }
+
+        switch (config.provider) {
+            case 'local':
+                const model = config.model || 'Xenova/all-MiniLM-L6-v2';
+                return await getLocalEmbedding(text, model);
+            
+            case 'openai':
+                return await getOpenAIEmbedding(text, config);
+            
+            case 'gemini':
+                return await getGeminiEmbedding(text, config);
+            
+            default:
+                throw new Error(`Unsupported embedding provider: ${config.provider}. Supported providers: local, openai, gemini`);
         }
     } catch (error) {
         logger.error(`Embedding generation failed for provider ${config.provider}:`, error.message);

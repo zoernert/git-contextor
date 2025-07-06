@@ -11,7 +11,8 @@
     "test": "jest",
     "dev": "nodemon bin/git-contextor.js start",
     "lint": "eslint src/**/*.js",
-    "build": "echo 'No build step required'"
+    "build": "echo 'No build step required'",
+    "postinstall": "node scripts/postinstall.js"
   },
   "keywords": [
     "git",
@@ -20,23 +21,39 @@
     "code",
     "context",
     "ai",
-    "llm"
+    "llm",
+    "rag",
+    "semantic-search",
+    "developer-tools",
+    "vscode",
+    "copilot",
+    "code-assistant"
   ],
-  "author": "Your Name",
+  "author": "STROMDAO GmbH",
   "license": "MIT",
+  "homepage": "https://github.com/stromdao/git-contextor#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stromdao/git-contextor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/stromdao/git-contextor/issues"
+  },
   "dependencies": {
+    "@google/generative-ai": "^0.15.0",
     "@qdrant/js-client-rest": "^1.9.0",
     "@xenova/transformers": "^2.6.0",
     "chalk": "^4.1.2",
     "chokidar": "^3.5.3",
     "commander": "^11.1.0",
     "cors": "^2.8.5",
-    "crypto": "^1.0.1",
+    "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "helmet": "^7.1.0",
     "ignore": "^5.3.0",
     "inquirer": "^8.2.6",
     "lodash": "^4.17.21",
+    "marked": "^12.0.0",
     "openai": "^4.20.1",
     "ora": "^5.4.1",
     "pdf-parse": "^1.1.1",
@@ -54,6 +71,17 @@
     "supertest": "^6.3.3"
   },
   "engines": {
-    "node": ">=16.0.0"
-  }
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "docs/",
+    "docker/",
+    "scripts/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "preferGlobal": true
 }
