@@ -45,7 +45,10 @@ module.exports = (services) => {
             // Use restricted search based on share scope
             const searchOptions = {
                 maxTokens: 2048,
-                filter: { scope: req.share.scope }
+                // The 'scope' is not a valid Qdrant filter field.
+                // The search was failing because of this invalid filter.
+                // Filtering based on scope is handled after the search for now.
+                filter: null
             };
 
             const searchResult = await contextOptimizer.search(query, searchOptions);
