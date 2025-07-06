@@ -1,4 +1,3 @@
-const { pipeline } = require('@xenova/transformers');
 const { OpenAI } = require('openai');
 const logger = require('../cli/utils/logger');
 
@@ -8,6 +7,7 @@ let openAIClient = null;
 async function getLocalEmbedding(text, model) {
     if (!embeddingPipeline) {
         logger.info(`Initializing local embedding model: ${model}... (This may take a moment on first run)`);
+        const { pipeline } = await import('@xenova/transformers');
         embeddingPipeline = await pipeline('feature-extraction', model);
         logger.info('Local embedding model loaded.');
     }
