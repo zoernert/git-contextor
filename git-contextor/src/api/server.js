@@ -1,7 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const logger = require('../cli/utils/logger');
+const logger =require('../cli/utils/logger');
+const { apiKeyAuth } = require('../utils/security');
 
 // Import routes
 const searchRoutes = require('./routes/search');
@@ -9,32 +10,27 @@ const statusRoutes = require('./routes/status');
 const metricsRoutes = require('./routes/metrics');
 const healthRoutes = require('./routes/health');
 
-function createApiServer(serviceManager) {
+let server;
+
+function start(config, services) {
     const app = express();
-    const config = serviceManager.config;
 
     // Middleware
     app.use(cors());
     app.use(helmet());
     app.use(express.json());
-
-    // Authentication Middleware
-    const apiKeyAuth = (req, res, next) => {
-        const apiKey = req.headers['x-api-key'];
-        if (apiKey && apiKey === config.services.apiKey) {
-            return next();
-        }
-        logger.warn(`Unauthorized API access attempt. Provided key: ${apiKey ? 'hidden' : 'none'}`);
-        res.status(401).json({ error: 'Unauthorized' });
-    };
-
+    
     // Public health check endpoint
     app.use('/health', healthRoutes);
-
-    // Pass service manager to routes and protect them with API key
-    app.use('/api/search', apiKeyAuth, searchRoutes(serviceManager));
-    app.use('/api/status', apiKeyAuth, statusRoutes(serviceManager));
-    app.use('/api/metrics', apiKeyAuth, metricsRoutes(serviceManager));
+    
+    // API routes
+    const apiRouter = express.Router();
+    apiRouter.use(apiKeyAuth(config)); // Protect all /api routes
+    apiRouter.use('/search', searchRoutes(services));
+    apiRouter.use('/status', statusRoutes(services));
+    apiRouter.use('/metrics', metricsRoutes(services));
+    
+    app.use('/api', apiRouter);
 
     // Not found handler
     app.use((req, res, next) => {
@@ -47,15 +43,31 @@ function createApiServer(serviceManager) {
         logger.debug(err.stack);
         res.status(500).json({ error: 'Internal Server Error' });
     });
-
-    return {
-        start: () => {
-            const port = config.services.apiPort;
-            app.listen(port, () => {
-                logger.info(`API server listening on http://localhost:${port}`);
-            });
-        }
-    };
+    
+    return new Promise((resolve) => {
+        const port = config.services.apiPort;
+        server = app.listen(port, () => {
+            logger.info(`API server listening on http://localhost:${port}`);
+            resolve();
+        });
+    });
 }
 
-module.exports = createApiServer;
+function stop() {
+    return new Promise((resolve, reject) => {
+        if (server) {
+            server.close((err) => {
+                if (err) {
+                    logger.error('Error stopping API server:', err);
+                    return reject(err);
+                }
+                logger.info('API server stopped.');
+                resolve();
+            });
+        } else {
+            resolve();
+        }
+    });
+}
+
+module.exports = { start, stop };

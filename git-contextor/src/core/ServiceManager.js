@@ -16,25 +16,22 @@ class ServiceManager {
         logger.info('Starting Git Contextor services...');
 
         if (await this.isRunning()) {
-            logger.warn(`Git Contextor is already running (PID: ${await this.readPidFile()}).`);
-            return;
+            const pid = await this.readPidFile();
+            logger.warn(`Git Contextor is already running (PID: ${pid}).`);
+            if (pid) process.exit(0);
         }
 
         // Write PID file to indicate the service is running
         await fs.writeFile(this.pidFile, process.pid.toString());
 
         try {
-            // Update config with ports from options if provided
-            this.config.services.apiPort = options.apiPort || this.config.services.apiPort;
-            this.config.services.uiPort = options.uiPort || this.config.services.uiPort;
-
             // Start API and UI servers
             await apiServer.start(this.config, this.services);
-            await uiServer.start(this.config, this.services);
+            await uiServer.start(this.config);
 
             // Run initial index of the repository
             logger.info('Performing initial repository index...');
-            await this.services.indexer.fullIndex();
+            await this.services.indexer.reindexAll();
             logger.info('Initial index complete.');
 
             // Start the file watcher if enabled
@@ -42,24 +39,27 @@ class ServiceManager {
                 this.services.fileWatcher.start();
             }
 
-            logger.info('Git Contextor services started successfully.');
+            logger.success('Git Contextor services started successfully.');
 
         } catch (error) {
             logger.error('Failed to start Git Contextor services:', error);
             // Attempt to clean up if startup failed
-            await this.stop();
+            await this.stop(true);
             throw error;
         }
     }
 
-    async stop() {
-        logger.info('Stopping Git Contextor services...');
+    async stop(isStartupError = false) {
+        if (!isStartupError) {
+             logger.info('Stopping Git Contextor services...');
+        }
 
-        if (!await this.isRunning()) {
+        if (!await this.isRunning() && !isStartupError) {
             logger.warn('Git Contextor is not running.');
             // Clean up stale pid file if it exists but process is dead
             try {
                 await fs.unlink(this.pidFile);
+                logger.info('Removed stale PID file.');
             } catch (error) {
                 if (error.code !== 'ENOENT') {
                     logger.warn(`Could not remove stale PID file: ${this.pidFile}`, error);
@@ -85,8 +85,10 @@ class ServiceManager {
                 logger.warn(`Could not remove PID file: ${this.pidFile}`, error);
             }
         }
-
-        logger.info('Git Contextor services stopped.');
+        
+        if (!isStartupError) {
+            logger.info('Git Contextor services stopped.');
+        }
     }
 
     async getStatus() {
@@ -95,7 +97,7 @@ class ServiceManager {
         }
 
         const pid = await this.readPidFile();
-        const indexerStatus = await this.services.indexer.getStatus(); // Assumes indexer has getStatus
+        const indexerStatus = await this.services.indexer.getStatus();
 
         return {
             status: 'running',
@@ -120,11 +122,17 @@ class ServiceManager {
         try {
             const pid = await this.readPidFile();
             if (!pid) return false;
-            process.kill(pid, 0); // Throws an error if the process doesn't exist
+            // The `process.kill` with signal 0 is a test for process existence.
+            process.kill(pid, 0); 
             return true;
         } catch (error) {
-            // ESRCH: process doesn't exist. ENOENT: pidfile doesn't exist.
-            return false;
+            // ESRCH means process doesn't exist, which is what we expect if it's not running.
+            // ENOENT means pidfile doesn't exist.
+            if (error.code === 'ESRCH' || error.code === 'ENOENT') {
+                return false;
+            }
+            // Other errors should be thrown
+            throw error;
         }
     }
 

@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const API_BASE_URL = 'http://localhost:3000'; // Assuming default API port
+    // API calls are proxied through the UI server, so use relative paths.
+    const API_BASE_URL = '/api';
 
     const page = window.location.pathname;
 
@@ -38,7 +39,7 @@ function initDashboard(API_BASE_URL) {
             statusElements.serviceStatus.textContent = status;
             statusElements.serviceStatus.className = `status-badge status-${status.toLowerCase()}`;
 
-            statusElements.indexedFiles.textContent = data.indexer?.indexedFiles ?? 'N/A';
+            statusElements.indexedFiles.textContent = data.indexer?.totalFiles ?? 'N/A';
             statusElements.totalChunks.textContent = data.indexer?.totalChunks ?? 'N/A';
             
             if (data.fileWatcher?.latestActivity && data.fileWatcher.latestActivity.length > 0) {
@@ -108,15 +109,12 @@ function initConfigPage(API_BASE_URL) {
 
     async function fetchConfig() {
         try {
-            // NOTE: The API doesn't have a /config endpoint in the spec.
-            // Using /status and showing the repository part of the config.
-            // A dedicated /config endpoint would be better.
+            // A dedicated /config endpoint would be better, but for now we derive from /status
             const response = await fetch(`${API_BASE_URL}/status`);
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const data = await response.json();
 
-            // The full config isn't usually exposed for security.
-            // We'll display safe parts from the status endpoint.
+            // Display safe parts from the status endpoint
             const displayConfig = {
                 repository: data.repository,
                 service_status: data.status,

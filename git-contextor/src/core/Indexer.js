@@ -22,6 +22,7 @@ class Indexer {
     this.lastActivity = null;
     this.totalFiles = 0;
     this.totalChunks = 0;
+    this.errorCount = 0;
   }
 
   /**
@@ -37,13 +38,14 @@ class Indexer {
       const chunks = await chunkFile(filePath, this.repoPath, this.config.chunking);
       if (chunks && chunks.length > 0) {
         await this.vectorStore.upsertChunks(chunks);
-        this.totalChunks += chunks.length;
+        // this.totalChunks += chunks.length; // This will be updated from vector store status
         logger.info(`Indexed ${chunks.length} chunks for ${path.relative(this.repoPath, filePath)}`);
       }
       this.status = 'idle';
       return true;
     } catch (error) {
       logger.error(`Failed to index file ${filePath}:`, error);
+      this.errorCount++;
       this.status = 'error';
       return false;
     }
@@ -63,6 +65,7 @@ class Indexer {
       this.status = 'idle';
     } catch (error) {
       logger.error(`Failed to remove file ${filePath} from index:`, error);
+      this.errorCount++;
       this.status = 'error';
     }
   }
@@ -103,6 +106,7 @@ class Indexer {
       logger.info('Full re-index completed.');
     } catch (error) {
       logger.error('Full re-index failed:', error);
+      this.errorCount++;
       this.status = 'error';
     } finally {
       this.status = 'idle';
@@ -120,6 +124,7 @@ class Indexer {
 
     return {
       status: this.status,
+      errorCount: this.errorCount,
       totalFiles: this.totalFiles,
       totalChunks: this.totalChunks,
       lastActivity: this.lastActivity,

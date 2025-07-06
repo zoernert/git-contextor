@@ -2,12 +2,14 @@ const express = require('express');
 
 /**
  * Creates and returns the metrics router.
- * @param {import('../../core/ServiceManager')} serviceManager - The service manager instance.
+ * @param {object} services - The core services of the application.
+ * @param {import('../../core/Indexer')} services.indexer
+ * @param {import('../../core/VectorStore')} services.vectorStore
  * @returns {express.Router} The configured router.
  */
-module.exports = (serviceManager) => {
+module.exports = (services) => {
     const router = express.Router();
-    const { indexer, vectorStore } = serviceManager.services;
+    const { indexer, vectorStore } = services;
 
     /**
      * Retrieves detailed metrics about the index, vector store, and system performance.
@@ -15,24 +17,23 @@ module.exports = (serviceManager) => {
     router.get('/', async (req, res, next) => {
         try {
             const indexerStatus = await indexer.getStatus();
-            const collectionStats = await vectorStore.getCollectionStats().catch(() => null);
+            const vectorStoreStatus = await vectorStore.getStatus();
             const memoryUsage = process.memoryUsage();
 
             res.json({
                 timestamp: new Date().toISOString(),
-                indexer: indexerStatus,
+                indexer: {
+                    totalFiles: indexerStatus.totalFiles,
+                    totalChunks: indexerStatus.totalChunks,
+                    errorCount: indexerStatus.errorCount,
+                },
                 vectorStore: {
-                    collectionName: vectorStore.collectionName,
-                    pointsCount: collectionStats?.points_count ?? 0,
-                    vectorsCount: collectionStats?.vectors_count ?? 0,
+                    totalVectors: vectorStoreStatus.vectorCount,
+                    avgDimensions: vectorStore.config.embedding.dimensions,
                 },
                 system: {
-                    memoryUsage: {
-                        rss: `${(memoryUsage.rss / 1024 / 1024).toFixed(2)} MB`,
-                        heapTotal: `${(memoryUsage.heapTotal / 1024 / 1024).toFixed(2)} MB`,
-                        heapUsed: `${(memoryUsage.heapUsed / 1024 / 1024).toFixed(2)} MB`,
-                        external: `${(memoryUsage.external / 1024 / 1024).toFixed(2)} MB`,
-                    }
+                    memoryUsageMb: (memoryUsage.rss / 1024 / 1024).toFixed(2),
+                    cpuUsage: 0, // Getting CPU usage is non-trivial, placeholder for now
                 }
             });
         } catch (error) {
