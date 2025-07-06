@@ -453,3 +453,13 @@ footer {
 #tunnel-url a:hover {
     text-decoration: underline;
 }
+
+.hint {
+    font-size: 0.9em;
+    color: var(--subtle-text-color);
+    background-color: #eef1f3;
+    padding: 10px;
+    border-radius: 4px;
+    margin-top: 15px;
+    border-left: 3px solid var(--primary-color);
+}
