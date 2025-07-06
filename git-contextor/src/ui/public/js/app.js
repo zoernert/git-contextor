@@ -1,7 +1,17 @@
-document.addEventListener('DOMContentLoaded', () => {
-    // API calls are proxied through the UI server, so use relative paths.
-    const API_BASE_URL = '/api';
+document.addEventListener('DOMContentLoaded', async () => {
+    // This script will run on all pages to fetch config first.
+    try {
+        const response = await fetch('/api/uiconfig');
+        if (!response.ok) throw new Error('Failed to get API Key');
+        const uiconfig = await response.json();
+        sessionStorage.setItem('gctx_apiKey', uiconfig.apiKey);
+    } catch (e) {
+        document.body.innerHTML = '<h1>Error: Could not connect to Git Contextor server. Is it running?</h1>';
+        console.error('Failed to fetch UI config:', e);
+        return;
+    }
 
+    const API_BASE_URL = '/api';
     const page = window.location.pathname;
 
     if (page === '/' || page.endsWith('index.html')) {
@@ -9,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (page.endsWith('config.html')) {
         initConfigPage(API_BASE_URL);
     }
+    // The charts page is handled by its own script, which can now use the API key
 });
 
 function initDashboard(API_BASE_URL) {
@@ -23,10 +34,11 @@ function initDashboard(API_BASE_URL) {
     const searchForm = document.getElementById('search-form');
     const searchQuery = document.getElementById('search-query');
     const searchResults = document.getElementById('search-results');
+    const apiKey = sessionStorage.getItem('gctx_apiKey');
     
     async function fetchStatus() {
         try {
-            const response = await fetch(`${API_BASE_URL}/status`);
+            const response = await fetch(`${API_BASE_URL}/status`, { headers: { 'x-api-key': apiKey } });
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const data = await response.json();
 
@@ -81,7 +93,7 @@ function initDashboard(API_BASE_URL) {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    // API key might be needed
+                    'x-api-key': apiKey
                 },
                 body: JSON.stringify({ query: query })
             });
@@ -92,7 +104,7 @@ function initDashboard(API_BASE_URL) {
             }
 
             const result = await response.json();
-            searchResults.textContent = JSON.stringify(result.context, null, 2);
+            searchResults.textContent = result.optimizedContext || 'No relevant context found.';
 
         } catch (error) {
             console.error('Error during search:', error);
@@ -109,11 +121,13 @@ function initDashboard(API_BASE_URL) {
 
 function initConfigPage(API_BASE_URL) {
     const configDisplay = document.getElementById('config-display');
+    const apiKey = sessionStorage.getItem('gctx_apiKey');
 
     async function fetchConfig() {
         try {
-            // A dedicated /config endpoint would be better, but for now we derive from /status
-            const response = await fetch(`${API_BASE_URL}/status`);
+            // We need a proper /config endpoint to show the full config.
+            // For now, we get some info from /status.
+            const response = await fetch(`${API_BASE_URL}/status`, { headers: { 'x-api-key': apiKey } });
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const data = await response.json();
 

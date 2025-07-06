@@ -1,5 +1,12 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const API_BASE_URL = '/api'; // Assuming default API port
+    const API_BASE_URL = '/api';
+    const apiKey = sessionStorage.getItem('gctx_apiKey');
+
+    if (!apiKey) {
+        console.error("API key not found in session storage. Ensure app.js is loaded first on the page.");
+        // You could display an error on the canvas here.
+        return;
+    }
 
     let indexingChart, vectorStoreChart, systemPerfChart;
 
@@ -65,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function updateCharts() {
         try {
-            const response = await fetch(`${API_BASE_URL}/metrics`);
+            const response = await fetch(`${API_BASE_URL}/metrics`, { headers: { 'x-api-key': apiKey } });
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const data = await response.json();
 

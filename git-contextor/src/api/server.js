@@ -11,6 +11,7 @@ const statusRoutes = require('./routes/status');
 const metricsRoutes = require('./routes/metrics');
 const healthRoutes = require('./routes/health');
 const reindexRoutes = require('./routes/reindex');
+const uiconfigRoutes = require('./routes/uiconfig');
 
 let server;
 
@@ -24,6 +25,7 @@ function start(config, services) {
 
     // Public health check endpoint
     app.use('/health', healthRoutes);
+    app.use('/api/uiconfig', uiconfigRoutes(config));
 
     // API routes
     const apiRouter = express.Router();
