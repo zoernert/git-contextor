@@ -24,8 +24,6 @@ function initDashboard(API_BASE_URL) {
     const searchQuery = document.getElementById('search-query');
     const searchResults = document.getElementById('search-results');
     
-    let activityLogCleared = false;
-
     async function fetchStatus() {
         try {
             const response = await fetch(`${API_BASE_URL}/status`);
@@ -42,12 +40,15 @@ function initDashboard(API_BASE_URL) {
             statusElements.indexedFiles.textContent = data.indexer?.totalFiles ?? 'N/A';
             statusElements.totalChunks.textContent = data.indexer?.totalChunks ?? 'N/A';
             
-            if (data.fileWatcher?.latestActivity && data.fileWatcher.latestActivity.length > 0) {
-                if (!activityLogCleared) {
-                    activityLog.innerHTML = '';
-                    activityLogCleared = true;
-                }
-                data.fileWatcher.latestActivity.forEach(log => addActivityLog(log));
+            // Update activity log
+            activityLog.innerHTML = ''; // Clear the log
+            const activities = data.fileWatcher?.latestActivity || [];
+            if (activities.length === 0) {
+                addActivityLog('Waiting for events...');
+            } else {
+                // The API returns newest first. To display newest on top with prepend,
+                // we must process them from oldest to newest.
+                activities.reverse().forEach(log => addActivityLog(log));
             }
 
         } catch (error) {
@@ -57,13 +58,15 @@ function initDashboard(API_BASE_URL) {
         }
     }
 
-    function addActivityLog(message) {
+    function addActivityLog(log) {
         const li = document.createElement('li');
-        li.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-        activityLog.prepend(li);
-        if (activityLog.children.length > 50) {
-           activityLog.removeChild(activityLog.lastChild);
+        if (typeof log === 'string') {
+            li.textContent = `[${new Date().toLocaleTimeString()}] ${log}`;
+        } else {
+            const eventText = log.event.charAt(0).toUpperCase() + log.event.slice(1);
+            li.innerHTML = `[${new Date(log.timestamp).toLocaleTimeString()}] <strong>${eventText}:</strong> ${log.path}`;
         }
+        activityLog.prepend(li);
     }
 
     async function performSearch(event) {

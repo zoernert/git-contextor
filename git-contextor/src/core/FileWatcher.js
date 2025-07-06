@@ -21,6 +21,8 @@ class FileWatcher {
     this.processingQueue = [];
     this.isProcessing = false;
     this.ignoreFilter = ignore().add(config.indexing.excludePatterns);
+    this.activityLog = [];
+    this.maxLogSize = 50;
   }
 
   /**
@@ -83,6 +85,16 @@ class FileWatcher {
     // Check file extension
     if (!this.isSupportedFile(filePath)) {
       return;
+    }
+
+    const logEntry = {
+        event,
+        path: relativePath,
+        timestamp: new Date().toISOString()
+    };
+    this.activityLog.unshift(logEntry);
+    if (this.activityLog.length > this.maxLogSize) {
+        this.activityLog.pop();
     }
 
     logger.debug(`File ${event}: ${relativePath}`);
@@ -183,6 +195,10 @@ class FileWatcher {
         await this.indexer.removeFile(filePath);
         break;
     }
+  }
+
+  getActivityLog() {
+    return this.activityLog;
   }
 }
 

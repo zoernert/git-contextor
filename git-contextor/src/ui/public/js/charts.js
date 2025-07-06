@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const API_BASE_URL = 'http://localhost:3000'; // Assuming default API port
+    const API_BASE_URL = '/api'; // Assuming default API port
 
     let indexingChart, vectorStoreChart, systemPerfChart;
 

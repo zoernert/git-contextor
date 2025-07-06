@@ -26,7 +26,7 @@ module.exports = (services) => {
                 },
                 indexer: indexerStatus,
                 fileWatcher: {
-                    latestActivity: [] // Placeholder for more detailed activity tracking
+                    latestActivity: fileWatcher.getActivityLog() || []
                 }
             });
         } catch (error) {
