@@ -1,0 +1,71 @@
+const ConfigManager = require('../../core/ConfigManager');
+const logger = require('../utils/logger');
+const ora = require('ora');
+const chalk = require('chalk');
+
+async function config(options) {
+  const spinner = ora('Managing configuration...').start();
+  const repoPath = process.cwd();
+  const configManager = new ConfigManager(repoPath);
+
+  try {
+    await configManager.load();
+  } catch (error) {
+    spinner.fail('Configuration management failed.');
+    logger.error(error.message);
+    process.exit(1);
+  }
+  
+  if (options.show) {
+    spinner.succeed('Current Git Contextor Configuration:');
+    console.log(JSON.stringify(configManager.config, null, 2));
+    return;
+  }
+
+  const updates = {};
+  let updated = false;
+
+  if (options.embeddingProvider) {
+    updates.embedding = { ...configManager.config.embedding, provider: options.embeddingProvider };
+    updated = true;
+  }
+  if (options.apiKey) {
+    const baseEmbedding = updates.embedding || configManager.config.embedding;
+    updates.embedding = { ...baseEmbedding, apiKey: options.apiKey };
+    updated = true;
+  }
+  if (options.maxChunkSize) {
+    updates.chunking = { ...configManager.config.chunking, maxChunkSize: options.maxChunkSize };
+    updated = true;
+  }
+  if (options.excludePattern) {
+    const currentPatterns = configManager.config.indexing.excludePatterns;
+    if (!currentPatterns.includes(options.excludePattern)) {
+      updates.indexing = { 
+        ...configManager.config.indexing, 
+        excludePatterns: [...currentPatterns, options.excludePattern] 
+      };
+      updated = true;
+    } else {
+        logger.info(`Exclude pattern "${options.excludePattern}" already exists.`);
+    }
+  }
+
+  if (!updated) {
+    spinner.warn('No configuration changes specified. Use --show to see current config or provide options to update.');
+    logger.info('Run "git-contextor config --help" for more information.');
+    return;
+  }
+
+  try {
+    await configManager.updateConfig(updates);
+    spinner.succeed('Configuration updated successfully.');
+    logger.info('Changes will take effect on next service restart.');
+  } catch (error) {
+    spinner.fail('Failed to update configuration.');
+    logger.error(error.message);
+    process.exit(1);
+  }
+}
+
+module.exports = config;
