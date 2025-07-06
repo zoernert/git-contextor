@@ -15,10 +15,10 @@ class ConfigManager {
         branch: 'main'
       },
       embedding: {
-        provider: 'openai',
-        model: 'text-embedding-3-small',
+        provider: 'local',
+        model: 'Xenova/all-MiniLM-L6-v2',
         apiKey: null,
-        dimensions: 1536
+        dimensions: 384
       },
       chunking: {
         strategy: 'function',

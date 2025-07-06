@@ -25,15 +25,28 @@ async function config(options) {
   const updates = {};
   let updated = false;
 
+  const embeddingUpdates = {};
   if (options.embeddingProvider) {
-    updates.embedding = { ...configManager.config.embedding, provider: options.embeddingProvider };
+    embeddingUpdates.provider = options.embeddingProvider;
+    updated = true;
+  }
+  if (options.embeddingModel) {
+    embeddingUpdates.model = options.embeddingModel;
+    updated = true;
+  }
+  if (options.embeddingDimensions) {
+    embeddingUpdates.dimensions = options.embeddingDimensions;
     updated = true;
   }
   if (options.apiKey) {
-    const baseEmbedding = updates.embedding || configManager.config.embedding;
-    updates.embedding = { ...baseEmbedding, apiKey: options.apiKey };
+    embeddingUpdates.apiKey = options.apiKey;
     updated = true;
   }
+  
+  if (Object.keys(embeddingUpdates).length > 0) {
+    updates.embedding = { ...configManager.config.embedding, ...embeddingUpdates };
+  }
+
   if (options.maxChunkSize) {
     updates.chunking = { ...configManager.config.chunking, maxChunkSize: options.maxChunkSize };
     updated = true;

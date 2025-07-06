@@ -73,16 +73,30 @@ async function chunkCode(content, relativePath, parser, config) {
     const language = parser.getLanguage();
 
     // Queries for functions and classes. Can be expanded.
-    const queryString = `
-      [(function_declaration) (function_definition) (method_definition) (arrow_function) (function)] @func
-      [(class_declaration) (class_definition)] @class
-    `;
+    const ext = path.extname(relativePath);
+    let queryString;
+
+    if (['.js', '.jsx', '.ts', '.tsx'].includes(ext)) {
+        queryString = `
+            [(function_declaration) (method_definition) (arrow_function)] @func
+            [(class_declaration)] @class
+        `;
+    } else if (ext === '.py') {
+        queryString = `
+            [(function_definition)] @func
+            [(class_definition)] @class
+        `;
+    } else {
+        logger.debug(`No specific Tree-sitter query for ${ext}, falling back to text-based chunking.`);
+        return chunkText(content, relativePath, config);
+    }
+
     const query = new Parser.Query(language, queryString);
     const matches = query.captures(tree.rootNode);
-    
+
     const nodes = matches.map(m => m.node);
     const sortedNodes = nodes.sort((a, b) => a.startIndex - b.startIndex);
-    
+
     for (const node of sortedNodes) {
         const chunkContent = node.text;
         if (chunkContent.length > config.maxChunkSize) {
