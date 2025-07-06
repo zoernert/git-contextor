@@ -113,6 +113,27 @@
                         </ul>
                     </div>
                 </div>
+
+                <div class="tunnel-container">
+                    <h3>Public Tunnel</h3>
+                    <p>Expose your local service to the internet for external collaborators. This allows you to share a public URL.</p>
+                    <div id="tunnel-controls">
+                        <div class="form-group">
+                            <label for="tunnel-service">Service:</label>
+                            <select id="tunnel-service">
+                                <option value="localtunnel" selected>localtunnel (recommended)</option>
+                                <option value="ngrok" disabled>ngrok (coming soon)</option>
+                                <option value="serveo" disabled>serveo (coming soon)</option>
+                            </select>
+                        </div>
+                        <button id="tunnel-toggle-btn">Start Tunnel</button>
+                    </div>
+                    <div id="tunnel-status-container" style="display:none;">
+                        <h4>Tunnel Status</h4>
+                        <p><strong>Status:</strong> <span id="tunnel-status"></span></p>
+                        <p><strong>Public URL:</strong> <span id="tunnel-url"></span></p>
+                    </div>
+                </div>
             </section>
         </main>
         <footer>

@@ -24,5 +24,30 @@ module.exports = (services) => {
         }
     });
 
+    // Tunnel management endpoints
+    router.post('/tunnel', async (req, res, next) => {
+        try {
+            const { service } = req.body;
+            await sharingService.startTunnel(service);
+            res.status(202).json({ message: `Tunnel service '${service}' is starting.` });
+        } catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    });
+
+    router.get('/tunnel', (req, res) => {
+        const status = sharingService.getTunnelStatus();
+        res.json(status);
+    });
+
+    router.delete('/tunnel', async (req, res, next) => {
+        try {
+            await sharingService.stopTunnel();
+            res.json({ message: 'Tunnel stopped.' });
+        } catch (error) {
+            next(error);
+        }
+    });
+
     return router;
 };

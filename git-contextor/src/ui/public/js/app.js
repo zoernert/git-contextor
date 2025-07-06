@@ -56,6 +56,13 @@ function initDashboard(API_BASE_URL) {
     const activeSharesList = document.getElementById('active-shares-list');
     const refreshSharesButton = document.getElementById('refresh-shares-btn');
     
+    // Tunnel elements
+    const tunnelToggleBtn = document.getElementById('tunnel-toggle-btn');
+    const tunnelServiceSelect = document.getElementById('tunnel-service');
+    const tunnelStatusContainer = document.getElementById('tunnel-status-container');
+    const tunnelStatusSpan = document.getElementById('tunnel-status');
+    const tunnelUrlSpan = document.getElementById('tunnel-url');
+    
     async function fetchStatus() {
         try {
             const response = await fetch(`${API_BASE_URL}/status`, { headers: { 'x-api-key': apiKey } });
@@ -305,10 +312,98 @@ else:
     chatForm.addEventListener('submit', performChat);
     shareForm.addEventListener('submit', createShare);
     refreshSharesButton.addEventListener('click', fetchShares);
+    tunnelToggleBtn.addEventListener('click', toggleTunnel);
+
+    // --- Tunnel Functions ---
+    async function getTunnelStatus() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/share/tunnel`, { headers: { 'x-api-key': apiKey } });
+            if (!response.ok) {
+                if (response.status === 404) { // Endpoint might not exist if API is old/down
+                    updateTunnelUI({ status: 'stopped', url: null, service: null });
+                    return;
+                }
+                throw new Error(`HTTP ${response.status}`);
+            }
+            const data = await response.json();
+            updateTunnelUI(data);
+        } catch (error) {
+            console.error('Error fetching tunnel status:', error);
+        }
+    }
+
+    function updateTunnelUI(data) {
+        tunnelStatusSpan.textContent = data.status;
+        tunnelToggleBtn.classList.remove('danger');
+        
+        if (data.status === 'stopped' || data.status === 'error') {
+            tunnelToggleBtn.textContent = 'Start Tunnel';
+            tunnelToggleBtn.disabled = false;
+            tunnelServiceSelect.disabled = false;
+            tunnelStatusContainer.style.display = 'none';
+
+            if (data.status === 'error') {
+                tunnelStatusSpan.textContent = 'Error - check server logs for details.';
+                tunnelStatusContainer.style.display = 'block';
+                tunnelUrlSpan.textContent = 'N/A';
+            }
+        } else {
+            tunnelStatusContainer.style.display = 'block';
+            tunnelServiceSelect.disabled = true;
+            if (data.service) {
+                tunnelServiceSelect.value = data.service;
+            }
+
+            if (data.status === 'starting') {
+                tunnelToggleBtn.textContent = 'Starting...';
+                tunnelToggleBtn.disabled = true;
+                tunnelUrlSpan.textContent = 'Waiting for URL...';
+            } else if (data.status === 'running') {
+                tunnelToggleBtn.textContent = 'Stop Tunnel';
+                tunnelToggleBtn.disabled = false;
+                tunnelToggleBtn.classList.add('danger');
+                tunnelUrlSpan.innerHTML = data.url ? `<a href="${data.url}" target="_blank">${data.url}</a>` : 'Acquiring URL...';
+            }
+        }
+    }
+
+    async function toggleTunnel() {
+        const currentStatus = tunnelStatusSpan.textContent;
+        tunnelToggleBtn.disabled = true;
+
+        try {
+            if (currentStatus === 'stopped' || currentStatus.startsWith('Error')) {
+                // Start the tunnel
+                const service = tunnelServiceSelect.value;
+                const response = await fetch(`${API_BASE_URL}/share/tunnel`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
+                    body: JSON.stringify({ service })
+                });
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.error || `HTTP ${response.status}`);
+                }
+            } else {
+                // Stop the tunnel
+                await fetch(`${API_BASE_URL}/share/tunnel`, {
+                    method: 'DELETE',
+                    headers: { 'x-api-key': apiKey }
+                });
+            }
+        } catch (error) {
+            alert(`Tunnel operation failed: ${error.message}`);
+        } finally {
+            // Let the interval update the UI, but give it a head start
+            setTimeout(getTunnelStatus, 500);
+        }
+    }
     
     fetchStatus();
     fetchShares();
-    setInterval(fetchStatus, 5000); // Poll every 5 seconds
+    getTunnelStatus();
+    setInterval(fetchStatus, 5000); // Poll general status
+    setInterval(getTunnelStatus, 3000); // Poll tunnel status frequently
 }
 
 

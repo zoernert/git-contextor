@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const fs = require('fs').promises;
 const path = require('path');
+const { spawn } = require('child_process');
 
 function parseDuration(duration) {
     // Already in milliseconds
@@ -31,6 +32,11 @@ class SharingService {
         this.config = config;
         this.shareStore = new Map(); // In-memory store for shares
         this.shareDir = path.join(repoPath, '.gitcontextor', 'shares');
+
+        this.tunnelProcess = null;
+        this.tunnelUrl = null;
+        this.tunnelService = null;
+        this.tunnelStatus = 'stopped'; // stopped, starting, running, error
     }
 
     async init() {
@@ -139,6 +145,81 @@ class SharingService {
                 access_count: share.access_count,
                 max_queries: share.max_queries
             }));
+    }
+
+    getTunnelStatus() {
+        return {
+            status: this.tunnelStatus,
+            url: this.tunnelUrl,
+            service: this.tunnelService
+        };
+    }
+
+    async stopTunnel() {
+        return new Promise((resolve) => {
+            if (this.tunnelProcess) {
+                this.tunnelProcess.kill();
+                // The 'exit' event handler will clean up state.
+            }
+            // Reset state immediately for snappy UI
+            this.tunnelProcess = null;
+            this.tunnelUrl = null;
+            this.tunnelService = null;
+            this.tunnelStatus = 'stopped';
+            resolve();
+        });
+    }
+
+    async startTunnel(service) {
+        if (this.tunnelStatus !== 'stopped' && this.tunnelStatus !== 'error') {
+            throw new Error(`Tunnel is already active with status: ${this.tunnelStatus}`);
+        }
+
+        this.tunnelStatus = 'starting';
+        this.tunnelService = service;
+        this.tunnelUrl = null;
+
+        const port = this.config.services.port;
+        let command, args;
+
+        // For now, only localtunnel is supported programmatically
+        if (service === 'localtunnel') {
+            command = 'npx';
+            args = ['localtunnel', '--port', port];
+        } else {
+            this.tunnelStatus = 'error';
+            throw new Error(`Unsupported tunnel service for UI control: ${service}`);
+        }
+        
+        this.tunnelProcess = spawn(command, args);
+
+        this.tunnelProcess.stdout.on('data', (data) => {
+            const output = data.toString();
+            // localtunnel outputs: "your url is: https://..."
+            const match = output.match(/your url is: (https:\/\/[^\s]+)/);
+            if (match && match[1]) {
+                this.tunnelUrl = match[1];
+                this.tunnelStatus = 'running';
+            }
+        });
+
+        this.tunnelProcess.stderr.on('data', (data) => {
+            console.error(`Tunnel service error: ${data}`);
+        });
+
+        this.tunnelProcess.on('error', (err) => {
+            console.error('Failed to start tunnel process:', err);
+            this.tunnelStatus = 'error';
+            this.tunnelProcess = null;
+        });
+
+        this.tunnelProcess.on('exit', (code) => {
+            if (this.tunnelStatus !== 'stopped') {
+                this.tunnelStatus = code === 0 ? 'stopped' : 'error';
+                this.tunnelUrl = null;
+                this.tunnelProcess = null;
+            }
+        });
     }
 }
 
