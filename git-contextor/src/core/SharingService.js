@@ -154,9 +154,24 @@ class SharingService {
         if (urlMatch && urlMatch[1] && !this.tunnelUrl) { // Set URL only once
             this.tunnelUrl = urlMatch[1];
             this.tunnelStatus = 'running';
+
+            // When the localtunnel.me server requires a password, it's the subdomain of the URL.
+            // This serves as a reliable fallback.
+            if (!this.tunnelPassword) {
+                try {
+                    const parsedUrl = new URL(this.tunnelUrl);
+                    const hostnameParts = parsedUrl.hostname.split('.');
+                    if (hostnameParts.length > 2 && hostnameParts[1] === 'loca' && hostnameParts[2] === 'lt') {
+                        this.tunnelPassword = hostnameParts[0];
+                    }
+                } catch (e) {
+                    // Ignore errors if URL is somehow malformed
+                }
+            }
         }
 
-        // Match password, which can appear on stderr and in different formats.
+        // Match an explicitly printed password, which can appear on stderr.
+        // This will override the subdomain fallback if found.
         const passwordMatch = output.match(/(?:your password is:|Password:)\s*(\w+)/i);
         if (passwordMatch && passwordMatch[1]) {
             this.tunnelPassword = passwordMatch[1];
