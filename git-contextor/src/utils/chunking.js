@@ -4,6 +4,7 @@ const Parser = require('tree-sitter');
 const JavaScript = require('tree-sitter-javascript');
 const Python = require('tree-sitter-python');
 const logger = require('../cli/utils/logger');
+const pdf = require('pdf-parse');
 
 // More languages can be added here
 const parsers = {
@@ -86,6 +87,18 @@ function chunkText(content, relativePath, config) {
 }
 
 
+// PDF chunker
+async function chunkPdf(filePath, relativePath, config) {
+    try {
+        const dataBuffer = await fs.readFile(filePath);
+        const pdfData = await pdf(dataBuffer);
+        return chunkText(pdfData.text, relativePath, config);
+    } catch (error) {
+        logger.error(`Failed to parse PDF ${relativePath}:`, error);
+        return [];
+    }
+}
+
 // Tree-sitter powered chunking for code
 async function chunkCode(content, relativePath, parser, config) {
     const tree = parser.parse(content);
@@ -153,9 +166,15 @@ async function chunkCode(content, relativePath, parser, config) {
  */
 async function chunkFile(filePath, repoPath, config) {
     try {
-        const content = await fs.readFile(filePath, 'utf8');
         const relativePath = path.relative(repoPath, filePath);
+        const ext = path.extname(filePath).toLowerCase();
+
+        if (ext === '.pdf') {
+            return await chunkPdf(filePath, relativePath, config);
+        }
+
         const parser = getParserForFile(filePath);
+        const content = await fs.readFile(filePath, 'utf8');
 
         if (parser && config.strategy === 'function') {
             return await chunkCode(content, relativePath, parser, config);

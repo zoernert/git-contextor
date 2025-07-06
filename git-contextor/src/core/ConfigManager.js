@@ -45,7 +45,7 @@ class ConfigManager {
           '.scala', '.swift', '.dart', '.r',
           '.html', '.css', '.scss', '.sass',
           '.json', '.yaml', '.yml', '.toml',
-          '.xml', '.md', '.txt', '.sql'
+          '.xml', '.md', '.txt', '.sql', '.pdf'
         ],
         followSymlinks: false
       },
