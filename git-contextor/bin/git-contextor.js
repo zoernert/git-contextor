@@ -1,5 +1,25 @@
 #!/usr/bin/env node
 
+process.on('uncaughtException', (error) => {
+  console.error('Fatal error:', error.message);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
+
+// Check Node.js version
+const nodeVersion = process.version;
+const majorVersion = parseInt(nodeVersion.slice(1).split('.')[0]);
+if (majorVersion < 18) {
+  console.error('❌ Git Contextor requires Node.js 18 or higher.');
+  console.error(`   Current version: ${nodeVersion}`);
+  console.error('   Please upgrade: https://nodejs.org/');
+  process.exit(1);
+}
+
 /**
  * @fileoverview CLI entry point for Git Contextor.
  * Sets up commander.js to handle command-line arguments and subcommands.

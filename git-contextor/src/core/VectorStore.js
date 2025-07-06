@@ -55,25 +55,40 @@ class VectorStore {
     if (!chunks || chunks.length === 0) return;
 
     await this.ensureCollection();
+    
+    const batchSize = 100; // Process in batches to avoid memory issues
+    for (let i = 0; i < chunks.length; i += batchSize) {
+      const batch = chunks.slice(i, i + batchSize);
+      const points = [];
+      
+      for (const chunk of batch) {
+        try {
+          const embedding = await getEmbedding(chunk.content, this.config.embedding);
+          if (embedding && embedding.length > 0) {
+            points.push({
+              id: uuidv4(),
+              vector: embedding,
+              payload: { ...chunk.metadata, content: chunk.content },
+            });
+          }
+        } catch (error) {
+          logger.warn(`Failed to generate embedding for chunk: ${error.message}`);
+          continue; // Skip this chunk but continue with others
+        }
+      }
 
-    const points = [];
-    for (const chunk of chunks) {
-      const embedding = await getEmbedding(chunk.content, this.config.embedding);
-      points.push({
-        id: uuidv4(),
-        vector: embedding,
-        payload: { ...chunk.metadata, content: chunk.content }, // Store content in payload
-      });
-    }
-
-    try {
-      await this.client.upsert(this.collectionName, {
-        points: points,
-        wait: true,
-      });
-      logger.debug(`Upserted ${points.length} points to ${this.collectionName}.`);
-    } catch (error) {
-      logger.error('Failed to upsert points to Qdrant:', error);
+      if (points.length > 0) {
+        try {
+          await this.client.upsert(this.collectionName, {
+            points: points,
+            wait: true,
+          });
+          logger.debug(`Upserted ${points.length} points to ${this.collectionName}.`);
+        } catch (error) {
+          logger.error('Failed to upsert points to Qdrant:', error);
+          throw error;
+        }
+      }
     }
   }
 

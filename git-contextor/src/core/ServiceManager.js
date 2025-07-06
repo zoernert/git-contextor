@@ -2,6 +2,7 @@ const path = require('path');
 const fs = require('fs').promises;
 const logger = require('../cli/utils/logger');
 const apiServer = require('../api/server');
+const simpleGit = require('simple-git');
 
 class ServiceManager {
     constructor(repoPath, config, services) {
@@ -11,8 +12,33 @@ class ServiceManager {
         this.pidFile = path.join(this.repoPath, '.gitcontextor', 'daemon.pid');
     }
 
+    async validateEnvironment() {
+      // Check if we're in a git repository
+      try {
+        const git = simpleGit(this.repoPath);
+        await git.status();
+      } catch (error) {
+        throw new Error('Not a git repository. Please run git-contextor in a git repository.');
+      }
+    
+      // Check write permissions
+      try {
+        await fs.access(this.repoPath, fs.constants.W_OK);
+      } catch (error) {
+        throw new Error('No write permission in current directory.');
+      }
+    
+      // Validate embedding config
+      const { provider, apiKey } = this.config.embedding;
+      if (provider !== 'local' && !apiKey) {
+        throw new Error(`${provider} embedding provider requires an API key. Set it with: git-contextor config --api-key YOUR_KEY`);
+      }
+    }
+
     async start(options = {}) {
         logger.info('Starting Git Contextor services...');
+
+        await this.validateEnvironment();
 
         if (await this.isRunning()) {
             const pid = await this.readPidFile();

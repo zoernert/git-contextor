@@ -2,6 +2,7 @@ const fs = require('fs').promises;
 const path = require('path');
 const crypto = require('crypto');
 const { merge } = require('lodash');
+require('dotenv').config();
 
 class ConfigManager {
   constructor(repoPath) {
@@ -16,9 +17,9 @@ class ConfigManager {
         branch: 'main'
       },
       embedding: {
-        provider: 'local',
+        provider: 'local', // Safe default - no API key needed
         model: 'Xenova/all-MiniLM-L6-v2',
-        apiKey: null,
+        apiKey: process.env.OPENAI_API_KEY || process.env.GOOGLE_API_KEY || null,
         dimensions: 384
       },
       chunking: {

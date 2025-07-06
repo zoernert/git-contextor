@@ -68,4 +68,37 @@ try {
 } catch (error) {
   console.error('❌ Setup failed:', error.message);
   process.exit(1);
+}const net = require('net');
+
+function checkCommonIssues() {
+  // Check if port 3000 is available, as it's the default
+  const defaultPort = 3000;
+  const server = net.createServer();
+
+  server.once('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.warn(`\n⚠️  Warning: Port ${defaultPort} is currently in use.`);
+      console.warn(`   If you start git-contextor, it may fail. You can specify a different port with:`);
+      console.warn(`   git-contextor start --port <other_port>\n`);
+    }
+  });
+
+  server.once('listening', () => {
+    server.close();
+  });
+
+  server.listen(defaultPort);
+
+  // Provide general advice
+  console.log('\n💡 Git Contextor Tips:');
+  console.log('   - Ensure Docker is running before you start the service to use Qdrant.');
+  console.log('   - Check your firewall to ensure ports 3000 (API) and 6333 (Qdrant) are accessible.');
+  console.log('   - For verbose logs, run commands with the DEBUG environment variable, e.g., DEBUG=git-contextor:* git-contextor start\n');
+}
+
+console.log('Running Git Contextor post-install checks...');
+try {
+    checkCommonIssues();
+} catch (error) {
+    console.warn('Could not run post-install checks:', error.message);
 }

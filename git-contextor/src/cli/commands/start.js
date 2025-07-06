@@ -24,7 +24,7 @@ async function waitForService(port, maxRetries = 30) {
 
 async function start(options) {
   const repoPath = process.cwd();
-  const spinner = ora('Starting Git Contextor...').start();
+  const spinner = ora('Preparing to start Git Contextor...').start();
 
   try {
     await fs.access(path.join(repoPath, '.gitcontextor', 'config.json'));
@@ -59,6 +59,7 @@ async function start(options) {
   }
 
   // Check if Qdrant is running before starting services
+  spinner.text = 'Connecting to Qdrant...';
   await checkQdrant(configManager);
 
   if (options.daemon) {
@@ -73,7 +74,7 @@ async function start(options) {
     logger.info('Git Contextor daemon started. Use "git-contextor status" to check its state and "git-contextor stop" to terminate it.');
     process.exit(0);
   } else {
-    spinner.text = 'Starting Git Contextor in foreground...';
+    spinner.text = 'Starting services... This may take a moment for initial indexing.';
     const contextor = new GitContextor(repoPath);
     
     const shutdown = async () => {
@@ -99,7 +100,15 @@ async function start(options) {
             spinner.fail('Service failed to start within 30 seconds');
             process.exit(1);
         } else {
-            spinner.succeed(`Git Contextor running at http://localhost:${config.services.port}`);
+            spinner.succeed(`
+🚀 Git Contextor is running!
+
+📊 Dashboard: http://localhost:${config.services.port}
+🔍 Quick search: git-contextor query "your question"
+📚 Documentation: git-contextor config --show
+
+Tip: Try querying "authentication logic" or "error handling" to see it in action!
+`);
         }
     } catch (error) {
         spinner.fail('Failed to start Git Contextor.');
