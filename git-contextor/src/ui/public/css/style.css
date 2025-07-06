@@ -1,5 +1,5 @@
 :root {
-    --primary-color: #4a90e2;
+    --primary-color: #147a50;
     --background-color: #f4f7f9;
     --card-background: #ffffff;
     --text-color: #333;
@@ -52,7 +52,7 @@ nav a {
 }
 
 nav a:hover, nav a.active {
-    background-color: #e9f2fd;
+    background-color: #e8f2ed;
 }
 
 main {
@@ -175,7 +175,7 @@ footer {
 }
 
 #search-form button:hover {
-    background-color: #357abd;
+    background-color: #106944;
 }
 
 #search-results-container {
@@ -309,8 +309,8 @@ footer {
 }
 
 .docs-nav a:hover {
-    background-color: #e9f2fd;
-    border-color: #d0e3f8;
+    background-color: #e8f2ed;
+    border-color: #d3e6de;
 }
 
 .docs-nav a.active {
