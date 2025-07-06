@@ -236,3 +236,49 @@ footer {
 .snippet.active {
     display: block;
 }
+
+.danger-zone-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.action-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid var(--error-color);
+    padding: 20px;
+    border-radius: 8px;
+    background-color: #fffafa;
+}
+
+.action-item div {
+    max-width: 75%;
+}
+
+.action-item p {
+    margin: 0;
+}
+
+.action-item p:first-child {
+    margin-bottom: 5px;
+}
+
+.button-danger {
+    padding: 10px 20px;
+    border: 1px solid var(--error-color);
+    background-color: var(--error-color);
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: bold;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.button-danger:hover {
+    background-color: #d0021b;
+    border-color: #d0021b;
+}

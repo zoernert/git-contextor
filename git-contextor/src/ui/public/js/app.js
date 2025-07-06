@@ -219,5 +219,48 @@ function initConfigPage(API_BASE_URL) {
         }
     }
 
+    const reindexButton = document.getElementById('reindex-button');
+    const deleteCollectionButton = document.getElementById('delete-collection-button');
+
+    if (reindexButton) {
+        reindexButton.addEventListener('click', async () => {
+            if (!confirm('Are you sure you want to trigger a full repository re-index? This may take some time.')) {
+                return;
+            }
+            try {
+                const response = await fetch(`${API_BASE_URL}/reindex`, {
+                    method: 'POST',
+                    headers: { 'x-api-key': apiKey, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                const result = await response.json();
+                alert(result.message);
+            } catch (error) {
+                console.error('Re-index failed:', error);
+                alert('Re-index failed. See console for details.');
+            }
+        });
+    }
+
+    if (deleteCollectionButton) {
+        deleteCollectionButton.addEventListener('click', async () => {
+            if (!confirm('DANGER: This will delete all data from the vector store and cannot be undone. Are you absolutely sure?')) {
+                return;
+            }
+            try {
+                const response = await fetch(`${API_BASE_URL}/reindex`, {
+                    method: 'DELETE',
+                    headers: { 'x-api-key': apiKey }
+                });
+                const result = await response.json();
+                alert(result.message);
+                window.location.reload();
+            } catch (error) {
+                console.error('Delete collection failed:', error);
+                alert('Delete collection failed. See console for details.');
+            }
+        });
+    }
+
     fetchConfig();
 }

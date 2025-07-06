@@ -69,6 +69,28 @@ class Indexer {
       this.status = 'error';
     }
   }
+
+  /**
+   * Clears the index and resets stats.
+   */
+  async clearIndex() {
+    this.status = 'clearing';
+    this.lastActivity = new Date().toISOString();
+    logger.info('Clearing vector collection and resetting index...');
+    try {
+      await this.vectorStore.clearCollection();
+      this.totalFiles = 0;
+      this.totalChunks = 0;
+      this.errorCount = 0;
+      this.status = 'idle';
+      logger.info('Index cleared successfully.');
+    } catch (error) {
+      logger.error('Failed to clear index:', error);
+      this.errorCount++;
+      this.status = 'error';
+      throw error;
+    }
+  }
   
   /**
    * Performs a full re-index of the entire repository based on git-tracked files.

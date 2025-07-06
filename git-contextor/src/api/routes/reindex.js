@@ -35,5 +35,14 @@ module.exports = (services) => {
         }
     });
 
+    router.delete('/', async (req, res, next) => {
+        try {
+            await indexer.clearIndex();
+            res.status(200).json({ message: 'Collection and index data cleared successfully.' });
+        } catch (error) {
+            next(error);
+        }
+    });
+
     return router;
 };

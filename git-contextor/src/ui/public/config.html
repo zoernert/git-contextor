@@ -21,6 +21,25 @@
                 <h2>Current Configuration</h2>
                 <pre id="config-display">Loading configuration...</pre>
             </section>
+            <section class="card">
+                <h2>Danger Zone</h2>
+                <div class="danger-zone-actions">
+                    <div class="action-item">
+                        <div>
+                            <p><strong>Re-index Repository</strong></p>
+                            <p>Triggers a full re-index of all tracked files. This can take a while.</p>
+                        </div>
+                        <button id="reindex-button" class="button-danger">Re-index Now</button>
+                    </div>
+                    <div class="action-item">
+                        <div>
+                            <p><strong>Delete Collection</strong></p>
+                            <p>Deletes all data from the vector store. This action cannot be undone.</p>
+                        </div>
+                        <button id="delete-collection-button" class="button-danger">Delete Collection</button>
+                    </div>
+                </div>
+            </section>
         </main>
         <footer>
             <p>Git Contextor &copy; 2025</p>
