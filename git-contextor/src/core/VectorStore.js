@@ -1,5 +1,6 @@
 const { QdrantClient } = require('@qdrant/js-client-rest');
 const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
 const logger = require('../cli/utils/logger');
 const { getEmbedding } = require('../utils/embeddings');
 
@@ -16,7 +17,11 @@ class VectorStore {
     this.client = new QdrantClient({
       url: `http://${config.services.qdrantHost}:${config.services.qdrantPort}`,
     });
-    this.collectionName = `gctx-${this.config.repository.name}`.replace(/[^a-zA-Z0-9-]/g, '_').toLowerCase();
+    
+    // Create a unique, stable ID for the repository based on its absolute path
+    const repoId = crypto.createHash('sha256').update(this.config.repository.path).digest('hex').substring(0, 12);
+    const repoName = this.config.repository.name.replace(/[^a-zA-Z0-9-]/g, '_');
+    this.collectionName = `gctx-${repoName}-${repoId}`.toLowerCase();
   }
 
   /**
