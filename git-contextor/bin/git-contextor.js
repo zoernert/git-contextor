@@ -34,6 +34,7 @@ program
   .description('Start the Git Contextor service')
   .option('-p, --port <port>', 'Port for API and UI (default from config)')
   .option('-d, --daemon', 'Run as daemon')
+  .option('--keep-collection', 'Do not delete the Qdrant collection on exit')
   .action(startCommand);
 
 program

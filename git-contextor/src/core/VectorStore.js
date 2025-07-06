@@ -121,6 +121,26 @@ class VectorStore {
   }
 
   /**
+   * Deletes the collection from Qdrant.
+   */
+  async deleteCollection() {
+    logger.info(`Attempting to delete collection: ${this.collectionName}`);
+    try {
+        const result = await this.client.deleteCollection(this.collectionName);
+        if (result) {
+            logger.info(`Collection '${this.collectionName}' deleted successfully.`);
+        }
+    } catch (error) {
+        if (error.status === 404) {
+            logger.info(`Collection '${this.collectionName}' did not exist, nothing to delete.`);
+        } else {
+            logger.error(`Failed to delete collection '${this.collectionName}':`, error);
+            // Do not re-throw, as we want shutdown to continue.
+        }
+    }
+  }
+
+  /**
    * Performs a semantic search in the vector store.
    * @param {Array<number>} queryVector - The vector representation of the search query.
    * @param {number} limit - The maximum number of results to return.

@@ -53,7 +53,8 @@ class ConfigManager {
         port: 3000,
         qdrantHost: process.env.QDRANT_HOST || 'localhost',
         qdrantPort: process.env.QDRANT_PORT || 6333,
-        apiKey: this.generateApiKey()
+        apiKey: this.generateApiKey(),
+        keepCollectionOnExit: false
       },
       monitoring: {
         watchEnabled: true,

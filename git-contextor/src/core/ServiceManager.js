@@ -74,6 +74,14 @@ class ServiceManager {
         // Stop API and UI servers
         await apiServer.stop();
 
+        // Delete collection if not configured to keep
+        if (!this.config.services.keepCollectionOnExit && this.services.vectorStore) {
+            if (!silent) {
+                logger.info('Removing Qdrant collection as per configuration...');
+            }
+            await this.services.vectorStore.deleteCollection();
+        }
+
         // Remove PID file
         try {
             await fs.unlink(this.pidFile);

@@ -44,7 +44,7 @@ Git Contextor is a developer tool designed to create and manage contextually-awa
 ## CLI Commands
 
 - `init`: Initializes Git Contextor in the current directory.
-- `start`: Starts the API server and file watcher. Use `-d` to run as a daemon.
+- `start`: Starts the API server and file watcher. Use `-d` to run as a daemon. Use `--keep-collection` to prevent the Qdrant collection from being deleted on exit.
 - `stop`: Stops the running service.
 - `status`: Shows the current status of the service.
 - `reindex`: Triggers a full re-indexing of the repository.

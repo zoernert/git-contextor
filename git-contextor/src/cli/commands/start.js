@@ -33,7 +33,7 @@ async function start(options) {
 
   if (configChanged) {
     await configManager.updateConfig(updates);
-    logger.info('Configuration updated with new port settings.');
+    logger.info('Configuration updated.');
   }
 
   // Check if Qdrant is running before starting services
