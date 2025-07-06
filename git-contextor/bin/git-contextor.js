@@ -35,6 +35,8 @@ const statusCommand = require('../src/cli/commands/status');
 const configCommand = require('../src/cli/commands/config');
 const queryCommand = require('../src/cli/commands/query');
 const reindexCommand = require('../src/cli/commands/reindex');
+const chatCommand = require('../src/cli/commands/chat');
+const shareCommand = require('../src/cli/commands/share');
 
 program
   .name('git-contextor')
@@ -92,5 +94,21 @@ program
   .description('Force full reindex of repository')
   .option('-f, --file <file>', 'Reindex specific file')
   .action(reindexCommand);
+
+program
+  .command('chat <query>')
+  .description('Chat with your repository using AI')
+  .option('-c, --context <type>', 'Context type (general|architecture|security)', 'general')
+  .action(chatCommand);
+
+program
+  .command('share <action>')
+  .description('Share repository AI access (create|list|tunnel)')
+  .option('-d, --duration <duration>', 'Share duration (24h, 7d, 1w)', '24h')
+  .option('-s, --scope <scope>', 'Access scope (general,architecture,security)')
+  .option('--description <desc>', 'Share description')
+  .option('--max-queries <num>', 'Maximum queries allowed', '100')
+  .option('-t, --tunnel [service]', 'Create public tunnel (ngrok|localtunnel|serveo)')
+  .action(shareCommand);
 
 program.parse(process.argv);
