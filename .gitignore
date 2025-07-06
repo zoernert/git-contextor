@@ -138,3 +138,6 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .aider*
+
+# Git Contextor
+.gitcontextor/
