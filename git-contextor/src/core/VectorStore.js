@@ -67,7 +67,7 @@ class VectorStore {
     }
 
     try {
-      await this.client.upsertPoints(this.collectionName, {
+      await this.client.upsert(this.collectionName, {
         points: points,
         wait: true,
       });
@@ -84,7 +84,7 @@ class VectorStore {
   async removeFile(filePath) {
     await this.ensureCollection();
     try {
-      await this.client.deletePoints(this.collectionName, {
+      await this.client.delete(this.collectionName, {
         filter: {
           must: [
             {
