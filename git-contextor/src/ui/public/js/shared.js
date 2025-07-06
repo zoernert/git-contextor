@@ -8,6 +8,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const queryInput = document.getElementById('chat-query');
     const resultsContainer = document.getElementById('chat-results-container');
     const resultsEl = document.getElementById('chat-results');
+    const apiUsageContainer = document.getElementById('api-usage');
+    const snippetInfoCurl = document.getElementById('snippet-info-curl');
+    const snippetChatCurl = document.getElementById('snippet-chat-curl');
 
     // Store API key in sessionStorage to persist across reloads for convenience
     apiKeyInput.value = sessionStorage.getItem(`gctx_share_key_${shareId}`) || '';
@@ -20,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!apiKey) {
             shareDescriptionEl.textContent = 'Enter API key to view details.';
             shareExpiresEl.textContent = '';
+            updateApiUsage(null, null); // Hide API usage details
             return;
         }
 
@@ -36,9 +40,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             shareDescriptionEl.textContent = data.description;
             shareExpiresEl.textContent = new Date(data.expires_at).toLocaleString();
+            updateApiUsage(shareId, apiKey);
         } catch (error) {
             shareDescriptionEl.textContent = `Error: ${error.message}`;
             shareExpiresEl.textContent = 'Could not load details.';
+            updateApiUsage(null, null); // Hide API usage details on error
         }
     }
 
@@ -88,6 +94,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     chatForm.addEventListener('submit', performChat);
+
+    function updateApiUsage(shareId, apiKey) {
+        if (!apiKey || !shareId) {
+            apiUsageContainer.style.display = 'none';
+            return;
+        }
+    
+        const baseUrl = window.location.origin;
+        const infoUrl = `${baseUrl}/shared/${shareId}/info`;
+        const chatUrl = `${baseUrl}/shared/${shareId}/chat`;
+    
+        const infoSnippet = `curl "${infoUrl}" \\\n  -H "x-share-key: ${apiKey}"`;
+        snippetInfoCurl.textContent = infoSnippet;
+    
+        const chatSnippet = `curl -X POST "${chatUrl}" \\\n  -H "Content-Type: application/json" \\\n  -H "x-share-key: ${apiKey}" \\\n  -d '{"query": "What is the main authentication pattern?"}'`;
+        snippetChatCurl.textContent = chatSnippet;
+    
+        apiUsageContainer.style.display = 'block';
+    }
 
     // Initial fetch if key is pre-filled
     if (apiKeyInput.value) {

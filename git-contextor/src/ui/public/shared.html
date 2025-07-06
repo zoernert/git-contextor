@@ -36,6 +36,27 @@
                     <div id="chat-results"></div>
                 </div>
             </section>
+
+            <section id="api-usage" class="card" style="display: none;">
+                <h2>API Usage</h2>
+                <p>You can also interact with this shared repository programmatically using the following endpoints and your Share API Key.</p>
+                
+                <div class="api-endpoint">
+                    <h3>Get Share Information</h3>
+                    <p><code>GET /shared/{shareId}/info</code></p>
+                    <p>Retrieve details about the share, such as its description, expiration date, and query usage.</p>
+                    <h4>Example (cURL)</h4>
+                    <pre id="snippet-info-curl"></pre>
+                </div>
+                
+                <div class="api-endpoint">
+                    <h3>Chat with the Repository</h3>
+                    <p><code>POST /shared/{shareId}/chat</code></p>
+                    <p>Send a query to the repository AI and receive a context-aware response.</p>
+                    <h4>Example (cURL)</h4>
+                    <pre id="snippet-chat-curl"></pre>
+                </div>
+            </section>
         </main>
         <footer>
             <p>Powered by Git Contextor</p>
