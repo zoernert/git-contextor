@@ -51,7 +51,7 @@ class ConfigManager {
         followSymlinks: false
       },
       services: {
-        port: 3000,
+        port: 3333,
         qdrantHost: 'localhost',
         qdrantPort: 6333,
         apiKey: this.generateApiKey(),

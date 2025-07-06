@@ -203,25 +203,6 @@ class VectorStore {
       return { status: 'error', message: error.message };
     }
   }
-
-  /**
-   * Gets the count of unique indexed files.
-   * @returns {Promise<number>}
-   */
-  async getUniqueFileCount() {
-    logger.warn('getUniqueFileCount is not efficiently implemented and may be slow or inaccurate.');
-    try {
-        const result = await this.client.scroll(this.collectionName, { limit: 100000, with_payload: ['filePath'], with_vector: false });
-        const uniqueFiles = new Set(result.points.map(p => p.payload.filePath));
-        return uniqueFiles.size;
-    } catch (error) {
-        if (error.status === 404) {
-            return 0;
-        }
-        logger.error('Failed to get unique file count:', error);
-        return 0;
-    }
-  }
 }
 
 module.exports = VectorStore;

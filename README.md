@@ -9,7 +9,7 @@
 
 > Stop copying and pasting code snippets into ChatGPT. Git Contextor automatically indexes your entire repository and provides **semantic, context-aware search** that understands what your code actually does.
 
-![Git Contextor Demo](https://your-domain.com/demo.gif)
+<!-- ![Git Contextor Demo](placeholder.gif) -->
 
 ## 🎯 Why Git Contextor?
 
@@ -52,10 +52,10 @@ git-contextor init
 docker run -p 6333:6333 qdrant/qdrant
 
 # 5. Start indexing and monitoring
-git-contextor start
+git-contextor start --port 3333
 
 # 6. Open the dashboard
-open http://localhost:3000
+open http://localhost:3333
 ```
 
 **That's it!** Your entire codebase is now semantically searchable.
@@ -84,36 +84,21 @@ git-contextor query "error handling patterns"
 
 ### n8n Workflow
 ```javascript
-// HTTP Request node
-POST http://localhost:3000/api/search
+// Use the HTTP Request node in n8n
+POST http://localhost:3333/api/search
 {
   "query": "payment processing code",
   "maxTokens": 2048
 }
 ```
 
-### Python Script
-```python
-import requests
-
-response = requests.post('http://localhost:3000/api/search', 
-    headers={'x-api-key': 'your-key'},
-    json={'query': 'user registration flow'})
-    
-context = response.json()['optimizedContext']
-# Send context to your favorite LLM
-```
-
 ## 🌟 What Developers Are Saying
 
-> "This is what GitHub Copilot should have been. Instead of guessing, it actually understands my codebase." 
-> — **@dev_sarah** (React Developer)
+> "Git Contextor feels like having a senior developer who has memorized the entire codebase, available 24/7. It has fundamentally changed how I explore and understand large projects."
 
-> "Cut my code review time by 80%. New team members onboard in hours, not weeks."
-> — **@tech_lead_mike** (Engineering Manager)
+> "Onboarding new developers used to take weeks. Now, they can ask Git Contextor questions about the architecture and get meaningful answers in seconds. It has slashed our ramp-up time."
 
-> "Finally! An AI tool that gets the context. No more 10-minute explanations to ChatGPT."
-> — **@fullstack_jane** (Full-Stack Developer)
+> "I cut my 'code archaeology' time in half. Instead of manually tracing function calls, I can just ask 'where is the database logic for user sessions?' and get an immediate, accurate answer."
 
 ## 🛠️ Advanced Configuration
 
@@ -174,19 +159,13 @@ context = response.json()['optimizedContext']
 # docker-compose.yml
 version: '3.8'
 services:
-  git-contextor:
-    build: .
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./your-repo:/workspace
-    environment:
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      
   qdrant:
     image: qdrant/qdrant
     ports:
       - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - ./qdrant_data:/qdrant/storage
 ```
 
 ## 🔒 Privacy & Security
@@ -230,7 +209,5 @@ MIT © [STROMDAO GmbH](https://stromdao.de)
 <div align="center">
 
 **Made with ❤️ by developers, for developers**
-
-[Website](https://git-contextor.dev) • [Documentation](https://docs.git-contextor.dev) • [Twitter](https://twitter.com/stromdao) • [Discord](https://discord.gg/git-contextor)
 
 </div>

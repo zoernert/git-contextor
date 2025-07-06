@@ -58,7 +58,7 @@ async function main() {
         createExampleEnv();
         
         const hasDocker = checkDocker();
-        const isPortFree = await checkPort(3000);
+        const isPortFree = await checkPort(3333);
 
         console.log('\n🎉 Git Contextor installed successfully!');
         console.log('\nNext steps:');
@@ -74,12 +74,12 @@ async function main() {
         
         console.log('4. Start the service: npx git-contextor start');
         if (!isPortFree) {
-            console.warn('   ⚠️ Port 3000 may be in use. The start command might fail. Use a different port if needed:');
-            console.warn('      npx git-contextor start --port 3001');
+            console.warn('   ⚠️ Port 3333 may be in use. The start command might fail. Use a different port if needed:');
+            console.warn('      npx git-contextor start --port <other_port>');
         }
-        console.log('5. Open the dashboard: http://localhost:3000 (if using the default port)');
+        console.log('5. Open the dashboard: http://localhost:3333 (if using the default port)');
         
-        console.log('\n💡 Tip: For verbose logs, use the DEBUG environment variable, e.g., DEBUG=git-contextor:* npx git-contextor start');
+        console.log('\n💡 Tip: For verbose logs, use the DEBUG environment variable, e.g., DEBUG=true npx git-contextor start');
         console.log('📚 For more details, check the README: https://github.com/stromdao/git-contextor#readme');
         console.log('💬 Need help? Open an issue: https://github.com/stromdao/git-contextor/issues\n');
 

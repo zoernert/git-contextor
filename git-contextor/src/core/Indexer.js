@@ -142,7 +142,8 @@ class Indexer {
   async getStatus() {
     const vectorStoreStatus = await this.vectorStore.getStatus();
     this.totalChunks = vectorStoreStatus.vectorCount || 0;
-    this.totalFiles = await this.vectorStore.getUniqueFileCount();
+    // This is currently disabled due to performance issues on large repos.
+    this.totalFiles = null; 
 
     return {
       status: this.status,
