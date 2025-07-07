@@ -29,15 +29,23 @@ git-contextor chat "Are there any rate-limiting mechanisms implemented?" --conte
 
 ### Configuration
 
-The chat feature uses the embedding provider configured in your `.gitcontextor/config.json`. To get conversational AI responses, you must configure a provider with an API key (e.g., `openai` or `gemini`). If no provider is configured, it will fall back to returning the raw context.
+The chat feature is powered by a separate `llm` section in your `.gitcontextor/config.json`. This allows you to use a local model for embeddings while still using a powerful cloud-based model (like GPT-4) for chat.
 
-```bash
-# Configure OpenAI
-git-contextor config --embedding-provider openai --api-key "sk-..."
+You can add or edit this section in the UI under `Configuration`.
 
-# Configure Gemini
-git-contextor config --embedding-provider gemini --api-key "..."
+```json
+"llm": {
+  "provider": "openai",
+  "model": "gpt-4-turbo",
+  "apiKey": "sk-..."
+}
 ```
+
+-   `provider`: The service to use for generating responses (e.g., `openai`, `gemini`).
+-   `model`: The specific model to use.
+-   `apiKey`: Your API key for the selected provider.
+
+For backward compatibility, if the `llm` section is not present, Git Contextor will fall back to using the `embedding` configuration.
 
 ## 🚀 Secure Sharing (`share`)
 
@@ -91,7 +99,7 @@ This shows all non-expired shares, their IDs, descriptions, and usage counts.
 
 #### 4. External Access
 
-The external user can now access the shared context via its full URL. They can use the simple web UI provided at that URL or query the API endpoints programmatically, for example with `curl`.
+The external user can now access the shared context via its full URL. They get the same powerful AI chat experience as the main user, with their access restricted to the defined scope of the share. They can use the simple web UI provided at that URL or query the API endpoints programmatically, for example with `curl`.
 
 ```bash
 # External user queries the public URL
@@ -101,4 +109,4 @@ curl -X POST "https://some-random-name.loca.lt/shared/2a9b.../chat" \
   -d '{"query": "What is the main authentication pattern used here?"}'
 ```
 
-The response will be a JSON object containing the AI's answer, scoped to the permissions of the share.
+The response will be a JSON object containing the AI's answer, scoped to the permissions of the share. The collaborator gets a full conversational response, not just raw code context.

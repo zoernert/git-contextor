@@ -3,6 +3,15 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.4] - 2025-07-07
+
+### Added
+- Enabled full conversational AI capabilities for shared repository access, providing the same experience as the main chat feature.
+- Introduced a dedicated `llm` section in the configuration for specifying the language model provider and API key, separate from the `embedding` configuration. The system falls back to the `embedding` config for backward compatibility.
+
+### Changed
+- The `/api/chat` and `/shared/{id}/chat` endpoints now prioritize the `llm` configuration.
+
 ## [1.0.3] - 2025-07-07
 
 ### Changed

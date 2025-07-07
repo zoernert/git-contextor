@@ -31,11 +31,12 @@ module.exports = (services) => {
             const searchResult = await contextOptimizer.search(query, searchOptions);
             
             // Generate conversational response
+            const llmConfig = contextOptimizer.config.llm || contextOptimizer.config.embedding;
             const aiResponse = await generateConversationalResponse(
                 query, 
                 searchResult.optimizedContext, 
                 context_type,
-                contextOptimizer.config.embedding
+                llmConfig
             );
 
             res.json({
@@ -53,7 +54,7 @@ module.exports = (services) => {
     return router;
 };
 
-async function generateConversationalResponse(query, context, contextType, embeddingConfig) {
+async function generateConversationalResponse(query, context, contextType, llmConfig) {
     const systemPrompt = `You are an AI assistant that helps developers understand codebases. 
     You have access to relevant code context and should provide helpful, accurate responses about the repository structure, patterns, and implementation details.
     
@@ -73,9 +74,9 @@ ${context || 'No specific context found'}
 
 Answer this question: ${query}`;
 
-    // Use configured embedding provider's API for chat completion
-    if (embeddingConfig.provider === 'openai' && embeddingConfig.apiKey) {
-        const openai = new OpenAI({ apiKey: embeddingConfig.apiKey });
+    // Use configured LLM provider's API for chat completion
+    if (llmConfig.provider === 'openai' && llmConfig.apiKey) {
+        const openai = new OpenAI({ apiKey: llmConfig.apiKey });
         const completion = await openai.chat.completions.create({
             model: 'gpt-4',
             messages: [
@@ -85,8 +86,8 @@ Answer this question: ${query}`;
             max_tokens: 1000
         });
         return completion.choices[0].message.content;
-    } else if (embeddingConfig.provider === 'gemini' && embeddingConfig.apiKey) {
-        const genAI = new GoogleGenerativeAI(embeddingConfig.apiKey);
+    } else if (llmConfig.provider === 'gemini' && llmConfig.apiKey) {
+        const genAI = new GoogleGenerativeAI(llmConfig.apiKey);
         const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
         const result = await model.generateContent(`${systemPrompt}\n\n${userPrompt}`);
         return result.response.text();
