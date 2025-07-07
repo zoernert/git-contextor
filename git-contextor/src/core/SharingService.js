@@ -63,12 +63,18 @@ class SharingService {
         this.shareStore.set(shareId, shareConfig);
         await this.saveShare(shareConfig);
 
-        return {
+        const response = {
             share_id: shareId,
             api_key: shareConfig.api_key,
             expires_at: shareConfig.expires_at,
             access_url: `/shared/${shareId}`
         };
+
+        if (this.tunnelStatus === 'running' && this.tunnelUrl) {
+            response.public_url = `${this.tunnelUrl}${response.access_url}`;
+        }
+
+        return response;
     }
 
     async validateShare(shareId, apiKey) {

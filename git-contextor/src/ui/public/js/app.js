@@ -272,7 +272,17 @@ else:
             }
 
             const result = await response.json();
-            const resultText = `Share URL: ${window.location.origin}${result.access_url}\nAPI Key: ${result.api_key}\nExpires: ${new Date(result.expires_at).toLocaleString()}`;
+            let urlLine, keyLine, expiresLine;
+
+            if (result.public_url) {
+                urlLine = `Public URL: ${result.public_url}`;
+            } else {
+                urlLine = `Local URL: ${window.location.origin}${result.access_url}`;
+            }
+            keyLine = `API Key: ${result.api_key}`;
+            expiresLine = `Expires: ${new Date(result.expires_at).toLocaleString()}`;
+
+            const resultText = `${urlLine}\n${keyLine}\n${expiresLine}`;
             shareCreateResult.querySelector('pre').textContent = resultText;
             shareCreateResult.style.display = 'block';
 

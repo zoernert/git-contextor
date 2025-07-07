@@ -47,11 +47,14 @@ async function createShare(port, apiKey, options) {
     
     console.log(chalk.green('\n✅ Repository share created!'));
     console.log(chalk.blue('Share ID:'), data.share_id);
-    console.log(chalk.blue('API Key:'), data.api_key);
-    console.log(chalk.blue('Expires:'), data.expires_at);
+    if (data.public_url) {
+        console.log(chalk.yellow('Public URL:'), data.public_url);
+    }
     console.log(chalk.blue('Local URL:'), `http://localhost:${port}${data.access_url}`);
+    console.log(chalk.blue('API Key:'), data.api_key);
+    console.log(chalk.blue('Expires:'), new Date(data.expires_at).toLocaleString());
     
-    if (options.tunnel) {
+    if (options.tunnel && !data.public_url) {
         console.log(chalk.yellow('\n🚇 Creating tunnel...'));
         createTunnel(port, { service: options.tunnel });
     }
