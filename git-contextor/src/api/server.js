@@ -13,6 +13,7 @@ const healthRoutes = require('./routes/health');
 const reindexRoutes = require('./routes/reindex');
 const uiconfigRoutes = require('./routes/uiconfig');
 const docsRoutes = require('./routes/docs');
+const configRoutes = require('./routes/config');
 
 // Import routes for chat and sharing
 const chatRoutes = require('./routes/chat');
@@ -21,7 +22,7 @@ const sharedRoutes = require('./routes/shared');
 
 let server;
 
-function start(config, services) {
+function start(config, services, serviceManager) {
     const app = express();
 
     // Middleware
@@ -67,6 +68,7 @@ function start(config, services) {
     apiRouter.use('/reindex', reindexRoutes(services));
     apiRouter.use('/chat', chatRoutes(services));
     apiRouter.use('/share', shareRoutes(services));
+    apiRouter.use('/config', configRoutes(config, serviceManager));
     app.use('/api', apiRouter);
 
     // Shared access routes (public, with their own validation)

@@ -58,7 +58,7 @@ class ServiceManager {
             this.services.sharingService = this.sharingService;
 
             // Start API and UI servers
-            await apiServer.start(this.config, this.services);
+            await apiServer.start(this.config, this.services, this);
 
             // Run initial index of the repository only if the collection is empty
             const vectorStoreStatus = await this.services.vectorStore.getStatus();

@@ -18,10 +18,22 @@
             </nav>
         </header>
         <main>
-            <section class="card">
-                <h2>Current Configuration</h2>
-                <pre id="config-display">Loading configuration...</pre>
+            <section id="config-editor" class="card">
+                <h2>Edit Configuration</h2>
+                <p>Modify the `config.json` file directly. Changes will be applied after a service restart.</p>
+                <form id="config-form">
+                    <div class="form-group">
+                        <label for="config-textarea">config.json</label>
+                        <textarea id="config-textarea" rows="20"></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit">Save and Restart</button>
+                        <span id="config-status" class="status-message"></span>
+                    </div>
+                </form>
+                <div id="config-error" class="error-message" style="display: none;"></div>
             </section>
+            
             <section class="card">
                 <h2>Danger Zone</h2>
                 <div class="danger-zone-actions">

@@ -437,30 +437,84 @@ else:
 
 
 function initConfigPage(API_BASE_URL) {
-    const configDisplay = document.getElementById('config-display');
+    const configForm = document.getElementById('config-form');
+    const configTextarea = document.getElementById('config-textarea');
+    const configStatus = document.getElementById('config-status');
+    const configError = document.getElementById('config-error');
     const apiKey = sessionStorage.getItem('gctx_apiKey');
 
     async function fetchConfig() {
+        if (!configForm) return; // Exit if elements are not on the page
+        configStatus.textContent = 'Loading...';
+        configError.style.display = 'none';
         try {
-            // We need a proper /config endpoint to show the full config.
-            // For now, we get some info from /status.
-            const response = await fetch(`${API_BASE_URL}/status`, { headers: { 'x-api-key': apiKey } });
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            const data = await response.json();
-
-            // Display safe parts from the status endpoint
-            const displayConfig = {
-                repository: data.repository,
-                service_status: data.status,
-                indexing_status: data.indexer,
-            };
-
-            configDisplay.textContent = JSON.stringify(displayConfig, null, 2);
-
+            const response = await fetch(`${API_BASE_URL}/config`, { headers: { 'x-api-key': apiKey } });
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error || `HTTP ${response.status}`);
+            }
+            const config = await response.json();
+            // Remove sensitive or uneditable fields before displaying
+            if (config.services) {
+                delete config.services.apiKey; // Don't show the main API key
+            }
+            configTextarea.value = JSON.stringify(config, null, 2);
+            configStatus.textContent = 'Loaded successfully.';
         } catch (error) {
             console.error('Error fetching config:', error);
-            configDisplay.textContent = 'Error loading configuration.';
+            configError.textContent = `Error loading configuration: ${error.message}`;
+            configError.style.display = 'block';
+            configStatus.textContent = 'Error.';
         }
+    }
+
+    async function saveConfig(event) {
+        event.preventDefault();
+        configStatus.textContent = 'Saving...';
+        configError.style.display = 'none';
+        configForm.querySelector('button').disabled = true;
+
+        let newConfig;
+        try {
+            newConfig = JSON.parse(configTextarea.value);
+        } catch (jsonError) {
+            configError.textContent = `Invalid JSON: ${jsonError.message}`;
+            configError.style.display = 'block';
+            configStatus.textContent = 'Error.';
+            configForm.querySelector('button').disabled = false;
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/config`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
+                body: JSON.stringify(newConfig)
+            });
+
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error || `HTTP ${response.status}`);
+            }
+
+            const result = await response.json();
+            configStatus.textContent = result.message;
+            // The service is restarting, so we can just wait. The page will become unresponsive.
+            setTimeout(() => {
+                configStatus.textContent = 'Reloading page...';
+                window.location.reload();
+            }, 3000); // Wait 3 seconds before reloading
+
+        } catch (error) {
+            console.error('Error saving config:', error);
+            configError.textContent = `Error saving configuration: ${error.message}`;
+            configStatus.textContent = 'Error.';
+            configForm.querySelector('button').disabled = false;
+        }
+    }
+    
+    if (configForm) {
+        configForm.addEventListener('submit', saveConfig);
     }
 
     const reindexButton = document.getElementById('reindex-button');
@@ -506,7 +560,9 @@ function initConfigPage(API_BASE_URL) {
         });
     }
 
-    fetchConfig();
+    if (configForm) {
+        fetchConfig();
+    }
 }
 
 function initDocsPage(API_BASE_URL) {
