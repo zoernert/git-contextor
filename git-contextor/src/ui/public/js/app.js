@@ -127,17 +127,14 @@ function initDashboard(API_BASE_URL) {
         const maxTokens = parseInt(maxTokensInput.value, 10);
         if (!query) return;
 
-        searchResults.textContent = 'Searching...';
+        searchResults.innerHTML = '<p class="loading">Searching...</p>';
         searchResultsContainer.style.display = 'block';
         apiSnippetContainer.style.display = 'none';
 
         try {
             const response = await fetch(`${API_BASE_URL}/search`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-api-key': apiKey
-                },
+                headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
                 body: JSON.stringify({ query: query, maxTokens: maxTokens })
             });
 
@@ -147,14 +144,48 @@ function initDashboard(API_BASE_URL) {
             }
 
             const result = await response.json();
-            searchResults.textContent = result.optimizedContext || 'No relevant context found.';
+            searchResults.innerHTML = ''; // Clear loading message
+
+            if (!result.results || result.results.length === 0) {
+                searchResults.innerHTML = '<p>No relevant context found.</p>';
+            } else {
+                result.results.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'search-result-card';
+
+                    const header = document.createElement('div');
+                    header.className = 'result-card-header';
+                    const filePath = item.payload?.filePath || 'Unknown file';
+                    const score = item.score?.toFixed(3) || 'N/A';
+                    header.innerHTML = `<span class="file-path">${filePath}</span><span class="score">Score: ${score}</span>`;
+
+                    const content = document.createElement('pre');
+                    const code = document.createElement('code');
+                    
+                    const extension = filePath.split('.').pop();
+                    const langMap = { 'js': 'javascript', 'ts': 'typescript', 'py': 'python', 'java': 'java', 'go': 'go', 'html': 'xml', 'css': 'css', 'json': 'json', 'md': 'markdown' };
+                    const lang = langMap[extension] || 'plaintext';
+                    code.className = `language-${lang}`;
+                    code.textContent = item.payload?.content || 'No content';
+                    
+                    content.appendChild(code);
+                    card.appendChild(header);
+                    card.appendChild(content);
+                    searchResults.appendChild(card);
+                    
+                    // Apply highlighting to the newly added element
+                    if (window.hljs) {
+                        hljs.highlightElement(code);
+                    }
+                });
+            }
             
             generateApiSnippets(query, maxTokens, apiKey);
             apiSnippetContainer.style.display = 'block';
 
         } catch (error) {
             console.error('Error during search:', error);
-            searchResults.textContent = `Error: ${error.message}`;
+            searchResults.innerHTML = `<p class="error">Error: ${error.message}</p>`;
             apiSnippetContainer.style.display = 'none';
         }
     }
