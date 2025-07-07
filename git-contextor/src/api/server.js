@@ -36,13 +36,30 @@ function start(config, services) {
     }));
     app.use(express.json());
 
+    // Middleware to distinguish local and public access
+    app.use((req, res, next) => {
+        req.isLocal = req.hostname === 'localhost' || req.hostname === '127.0.0.1' || req.hostname === '::1';
+        next();
+    });
+
+    const localOnly = (req, res, next) => {
+        if (req.isLocal) {
+            return next();
+        }
+        logger.warn(`Forbidden public access attempt to admin resource: ${req.method} ${req.originalUrl} from ${req.ip}`);
+        res.status(403).json({ error: 'Forbidden: This resource is only available on localhost.' });
+    };
+
     // Public health check endpoint
     app.use('/health', healthRoutes);
-    app.use('/api/uiconfig', uiconfigRoutes(config));
-    app.use('/api/docs', docsRoutes(config));
 
-    // API routes
+    // Admin-only API endpoints
+    app.use('/api/uiconfig', localOnly, uiconfigRoutes(config));
+    app.use('/api/docs', localOnly, docsRoutes(config));
+
+    // API routes are local-only
     const apiRouter = express.Router();
+    apiRouter.use(localOnly);
     apiRouter.use(apiKeyAuth(config)); // Protect all /api routes
     apiRouter.use('/search', searchRoutes(services));
     apiRouter.use('/status', statusRoutes(services));
@@ -52,28 +69,31 @@ function start(config, services) {
     apiRouter.use('/share', shareRoutes(services));
     app.use('/api', apiRouter);
 
-    // Shared access routes (public, but with their own validation)
+    // Shared access routes (public, with their own validation)
     app.use('/shared', sharedRoutes(services));
 
-    // Determine path to the 'docs' directory to serve markdown files directly
-    let packagePath;
-    try {
-        // This works when git-contextor is an installed dependency (e.g., via npx)
-        packagePath = path.dirname(require.resolve('git-contextor/package.json'));
-    } catch (error) {
-        // This is a fallback for local development, assuming server.js is in src/api
-        packagePath = path.resolve(__dirname, '../../..');
-    }
-    const docsDir = path.join(packagePath, 'docs');
-    app.use(express.static(docsDir));
-
-    // Serve static UI files from the 'public' directory
     const publicPath = path.join(__dirname, '../ui/public');
-    app.use(express.static(publicPath));
 
-    // Fallback to index.html for single-page applications
+    // Explicitly serve public assets needed by shared.html and tunnel.html
+    app.use('/css', express.static(path.join(publicPath, 'css')));
+    app.use('/js/shared.js', express.static(path.join(publicPath, 'js', 'shared.js')));
+
+    // Serve the rest of the UI assets only for local requests
+    app.use((req, res, next) => {
+        if (req.isLocal) {
+            express.static(publicPath)(req, res, next);
+        } else {
+            next();
+        }
+    });
+
+    // Fallback to index.html for SPA (local) or tunnel.html (public)
     app.get('*', (req, res) => {
-        res.sendFile(path.join(publicPath, 'index.html'));
+        if (req.isLocal) {
+            res.sendFile(path.join(publicPath, 'index.html'));
+        } else {
+            res.sendFile(path.join(publicPath, 'tunnel.html'));
+        }
     });
 
     // Global error handler
