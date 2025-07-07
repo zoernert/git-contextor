@@ -63,7 +63,7 @@ function start(config, services, serviceManager) {
     apiRouter.use(localOnly);
     apiRouter.use(apiKeyAuth(config)); // Protect all /api routes
     apiRouter.use('/search', searchRoutes(services));
-    apiRouter.use('/status', statusRoutes(services));
+    apiRouter.use('/status', statusRoutes(serviceManager));
     apiRouter.use('/metrics', metricsRoutes(services));
     apiRouter.use('/reindex', reindexRoutes(services));
     apiRouter.use('/chat', chatRoutes(services));
