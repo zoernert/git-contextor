@@ -1,6 +1,6 @@
 {
   "name": "git-contextor",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Git-aware code context tool with vector search and real-time monitoring",
   "main": "src/index.js",
   "bin": {

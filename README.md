@@ -31,6 +31,7 @@
 |---------|-------------|----------------|
 | 🧠 **Semantic Search** | Find code by what it does, not what it's called | `"user authentication"` finds OAuth, JWT, sessions |
 | 💬 **AI Chat & Sharing** | Chat with your repo; securely share AI access | Get answers, not just snippets; collaborate safely |
+| 🛡️ **Hardened Security** | Tunnels only expose shared links, not the admin UI | Collaborate externally without risking unauthorized access |
 | 🔄 **Real-time Sync** | Auto-updates as you write code | Always current, never stale |
 | 🌐 **Universal API** | Works with any AI tool or IDE | VS Code, n8n, custom scripts |
 | 🔒 **Privacy First** | Runs locally, your code never leaves | Your IP stays protected |

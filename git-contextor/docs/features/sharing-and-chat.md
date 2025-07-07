@@ -78,7 +78,9 @@ git-contextor share create --duration 1h --tunnel localtunnel
 # 🚇 Creating tunnel...
 # 🌍 Public URL: https://some-random-name.loca.lt
 ```
-Now, you can give the public URL and the API key to your collaborator.
+Provide your collaborator with the **full share URL** and the **API key**. The full share URL is the public tunnel URL combined with the share path (e.g., `https://some-random-name.loca.lt/shared/2a9b...`).
+
+**Important Security Note:** The main tunnel URL (e.g., `https://some-random-name.loca.lt`) only displays a public landing page. Your Git Contextor admin dashboard and private APIs are **not** exposed to the internet. Only the specific `/shared/{shareId}` endpoints are accessible publicly with the correct share key.
 
 #### 3. List Active Shares
 
@@ -89,7 +91,7 @@ This shows all non-expired shares, their IDs, descriptions, and usage counts.
 
 #### 4. External Access
 
-The external user can now query the shared endpoint using `curl` or any HTTP client.
+The external user can now access the shared context via its full URL. They can use the simple web UI provided at that URL or query the API endpoints programmatically, for example with `curl`.
 
 ```bash
 # External user queries the public URL
