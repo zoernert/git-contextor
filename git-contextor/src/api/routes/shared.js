@@ -98,10 +98,10 @@ ${context || 'No specific context found'}
 
 Answer this question: ${query}`;
 
-    if (llmConfig.provider === 'openai' && llmConfig.apiKey) {
+    if (llmConfig && llmConfig.provider === 'openai' && llmConfig.apiKey) {
         const openai = new OpenAI({ apiKey: llmConfig.apiKey });
         const completion = await openai.chat.completions.create({
-            model: 'gpt-4',
+            model: llmConfig.model || 'gpt-4',
             messages: [
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: userPrompt }
@@ -109,9 +109,9 @@ Answer this question: ${query}`;
             max_tokens: 1000
         });
         return completion.choices[0].message.content;
-    } else if (llmConfig.provider === 'gemini' && llmConfig.apiKey) {
+    } else if (llmConfig && llmConfig.provider === 'gemini' && llmConfig.apiKey) {
         const genAI = new GoogleGenerativeAI(llmConfig.apiKey);
-        const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+        const model = genAI.getGenerativeModel({ model: llmConfig.model || 'gemini-pro' });
         const result = await model.generateContent(`${systemPrompt}\n\n${userPrompt}`);
         return result.response.text();
     } else {

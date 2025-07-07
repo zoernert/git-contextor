@@ -75,10 +75,10 @@ ${context || 'No specific context found'}
 Answer this question: ${query}`;
 
     // Use configured LLM provider's API for chat completion
-    if (llmConfig.provider === 'openai' && llmConfig.apiKey) {
+    if (llmConfig && llmConfig.provider === 'openai' && llmConfig.apiKey) {
         const openai = new OpenAI({ apiKey: llmConfig.apiKey });
         const completion = await openai.chat.completions.create({
-            model: 'gpt-4',
+            model: llmConfig.model || 'gpt-4',
             messages: [
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: userPrompt }
@@ -86,14 +86,15 @@ Answer this question: ${query}`;
             max_tokens: 1000
         });
         return completion.choices[0].message.content;
-    } else if (llmConfig.provider === 'gemini' && llmConfig.apiKey) {
+    } else if (llmConfig && llmConfig.provider === 'gemini' && llmConfig.apiKey) {
         const genAI = new GoogleGenerativeAI(llmConfig.apiKey);
-        const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+        const model = genAI.getGenerativeModel({ model: llmConfig.model || 'gemini-pro' });
         const result = await model.generateContent(`${systemPrompt}\n\n${userPrompt}`);
         return result.response.text();
     } else {
         // Fallback: return formatted search results without LLM
-        return `Based on the repository context, here's what I found:\n\n${context}\n\nNote: Install OpenAI or Gemini API key for enhanced AI responses.`;
+        const reason = llmConfig ? `The configured provider ('${llmConfig.provider}') is not supported for chat or the API key is missing.` : 'No LLM provider is configured.';
+        return `Based on the repository context, here's what I found:\n\n${context}\n\nNote: Could not generate an AI response. ${reason} Please configure an 'llm' provider (like 'openai' or 'gemini') with an API key in the UI.`;
     }
 }
 
