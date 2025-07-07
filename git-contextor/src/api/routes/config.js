@@ -23,6 +23,30 @@ module.exports = (config, serviceManager) => {
         }
     });
 
+    // POST to toggle monitoring
+    router.post('/monitoring', async (req, res, next) => {
+        try {
+            const { enabled } = req.body;
+            if (typeof enabled !== 'boolean') {
+                return res.status(400).json({ error: 'Field "enabled" must be a boolean.' });
+            }
+            await configManager.load();
+            await configManager.updateConfig({ monitoring: { watchEnabled: enabled } });
+
+            res.status(202).json({ message: 'Monitoring settings updated. Service is restarting...' });
+
+            logger.info(`Monitoring watch set to ${enabled} via UI. Triggering restart...`);
+            setTimeout(() => {
+                serviceManager.stop({ silent: true }).then(() => {
+                    process.exit(0);
+                });
+            }, 500);
+
+        } catch (error) {
+            next(error);
+        }
+    });
+
     // POST to update the configuration
     router.post('/', async (req, res, next) => {
         try {

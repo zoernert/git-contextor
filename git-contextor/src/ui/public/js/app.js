@@ -31,6 +31,7 @@ function initDashboard(API_BASE_URL) {
         serviceStatus: document.getElementById('service-status'),
         indexedFiles: document.getElementById('indexed-files'),
         totalChunks: document.getElementById('total-chunks'),
+        watcherStatus: document.getElementById('watcher-status'),
     };
     const activityLog = document.getElementById('activity-log');
     const searchForm = document.getElementById('search-form');
@@ -65,6 +66,7 @@ function initDashboard(API_BASE_URL) {
     const tunnelPasswordContainer = document.getElementById('tunnel-password-container');
     const tunnelPasswordSpan = document.getElementById('tunnel-password');
     const tunnelHint = document.getElementById('tunnel-hint');
+    const watcherToggle = document.getElementById('watcher-toggle');
     
     async function fetchStatus() {
         try {
@@ -78,6 +80,14 @@ function initDashboard(API_BASE_URL) {
             const status = data.status || 'unknown';
             statusElements.serviceStatus.textContent = status;
             statusElements.serviceStatus.className = `status-badge status-${status.toLowerCase()}`;
+
+            const watcherStatus = data.watcher?.status || 'unknown';
+            const watcherClass = watcherStatus === 'enabled' ? 'status-running' : 'status-stopped';
+            statusElements.watcherStatus.textContent = watcherStatus;
+            statusElements.watcherStatus.className = `status-badge ${watcherClass}`;
+            if (watcherToggle) {
+                watcherToggle.checked = (watcherStatus === 'enabled');
+            }
 
             statusElements.indexedFiles.textContent = data.indexer?.totalFiles ?? 'N/A';
             statusElements.totalChunks.textContent = data.indexer?.totalChunks ?? 'N/A';
@@ -326,6 +336,42 @@ else:
     shareForm.addEventListener('submit', createShare);
     refreshSharesButton.addEventListener('click', fetchShares);
     tunnelToggleBtn.addEventListener('click', toggleTunnel);
+
+    async function toggleWatcher(event) {
+        const isEnabled = event.target.checked;
+        if (!confirm(`This will ${isEnabled ? 'enable' : 'disable'} file monitoring and restart the service. Are you sure?`)) {
+            event.target.checked = !isEnabled; // Revert checkbox
+            return;
+        }
+
+        try {
+            watcherToggle.disabled = true;
+            const response = await fetch(`${API_BASE_URL}/config/monitoring`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
+                body: JSON.stringify({ enabled: isEnabled })
+            });
+
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error || `HTTP ${response.status}`);
+            }
+            
+            alert('Settings saved. The service will now restart to apply the changes.');
+            // The page will become unresponsive as the server restarts.
+            // A reload will eventually work.
+            setTimeout(() => window.location.reload(), 3000);
+
+        } catch (error) {
+            alert(`Failed to update settings: ${error.message}`);
+            event.target.checked = !isEnabled; // Revert on failure
+            watcherToggle.disabled = false;
+        }
+    }
+
+    if(watcherToggle) {
+        watcherToggle.addEventListener('change', toggleWatcher);
+    }
 
     // --- Tunnel Functions ---
     async function getTunnelStatus() {

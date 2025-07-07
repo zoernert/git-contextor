@@ -41,6 +41,11 @@ class ServiceManager {
     async start(options = {}) {
         logger.info('Starting Git Contextor services...');
 
+        if (options.watch === false) {
+            this.config.monitoring.watchEnabled = false;
+            logger.info('File watching disabled for this session via the --no-watch flag.');
+        }
+
         await this.validateEnvironment();
 
         if (await this.isRunning()) {
@@ -80,6 +85,8 @@ class ServiceManager {
             // Start the file watcher if enabled
             if (this.config.monitoring.watchEnabled) {
                 this.services.fileWatcher.start();
+            } else {
+                logger.info('File watcher is disabled by configuration.');
             }
 
             logger.success('Git Contextor services started successfully.');

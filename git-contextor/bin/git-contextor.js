@@ -56,6 +56,7 @@ program
   .option('-p, --port <port>', 'Port for API and UI (default from config)')
   .option('-d, --daemon', 'Run as daemon')
   .option('--clean', 'Configure the service to delete the Qdrant collection on the next "stop" command. Forces a full re-index on next start.')
+  .option('--no-watch', 'Disable file watching for this session.')
   .action(startCommand);
 
 program
