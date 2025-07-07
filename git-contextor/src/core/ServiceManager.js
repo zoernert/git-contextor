@@ -15,12 +15,13 @@ class ServiceManager {
     }
 
     async validateEnvironment() {
-      // Check if we're in a git repository
+      // Check if we're in a git repository, but don't make it mandatory.
       try {
         const git = simpleGit(this.repoPath);
         await git.status();
+        logger.info('Git repository detected. Git-related features are enabled.');
       } catch (error) {
-        throw new Error('Not a git repository. Please run git-contextor in a git repository.');
+        logger.warn('No Git repository detected. Git-related features like .gitignore support will be disabled. Indexing all files in the directory.');
       }
     
       // Check write permissions

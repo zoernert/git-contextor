@@ -1,10 +1,10 @@
 # Conversational AI and Secure Sharing
 
-Git Contextor goes beyond simple search. It brings a conversational AI to your command line and allows you to securely share your repository's context with others, turning your local codebase into an AI service.
+Git Contextor goes beyond simple search. It brings a conversational AI to your command line and allows you to securely share your project's context with others, turning your local codebase into an AI service.
 
 ## 💬 AI Chat (`chat`)
 
-Directly "talk" to your repository from the command line. Ask complex questions about architecture, implementation details, or logic, and get AI-generated answers based on the most relevant code context.
+Directly "talk" to your project from the command line. Ask complex questions about architecture, implementation details, or logic, and get AI-generated answers based on the most relevant code context.
 
 ### How it Works
 

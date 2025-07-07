@@ -7,7 +7,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Twitter Follow](https://img.shields.io/twitter/follow/stromdao?style=social)](https://twitter.com/stromdao)
 
-> Stop copying and pasting code snippets into ChatGPT. Git Contextor automatically indexes your entire repository and provides **semantic, context-aware search** that understands what your code actually does.
+> Stop copying and pasting code snippets into ChatGPT. Git Contextor automatically indexes your project folder and provides **semantic, context-aware search** that understands what your code actually does.
 
 <!-- ![Git Contextor Demo](placeholder.gif) -->
 
