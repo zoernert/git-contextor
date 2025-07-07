@@ -43,8 +43,10 @@ async function getGeminiEmbedding(text, { model, apiKey }) {
         geminiClient = new GoogleGenerativeAI(finalApiKey);
     }
     
-    const embeddingModel = geminiClient.getGenerativeModel({ 
-        model: model || 'text-embedding-004' 
+    // For embeddings, Google requires a specific embedding model (e.g., 'text-embedding-004').
+    // We explicitly use it and ignore any model from config to prevent errors from using a non-embedding model.
+    const embeddingModel = geminiClient.getGenerativeModel({
+        model: 'text-embedding-004'
     });
     
     const result = await embeddingModel.embedContent(text.substring(0, 30000)); // Respect token limits
