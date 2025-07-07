@@ -155,7 +155,7 @@ function initDashboard(API_BASE_URL) {
 
                     const header = document.createElement('div');
                     header.className = 'result-card-header';
-                    const filePath = item.payload?.filePath || 'Unknown file';
+                    const filePath = item.filePath || 'Unknown file';
                     const score = item.score?.toFixed(3) || 'N/A';
                     header.innerHTML = `<span class="file-path">${filePath}</span><span class="score">Score: ${score}</span>`;
 
@@ -166,7 +166,7 @@ function initDashboard(API_BASE_URL) {
                     const langMap = { 'js': 'javascript', 'ts': 'typescript', 'py': 'python', 'java': 'java', 'go': 'go', 'html': 'xml', 'css': 'css', 'json': 'json', 'md': 'markdown' };
                     const lang = langMap[extension] || 'plaintext';
                     code.className = `language-${lang}`;
-                    code.textContent = item.payload?.content || 'No content';
+                    code.textContent = item.chunk || 'No content';
                     
                     content.appendChild(code);
                     card.appendChild(header);
