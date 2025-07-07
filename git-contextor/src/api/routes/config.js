@@ -33,14 +33,8 @@ module.exports = (config, serviceManager) => {
             await configManager.load();
             await configManager.updateConfig({ monitoring: { watchEnabled: enabled } });
 
-            res.status(202).json({ message: 'Monitoring settings updated. Service is restarting...' });
-
-            logger.info(`Monitoring watch set to ${enabled} via UI. Triggering restart...`);
-            setTimeout(() => {
-                serviceManager.stop({ silent: true }).then(() => {
-                    process.exit(0);
-                });
-            }, 500);
+            logger.info(`Monitoring watch set to ${enabled} via UI. A manual restart is required to apply changes.`);
+            res.status(200).json({ message: 'Monitoring settings updated. Please restart the service to apply changes.' });
 
         } catch (error) {
             next(error);
@@ -54,15 +48,8 @@ module.exports = (config, serviceManager) => {
             await configManager.load(); // Load current state
             await configManager.updateConfig(newConfig); // Merge and save
 
-            res.status(202).json({ message: 'Configuration saved. Service is restarting...' });
-
-            // Trigger a graceful stop and then exit, to be restarted by a process manager.
-            logger.info('Configuration updated via UI. Triggering restart...');
-            setTimeout(() => {
-                serviceManager.stop({ silent: true }).then(() => {
-                    process.exit(0);
-                });
-            }, 500); // Give time for response to be sent
+            logger.info('Configuration updated via UI. A manual restart is required to apply changes.');
+            res.status(200).json({ message: 'Configuration saved. Please restart the service to apply changes.' });
 
         } catch (error) {
             next(error);

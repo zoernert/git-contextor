@@ -3,6 +3,11 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.6] - 2025-07-07
+
+### Fixed
+- The service no longer stops unexpectedly when saving configuration from the UI. The "restart" feature has been removed in favor of a more stable approach where the user is prompted to restart the service manually. This avoids issues when not running under a process manager like nodemon or pm2.
+
 ## [1.0.5] - 2025-07-07
 
 ### Fixed

@@ -339,7 +339,7 @@ else:
 
     async function toggleWatcher(event) {
         const isEnabled = event.target.checked;
-        if (!confirm(`This will ${isEnabled ? 'enable' : 'disable'} file monitoring and restart the service. Are you sure?`)) {
+        if (!confirm(`This will save the new setting. A manual service restart is required for it to take effect. Continue?`)) {
             event.target.checked = !isEnabled; // Revert checkbox
             return;
         }
@@ -357,14 +357,13 @@ else:
                 throw new Error(err.error || `HTTP ${response.status}`);
             }
             
-            alert('Settings saved. The service will now restart to apply the changes.');
-            // The page will become unresponsive as the server restarts.
-            // A reload will eventually work.
-            setTimeout(() => window.location.reload(), 3000);
+            const result = await response.json();
+            alert(result.message);
 
         } catch (error) {
             alert(`Failed to update settings: ${error.message}`);
             event.target.checked = !isEnabled; // Revert on failure
+        } finally {
             watcherToggle.disabled = false;
         }
     }
@@ -518,7 +517,8 @@ function initConfigPage(API_BASE_URL) {
         event.preventDefault();
         configStatus.textContent = 'Saving...';
         configError.style.display = 'none';
-        configForm.querySelector('button').disabled = true;
+        const button = configForm.querySelector('button');
+        button.disabled = true;
 
         let newConfig;
         try {
@@ -527,7 +527,7 @@ function initConfigPage(API_BASE_URL) {
             configError.textContent = `Invalid JSON: ${jsonError.message}`;
             configError.style.display = 'block';
             configStatus.textContent = 'Error.';
-            configForm.querySelector('button').disabled = false;
+            button.disabled = false;
             return;
         }
 
@@ -545,17 +545,13 @@ function initConfigPage(API_BASE_URL) {
 
             const result = await response.json();
             configStatus.textContent = result.message;
-            // The service is restarting, so we can just wait. The page will become unresponsive.
-            setTimeout(() => {
-                configStatus.textContent = 'Reloading page...';
-                window.location.reload();
-            }, 3000); // Wait 3 seconds before reloading
 
         } catch (error) {
             console.error('Error saving config:', error);
             configError.textContent = `Error saving configuration: ${error.message}`;
             configStatus.textContent = 'Error.';
-            configForm.querySelector('button').disabled = false;
+        } finally {
+            button.disabled = false;
         }
     }
     
