@@ -2,13 +2,12 @@ const express = require('express');
 
 /**
  * Creates and returns the status router.
- * @param {object} services - The core services of the application.
+ * @param {ServiceManager} serviceManager - The service manager instance.
  * @returns {express.Router} The configured router.
  */
-module.exports = (services) => {
+module.exports = (serviceManager) => {
     const router = express.Router();
-    const { indexer, fileWatcher } = services;
-
+    
     /**
      * Retrieves the current status of the Git Contextor services.
      */
@@ -16,6 +15,7 @@ module.exports = (services) => {
         try {
             // Note: This endpoint provides status of an already running service.
             // Some info like repo path and ports are from config, but we get live data here.
+            const { indexer, fileWatcher } = serviceManager.services;
             const indexerStatus = await indexer.getStatus();
             
             res.json({
@@ -25,6 +25,9 @@ module.exports = (services) => {
                     path: indexer.config.repository.path,
                 },
                 indexer: indexerStatus,
+                watcher: {
+                    status: serviceManager.config.monitoring.watchEnabled ? 'enabled' : 'disabled',
+                },
                 fileWatcher: {
                     latestActivity: fileWatcher.getActivityLog() || []
                 }
