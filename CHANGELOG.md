@@ -3,6 +3,14 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-07-08
+
+### Added
+- The `init` command now automatically configures providers if `GEMINI_API_KEY` or `OPENAI_API_KEY` are present in the environment, skipping interactive prompts.
+
+### Changed
+- Improved CLI feedback for the `chat` command, providing clearer instructions if the service is not running or if no context was found.
+
 ## [1.0.8] - 2025-07-07
 
 ### Fixed
