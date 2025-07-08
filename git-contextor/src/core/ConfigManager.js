@@ -22,6 +22,18 @@ class ConfigManager {
         apiKey: process.env.OPENAI_API_KEY || process.env.GOOGLE_API_KEY || null,
         dimensions: 384
       },
+      chat: {
+        provider: 'openai',
+        model: 'gpt-4o-mini',
+        apiKey: null
+      },
+      vision: {
+        enabled: false,
+        provider: null,
+        model: null,
+        apiKey: null,
+        prompt: 'Describe this image for a software developer. Focus on text, code, diagrams, UI elements, and technical content. Be concise but comprehensive.'
+      },
       chunking: {
         strategy: 'function',
         maxChunkSize: 1024,

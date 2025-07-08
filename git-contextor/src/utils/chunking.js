@@ -188,4 +188,4 @@ async function chunkFile(filePath, repoPath, config) {
     }
 }
 
-module.exports = { chunkFile };
+module.exports = { chunkFile, chunkText };

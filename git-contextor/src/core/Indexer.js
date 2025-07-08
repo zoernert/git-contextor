@@ -1,9 +1,16 @@
 const fs = require('fs').promises;
 const path = require('path');
 const logger = require('../cli/utils/logger');
-const { chunkFile } = require('../utils/chunking');
+const { chunkFile, chunkText } = require('../utils/chunking');
+const { getImageDescription } = require('../utils/vision');
 const { listGitFiles } = require('../utils/git');
 const ignore = require('ignore');
+
+const IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp'];
+
+function isImageFile(filePath) {
+    return IMAGE_EXTENSIONS.includes(path.extname(filePath).toLowerCase());
+}
 
 /**
  * Handles reading files, chunking them, and sending them to the VectorStore for embedding and storage.
@@ -32,15 +39,39 @@ class Indexer {
   async indexFile(filePath) {
     this.status = 'indexing';
     this.lastActivity = new Date().toISOString();
-    logger.info(`Indexing file: ${path.relative(this.repoPath, filePath)}`);
+
     try {
-      // Assuming chunkFile returns an array of { content, metadata } objects
-      const chunks = await chunkFile(filePath, this.repoPath, this.config.chunking);
+      let chunks = [];
+      const relativeFilePath = path.relative(this.repoPath, filePath);
+
+      if (isImageFile(filePath)) {
+        if (this.config.vision && this.config.vision.enabled) {
+          logger.info(`Generating description for image: ${relativeFilePath}`);
+          const description = await getImageDescription(filePath, this.config.vision);
+          if (description) {
+            chunks = chunkText(description, relativeFilePath, this.config.chunking);
+            if (!chunks || chunks.length === 0) {
+              logger.warn(`Generated description for ${relativeFilePath} resulted in 0 chunks.`);
+            }
+          } else {
+            logger.warn(`Could not generate a description for image ${relativeFilePath}. Skipping.`);
+          }
+        } else {
+          logger.debug(`Skipping image file (vision support disabled): ${relativeFilePath}`);
+        }
+      } else {
+        logger.info(`Indexing file: ${relativeFilePath}`);
+        chunks = await chunkFile(filePath, this.repoPath, this.config.chunking);
+      }
+
       if (chunks && chunks.length > 0) {
         await this.vectorStore.upsertChunks(chunks);
-        // this.totalChunks += chunks.length; // This will be updated from vector store status
-        logger.info(`Indexed ${chunks.length} chunks for ${path.relative(this.repoPath, filePath)}`);
+        const logMessage = isImageFile(filePath)
+          ? `Indexed description for image ${relativeFilePath} as ${chunks.length} chunks.`
+          : `Indexed ${chunks.length} chunks for ${relativeFilePath}`;
+        logger.info(logMessage);
       }
+
       this.status = 'idle';
       return true;
     } catch (error) {
