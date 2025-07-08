@@ -3,6 +3,27 @@ const { OpenAI } = require('openai');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const VectorStore = require('../../core/VectorStore');
 
+async function handleChatQuery(query, services, context_type = 'general') {
+    const { contextOptimizer } = services;
+
+    // Use existing search infrastructure. It will use settings from config.chat by default.
+    const searchResult = await contextOptimizer.search(query);
+    
+    // Generate conversational response
+    const chatConfig = contextOptimizer.config.chat;
+    const aiResponse = await generateConversationalResponse(
+        query, 
+        searchResult.optimizedContext, 
+        context_type,
+        chatConfig
+    );
+
+    return {
+        response: aiResponse,
+        context_chunks: searchResult.results, // Send the full chunk objects
+    };
+}
+
 /**
  * Creates and returns the chat router for conversational AI.
  * @param {object} services - The core services of the application.
@@ -23,21 +44,10 @@ module.exports = (services) => {
         }
 
         try {
-            // Use existing search infrastructure. It will use settings from config.chat by default.
-            const searchResult = await contextOptimizer.search(query);
-            
-            // Generate conversational response
-            const chatConfig = contextOptimizer.config.chat;
-            const aiResponse = await generateConversationalResponse(
-                query, 
-                searchResult.optimizedContext, 
-                context_type,
-                chatConfig
-            );
+            const result = await handleChatQuery(query, services, context_type);
 
             res.json({
-                response: aiResponse,
-                context_chunks: searchResult.results, // Send the full chunk objects
+                ...result,
                 conversation_id: conversation_id || generateConversationId(),
                 timestamp: new Date().toISOString()
             });
@@ -62,6 +72,8 @@ module.exports = (services) => {
 
     return router;
 };
+
+module.exports.handleChatQuery = handleChatQuery;
 
 async function generateConversationalResponse(query, context, contextType, chatConfig) {
     const systemPrompt = `You are an AI assistant that helps developers understand codebases. 

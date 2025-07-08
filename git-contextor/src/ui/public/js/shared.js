@@ -8,6 +8,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const queryInput = document.getElementById('chat-query');
     const resultsContainer = document.getElementById('chat-results-container');
     const resultsEl = document.getElementById('chat-results');
+    const chatContextContainer = document.getElementById('chat-context-container');
+    const chatContextCount = document.getElementById('chat-context-count');
+    const toggleContextBtn = document.getElementById('toggle-context-btn');
+    const chatContextDetails = document.getElementById('chat-context-details');
     const apiUsageContainer = document.getElementById('api-usage');
     const snippetInfoCurl = document.getElementById('snippet-info-curl');
     const snippetChatCurl = document.getElementById('snippet-chat-curl');
@@ -64,6 +68,11 @@ document.addEventListener('DOMContentLoaded', () => {
         resultsEl.innerHTML = '<p class="loading">Thinking...</p>';
         chatForm.querySelector('button').disabled = true;
 
+        // Reset context display for new query
+        chatContextContainer.style.display = 'none';
+        chatContextDetails.style.display = 'none';
+        toggleContextBtn.textContent = 'Show';
+
         try {
             const response = await fetch(`/shared/${shareId}/chat`, {
                 method: 'POST',
@@ -86,6 +95,44 @@ document.addEventListener('DOMContentLoaded', () => {
                 resultsEl.textContent = data.response || 'No response from AI.';
             }
 
+            // Render context chunks if available
+            if (data.context_chunks && Array.isArray(data.context_chunks) && data.context_chunks.length > 0) {
+                chatContextContainer.style.display = 'block';
+                chatContextCount.textContent = data.context_chunks.length;
+                chatContextDetails.innerHTML = ''; // Clear previous context
+
+                data.context_chunks.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'search-result-card';
+
+                    const header = document.createElement('div');
+                    header.className = 'result-card-header';
+                    const filePath = item.metadata?.filePath || 'Unknown file';
+                    const score = item.score?.toFixed(3) || 'N/A';
+                    const lineInfo = item.metadata?.start_line ? ` (L${item.metadata.start_line}-${item.metadata.end_line})` : '';
+
+                    header.innerHTML = `<span class="file-path">${filePath}${lineInfo}</span><span class="score">Score: ${score}</span>`;
+
+                    const contentEl = document.createElement('pre');
+                    const codeEl = document.createElement('code');
+                    
+                    const extension = filePath.split('.').pop();
+                    const langMap = { 'js': 'javascript', 'ts': 'typescript', 'py': 'python', 'java': 'java', 'go': 'go', 'html': 'xml', 'css': 'css', 'json': 'json', 'md': 'markdown' };
+                    const lang = langMap[extension] || 'plaintext';
+                    codeEl.className = `language-${lang}`;
+                    codeEl.textContent = item.content || 'No content';
+                    
+                    contentEl.appendChild(codeEl);
+                    card.appendChild(header);
+                    card.appendChild(contentEl);
+                    chatContextDetails.appendChild(card);
+                    
+                    if (window.hljs) {
+                        hljs.highlightElement(codeEl);
+                    }
+                });
+            }
+
         } catch (error) {
             resultsEl.innerHTML = `<p class="error">Error: ${error.message}</p>`;
         } finally {
@@ -94,6 +141,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     chatForm.addEventListener('submit', performChat);
+
+    toggleContextBtn.addEventListener('click', () => {
+        const isHidden = chatContextDetails.style.display === 'none';
+        chatContextDetails.style.display = isHidden ? 'block' : 'none';
+        toggleContextBtn.textContent = isHidden ? 'Hide' : 'Show';
+    });
 
     function updateApiUsage(shareId, apiKey) {
         if (!apiKey || !shareId) {

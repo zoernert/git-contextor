@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path');
 const { OpenAI } = require('openai');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { handleChatQuery } = require('./chat');
 
 /**
  * Creates and returns the shared access router.
@@ -44,23 +45,11 @@ module.exports = (services) => {
         try {
             await sharingService.incrementUsage(req.params.shareId);
 
-            // Use restricted search based on share scope
-            const searchOptions = {
-                maxTokens: 2048,
-                // The 'scope' is not a valid Qdrant filter field.
-                // The search was failing because of this invalid filter.
-                // Filtering based on scope is handled after the search for now.
-                filter: null
-            };
-
-            const searchResult = await contextOptimizer.search(query, searchOptions);
-            
-            // Generate conversational response using the main LLM config
-            const llmConfig = contextOptimizer.config.llm || contextOptimizer.config.embedding;
-            const response = await generateScopedResponse(query, searchResult.optimizedContext, req.share.scope, llmConfig);
+            // Use the unified chat handler for consistent behavior
+            const result = await handleChatQuery(query, services, `shared: ${req.share.scope.join(', ')}`);
 
             res.json({
-                response,
+                ...result,
                 share_id: req.params.shareId,
                 queries_remaining: req.share.max_queries - req.share.access_count
             });
@@ -84,38 +73,3 @@ module.exports = (services) => {
 
     return router;
 };
-
-async function generateScopedResponse(query, context, scope, llmConfig) {
-    const systemPrompt = `You are an AI assistant helping a developer understand a codebase.
-    You have access to relevant code context. Your responses should be helpful and accurate.
-    The user's access is restricted to the following scope(s): ${scope.join(', ')}.
-    Do not answer questions outside this scope.
-    Never reveal sensitive information like API keys or credentials.`;
-
-    const userPrompt = `Based on this code context from the repository:
-
-${context || 'No specific context found'}
-
-Answer this question: ${query}`;
-
-    if (llmConfig && llmConfig.provider === 'openai' && llmConfig.apiKey) {
-        const openai = new OpenAI({ apiKey: llmConfig.apiKey });
-        const completion = await openai.chat.completions.create({
-            model: llmConfig.model || 'gpt-4',
-            messages: [
-                { role: 'system', content: systemPrompt },
-                { role: 'user', content: userPrompt }
-            ],
-            max_tokens: 1000
-        });
-        return completion.choices[0].message.content;
-    } else if (llmConfig && llmConfig.provider === 'gemini' && llmConfig.apiKey) {
-        const genAI = new GoogleGenerativeAI(llmConfig.apiKey);
-        const model = genAI.getGenerativeModel({ model: llmConfig.model || 'gemini-pro' });
-        const result = await model.generateContent(`${systemPrompt}\n\n${userPrompt}`);
-        return result.response.text();
-    } else {
-        // Fallback for shared links: provide context but mention lack of AI.
-        return `Based on the repository context (scope: ${scope.join(', ')}), here's what I found:\n\n${context}\n\nNote: The repository owner has not configured a conversational AI provider (like OpenAI or Gemini) for this share.`;
-    }
-}
