@@ -22,21 +22,16 @@ module.exports = (services) => {
         }
 
         try {
-            // Use existing search infrastructure
-            const searchOptions = {
-                maxTokens: 4096,
-                llmType: 'claude-sonnet'
-            };
-            
-            const searchResult = await contextOptimizer.search(query, searchOptions);
+            // Use existing search infrastructure. It will use settings from config.chat by default.
+            const searchResult = await contextOptimizer.search(query);
             
             // Generate conversational response
-            const llmConfig = contextOptimizer.config.llm || contextOptimizer.config.embedding;
+            const chatConfig = contextOptimizer.config.chat;
             const aiResponse = await generateConversationalResponse(
                 query, 
                 searchResult.optimizedContext, 
                 context_type,
-                llmConfig
+                chatConfig
             );
 
             res.json({
@@ -54,7 +49,7 @@ module.exports = (services) => {
     return router;
 };
 
-async function generateConversationalResponse(query, context, contextType, llmConfig) {
+async function generateConversationalResponse(query, context, contextType, chatConfig) {
     const systemPrompt = `You are an AI assistant that helps developers understand codebases. 
     You have access to relevant code context and should provide helpful, accurate responses about the repository structure, patterns, and implementation details.
     
@@ -75,10 +70,10 @@ ${context || 'No specific context found'}
 Answer this question: ${query}`;
 
     // Use configured LLM provider's API for chat completion
-    if (llmConfig && llmConfig.provider === 'openai' && llmConfig.apiKey) {
-        const openai = new OpenAI({ apiKey: llmConfig.apiKey });
+    if (chatConfig && chatConfig.provider === 'openai' && chatConfig.apiKey) {
+        const openai = new OpenAI({ apiKey: chatConfig.apiKey });
         const completion = await openai.chat.completions.create({
-            model: llmConfig.model || 'gpt-4',
+            model: chatConfig.model || 'gpt-4',
             messages: [
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: userPrompt }
@@ -86,15 +81,15 @@ Answer this question: ${query}`;
             max_tokens: 1000
         });
         return completion.choices[0].message.content;
-    } else if (llmConfig && llmConfig.provider === 'gemini' && llmConfig.apiKey) {
-        const genAI = new GoogleGenerativeAI(llmConfig.apiKey);
-        const model = genAI.getGenerativeModel({ model: llmConfig.model || 'gemini-pro' });
+    } else if (chatConfig && chatConfig.provider === 'gemini' && chatConfig.apiKey) {
+        const genAI = new GoogleGenerativeAI(chatConfig.apiKey);
+        const model = genAI.getGenerativeModel({ model: chatConfig.model || 'gemini-pro' });
         const result = await model.generateContent(`${systemPrompt}\n\n${userPrompt}`);
         return result.response.text();
     } else {
         // Fallback: return formatted search results without LLM
-        const reason = llmConfig ? `The configured provider ('${llmConfig.provider}') is not supported for chat or the API key is missing.` : 'No LLM provider is configured.';
-        return `Based on the repository context, here's what I found:\n\n${context}\n\nNote: Could not generate an AI response. ${reason} Please configure an 'llm' provider (like 'openai' or 'gemini') with an API key in the UI.`;
+        const reason = chatConfig ? `The configured provider ('${chatConfig.provider}') is not supported for chat or the API key is missing.` : 'No chat provider is configured.';
+        return `Based on the repository context, here's what I found:\n\n${context}\n\nNote: Could not generate an AI response. ${reason} Please configure a 'chat' provider (like 'openai' or 'gemini') with an API key in the UI config.`;
     }
 }
 
