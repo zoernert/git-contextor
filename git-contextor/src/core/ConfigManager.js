@@ -68,7 +68,7 @@ class ConfigManager {
           persistence: true
         },
         qdrant: {
-          host: 'localhost',
+          host: null,
           port: 6333
         }
       },

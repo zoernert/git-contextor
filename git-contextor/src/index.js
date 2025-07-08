@@ -6,7 +6,8 @@ const ServiceManager = require('./core/ServiceManager');
 const ConfigManager = require('./core/ConfigManager');
 const FileWatcher = require('./core/FileWatcher');
 const Indexer = require('./core/Indexer');
-const VectorStore = require('./core/VectorStore');
+const VectorStore = require('./core/VectorStore'); // This is the Qdrant implementation
+const MemoryVectorStore = require('./core/MemoryVectorStore');
 const ContextOptimizer = require('./core/ContextOptimizer');
 
 // Utilities
@@ -44,7 +45,18 @@ class GitContextor {
     const config = this.configManager.config;
     
     // Initialize components
-    this.vectorStore = new VectorStore(config);
+    const vectorStoreProvider = config.vectorStore.provider;
+    const qdrantHost = config.vectorStore.qdrant.host;
+
+    if (vectorStoreProvider === 'qdrant' || (vectorStoreProvider === 'auto' && qdrantHost)) {
+        logger.info(`Using Qdrant vector store at ${qdrantHost}:${config.vectorStore.qdrant.port}`);
+        this.vectorStore = new VectorStore(config);
+        config.vectorStore.provider = 'qdrant'; // Solidify the provider choice for this session
+    } else {
+        logger.info('Using in-memory vector store. No Qdrant host configured or provider is set to memory.');
+        this.vectorStore = new MemoryVectorStore(config);
+        config.vectorStore.provider = 'memory'; // Solidify the provider choice for this session
+    }
     this.indexer = new Indexer(this.repoPath, this.vectorStore, config);
     this.contextOptimizer = new ContextOptimizer(this.vectorStore, config);
     const services = {

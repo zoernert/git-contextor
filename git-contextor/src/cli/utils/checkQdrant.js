@@ -38,9 +38,15 @@ async function isQdrantReady(host, port) {
  * @returns {Promise<void>}
  */
 async function checkQdrant(configManager) {
-    let { qdrantHost, qdrantPort } = configManager.config.services;
-    
-    if (await isQdrantReady(qdrantHost, qdrantPort)) {
+    const { provider, qdrant } = configManager.config.vectorStore;
+    let { host: qdrantHost, port: qdrantPort } = qdrant;
+
+    // Only check Qdrant if it's the configured provider or auto-selected with a host
+    if (provider === 'memory' || (provider === 'auto' && !qdrantHost)) {
+        return;
+    }
+
+    if (qdrantHost && await isQdrantReady(qdrantHost, qdrantPort)) {
         return;
     }
 
@@ -64,7 +70,7 @@ async function checkQdrant(configManager) {
 
     if (action === 'enter_new') {
         const { newHost, newPort } = await inquirer.prompt([
-            { type: 'input', name: 'newHost', message: 'Enter Qdrant host:', default: qdrantHost },
+            { type: 'input', name: 'newHost', message: 'Enter Qdrant host:', default: qdrantHost || 'localhost' },
             { type: 'input', name: 'newPort', message: 'Enter Qdrant port:', default: qdrantPort, validate: input => !isNaN(parseInt(input, 10)) || 'Please enter a valid port number.' },
         ]);
         
@@ -72,8 +78,9 @@ async function checkQdrant(configManager) {
         qdrantPort = parseInt(newPort, 10);
 
         if (await isQdrantReady(qdrantHost, qdrantPort)) {
-            await configManager.updateConfig({ services: { qdrantHost, qdrantPort } });
-            logger.success(`Configuration updated with new Qdrant host: ${qdrantHost}:${qdrantPort}`);
+            // Explicitly set provider to 'qdrant' since user is providing details for it.
+            await configManager.updateConfig({ vectorStore: { provider: 'qdrant', qdrant: { host: qdrantHost, port: qdrantPort } } });
+            logger.success(`Configuration updated to use Qdrant at: ${qdrantHost}:${qdrantPort}`);
             return;
         } else {
             logger.error('Still unable to connect with the new details. Aborting.');
