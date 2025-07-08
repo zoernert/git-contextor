@@ -65,21 +65,32 @@ class ServiceManager {
             // Start API and UI servers
             await apiServer.start(this.config, this.services, this);
 
-            // Run initial index of the repository only if the collection is empty
+            const isConfigValid = await this.services.vectorStore.validateCollectionConfig();
             const vectorStoreStatus = await this.services.vectorStore.getStatus();
-            if (!vectorStoreStatus.vectorCount || vectorStoreStatus.vectorCount === 0) {
+
+            const needsReindex = !isConfigValid;
+            const needsInitialIndex = isConfigValid && (!vectorStoreStatus.vectorCount || vectorStoreStatus.vectorCount === 0);
+
+            if (needsReindex) {
+                logger.warn('Configuration mismatch detected. Triggering a full repository re-index in the background...');
+                // Don't await, let it run in the background. The server can start and endpoints will handle inconsistency.
+                this.services.indexer.reindexAll().catch(err => {
+                    logger.error('Background re-index on startup failed:', err);
+                });
+            } else if (needsInitialIndex) {
                 logger.info('Vector store is empty. Performing initial repository index...');
                 try {
+                    // This one we can await as it's part of the initial setup.
                     await this.services.indexer.reindexAll();
                     logger.info('Initial index complete.');
                 } catch (error) {
                     logger.error('Initial repository index failed. Continuing startup, but the index may be incomplete.', error);
                 }
             } else {
-                logger.info(`Found ${vectorStoreStatus.vectorCount} vectors in existing collection. Skipping initial index.`);
-                // Sync the indexer's internal state with the data from the vector store
+                // This is the case where config is valid and collection is not empty
+                logger.info(`Found ${vectorStoreStatus.vectorCount} vectors in existing collection. Skipping index operation.`);
                 const indexerStatus = await this.services.indexer.getStatus();
-                logger.info(`Indexer state loaded: ${indexerStatus.totalFiles} files, ${indexerStatus.totalChunks} chunks.`);
+                logger.info(`Indexer state loaded: ${indexerStatus.totalFiles ?? 'N/A'} files, ${indexerStatus.totalChunks} chunks.`);
             }
 
             // Start the file watcher if enabled

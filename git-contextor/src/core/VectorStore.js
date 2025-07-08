@@ -25,6 +25,32 @@ class VectorStore {
   }
 
   /**
+   * Validates if the existing Qdrant collection's vector dimension matches the current config.
+   * @returns {Promise<boolean>} True if config matches or collection doesn't exist, false on mismatch.
+   */
+  async validateCollectionConfig() {
+    try {
+      const collectionInfo = await this.client.getCollection(this.collectionName);
+      const collectionDimensions = collectionInfo.vectors_config?.params?.size;
+      const configDimensions = this.config.embedding.dimensions;
+
+      if (collectionDimensions && collectionDimensions !== configDimensions) {
+        logger.warn(`Configuration Mismatch: Qdrant collection '${this.collectionName}' has dimension ${collectionDimensions}, but config expects ${configDimensions}.`);
+        return false;
+      }
+      return true;
+    } catch (error) {
+      if (error.status === 404) {
+        // Collection doesn't exist, so there's no mismatch. It will be created with the correct config.
+        return true;
+      }
+      logger.error('Failed to validate collection config:', error);
+      // Be safe and assume it's valid if the check itself fails for other reasons.
+      return true;
+    }
+  }
+
+  /**
    * Ensures the Qdrant collection exists and is configured correctly.
    */
   async ensureCollection() {
@@ -180,7 +206,8 @@ class VectorStore {
       return results;
     } catch (error) {
       logger.error('Qdrant search failed:', error);
-      return [];
+      // Re-throw to allow upstream handlers to catch and handle specific cases like dimension mismatch.
+      throw error;
     }
   }
 
@@ -206,3 +233,13 @@ class VectorStore {
 }
 
 module.exports = VectorStore;
+
+/**
+ * Checks if a Qdrant API error is due to a vector dimension mismatch.
+ * @param {object} error - The error object from a Qdrant client call.
+ * @returns {boolean} - True if it's a dimension mismatch error.
+ */
+module.exports.isDimensionMismatch = function(error) {
+  const errorMessage = error?.data?.status?.error || '';
+  return errorMessage.includes('Vector dimension error');
+};

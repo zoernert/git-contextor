@@ -1,6 +1,7 @@
 const express = require('express');
 const { OpenAI } = require('openai');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const VectorStore = require('../../core/VectorStore');
 
 /**
  * Creates and returns the chat router for conversational AI.
@@ -9,7 +10,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
  */
 module.exports = (services) => {
     const router = express.Router();
-    const { contextOptimizer } = services;
+    const { contextOptimizer, indexer } = services;
 
     /**
      * Handles conversational queries about the repository
@@ -42,6 +43,19 @@ module.exports = (services) => {
             });
 
         } catch (error) {
+            if (VectorStore.isDimensionMismatch(error)) {
+                // This specific error means the config (e.g., embedding model) has changed
+                // and is incompatible with the existing data in the vector store.
+                indexer.reindexAll().catch(err => {
+                    console.error('Background re-index triggered by chat failed:', err);
+                });
+                return res.status(503).json({
+                    response: 'Configuration mismatch detected. The vector database is being re-indexed to match the new settings. Please wait a few minutes and try your question again.',
+                    context_chunks: 0,
+                    conversation_id: conversation_id || generateConversationId(),
+                    timestamp: new Date().toISOString()
+                });
+            }
             next(error);
         }
     });
