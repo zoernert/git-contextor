@@ -50,6 +50,7 @@ class SharingService {
         const durationMs = parseDuration(options.duration);
         const shareConfig = {
             id: shareId,
+            type: options.type || 'general',
             created_at: new Date().toISOString(),
             expires_at: new Date(Date.now() + durationMs).toISOString(),
             scope: options.scope || ['general'],
@@ -97,6 +98,20 @@ class SharingService {
             throw new Error('Query limit exceeded');
         }
 
+        return share;
+    }
+
+    async getAndValidateShare(shareId) {
+        const share = this.shareStore.get(shareId);
+        if (!share) {
+            return null;
+        }
+        if (new Date() > new Date(share.expires_at)) {
+            // Share ist abgelaufen, entferne ihn
+            this.shareStore.delete(shareId);
+            await this.deleteShare(shareId);
+            return null;
+        }
         return share;
     }
 
