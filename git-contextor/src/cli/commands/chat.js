@@ -38,9 +38,21 @@ async function chat(query, options) {
         console.log(chalk.gray('─'.repeat(50)));
         console.log(chalk.dim(`Context chunks used: ${data.context_chunks}`));
 
+        if (data.context_chunks === 0) {
+            logger.warn('\nNo local context was used for this response. The index may be empty or still building.');
+            logger.info('You can check the status of the index with:');
+            logger.info(chalk.green('  git-contextor status'));
+        }
+
     } catch (error) {
         spinner.fail('Chat failed');
-        logger.error(error.message);
+        if (error.message.includes('fetch failed') || (error.cause && error.cause.code === 'ECONNREFUSED')) {
+            logger.error('Could not connect to the Git Contextor server.');
+            logger.info('Please make sure the service is running. You can start it with:');
+            logger.info(chalk.green('  git-contextor start'));
+        } else {
+            logger.error(error.message);
+        }
         process.exit(1);
     }
 }
