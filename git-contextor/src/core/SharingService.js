@@ -38,6 +38,7 @@ class SharingService {
         this.tunnelService = null;
         this.tunnelStatus = 'stopped'; // stopped, starting, running, error
         this.tunnelPassword = null;
+        this.apiKeyStore = new Map(); // In-memory store for apiKey -> shareId mapping
     }
 
     async init() {
@@ -50,7 +51,6 @@ class SharingService {
         const durationMs = parseDuration(options.duration);
         const shareConfig = {
             id: shareId,
-            type: options.type || 'general',
             created_at: new Date().toISOString(),
             expires_at: new Date(Date.now() + durationMs).toISOString(),
             scope: options.scope || ['general'],
@@ -62,6 +62,7 @@ class SharingService {
         };
 
         this.shareStore.set(shareId, shareConfig);
+        this.apiKeyStore.set(shareConfig.api_key, shareId); // Diese Zeile hinzufügen
         await this.saveShare(shareConfig);
 
         const response = {
@@ -73,6 +74,7 @@ class SharingService {
 
         if (this.tunnelStatus === 'running' && this.tunnelUrl) {
             response.public_url = `${this.tunnelUrl}${response.access_url}`;
+            response.mcp_server_url = `${this.tunnelUrl}/mcp/v1`; // Diese Zeile hinzufügen
         }
 
         return response;
@@ -85,7 +87,6 @@ class SharingService {
         }
 
         if (new Date() > new Date(share.expires_at)) {
-            this.shareStore.delete(shareId);
             await this.deleteShare(shareId);
             throw new Error('Share expired');
         }
@@ -101,14 +102,20 @@ class SharingService {
         return share;
     }
 
-    async getAndValidateShare(shareId) {
-        const share = this.shareStore.get(shareId);
-        if (!share) {
+    async getAndValidateShareByApiKey(apiKey) {
+        const shareId = this.apiKeyStore.get(apiKey);
+        if (!shareId) {
             return null;
         }
+        const share = this.shareStore.get(shareId);
+        if (!share) {
+            // Sollte nicht passieren, wenn die Stores synchron sind, aber zur Sicherheit aufräumen
+            this.apiKeyStore.delete(apiKey);
+            return null;
+        }
+
         if (new Date() > new Date(share.expires_at)) {
-            // Share ist abgelaufen, entferne ihn
-            this.shareStore.delete(shareId);
+            // Abgelaufenen Share entfernen
             await this.deleteShare(shareId);
             return null;
         }
@@ -139,6 +146,7 @@ class SharingService {
                     // Only load non-expired shares
                     if (new Date() <= new Date(share.expires_at)) {
                         this.shareStore.set(share.id, share);
+                        this.apiKeyStore.set(share.api_key, share.id); // Diese Zeile hinzufügen
                     } else {
                         await fs.unlink(path.join(this.shareDir, file));
                     }
@@ -150,10 +158,18 @@ class SharingService {
     }
 
     async deleteShare(shareId) {
+        const share = this.shareStore.get(shareId);
+        if (share) {
+            this.apiKeyStore.delete(share.api_key);
+        }
+        this.shareStore.delete(shareId);
+
         try {
             await fs.unlink(path.join(this.shareDir, `${shareId}.json`));
         } catch (error) {
-            // File might not exist, ignore
+            if (error.code !== 'ENOENT') {
+                console.error(`Error unlinking share file for ${shareId}:`, error);
+            }
         }
     }
 

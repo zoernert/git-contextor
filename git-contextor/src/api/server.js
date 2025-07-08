@@ -20,6 +20,26 @@ const chatRoutes = require('./routes/chat');
 const shareRoutes = require('./routes/share');
 const sharedRoutes = require('./routes/shared');
 
+// Nach den Imports hinzufügen
+function mcpAuth(sharingService) {
+    return async (req, res, next) => {
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ error: 'Unauthorized: Missing Bearer token.' });
+        }
+
+        const token = authHeader.substring(7); // Token ist der API-Schlüssel des Shares
+        const share = await sharingService.getAndValidateShareByApiKey(token);
+
+        if (!share) {
+            return res.status(403).json({ error: 'Forbidden: Invalid or expired token.' });
+        }
+
+        req.share = share; // Share-Konfiguration an die Anfrage anhängen
+        next();
+    };
+}
+
 let server;
 
 function start(config, services, serviceManager) {
@@ -73,6 +93,60 @@ function start(config, services, serviceManager) {
 
     // Shared access routes (public, with their own validation)
     app.use('/shared', sharedRoutes(services));
+
+    // --- MCP (Meta-Context Protocol) Routes for Custom Integrations ---
+    const mcpRouter = express.Router();
+
+    // Spec-Endpunkt
+    mcpRouter.get('/spec', (req, res) => {
+        const repoName = services.config.repository.name;
+        res.json({
+            name: `Git Contextor: ${repoName}`,
+            description: `Provides context-aware search for the ${repoName} repository.`,
+            tools: [{
+                name: 'code_search',
+                description: 'Searches the repository for code snippets, file contents, and documentation relevant to the user query.',
+                parameters: {
+                    type: 'object',
+                    properties: {
+                        query: {
+                            type: 'string',
+                            description: 'The natural language query to search for.'
+                        }
+                    },
+                    required: ['query']
+                }
+            }]
+        });
+    });
+
+    // Tool Invocation Endpunkt
+    mcpRouter.post('/tools/code_search/invoke', async (req, res) => {
+        const { query } = req.body;
+        if (!query) {
+            return res.status(400).json({ error: 'Missing query in request body.' });
+        }
+
+        try {
+            const searchResults = await services.contextOptimizer.search(query);
+            
+            const formattedResults = searchResults.map(r => 
+                `File: ${r.metadata.filePath}\nLines: ${r.metadata.startLine}-${r.metadata.endLine}\n\`\`\`\n${r.pageContent}\n\`\`\``
+            ).join('\n\n---\n\n');
+
+            await services.sharingService.incrementUsage(req.share.id);
+
+            res.status(200).json({
+                content: formattedResults || "No relevant context found for the query."
+            });
+
+        } catch (error) {
+            logger.error('Error during MCP code search:', error);
+            res.status(500).json({ error: 'An internal error occurred during search.' });
+        }
+    });
+
+    app.use('/mcp/v1', mcpAuth(services.sharingService), mcpRouter);
 
     const publicPath = path.join(__dirname, '../ui/public');
 
