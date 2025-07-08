@@ -62,10 +62,18 @@ class ConfigManager {
         ],
         followSymlinks: false
       },
+      vectorStore: {
+        provider: 'auto', // 'auto', 'memory', 'qdrant'
+        memory: {
+          persistence: true
+        },
+        qdrant: {
+          host: 'localhost',
+          port: 6333
+        }
+      },
       services: {
         port: 3333,
-        qdrantHost: 'localhost',
-        qdrantPort: 6333,
         apiKey: this.generateApiKey(),
         keepCollectionOnExit: true
       },
@@ -114,6 +122,7 @@ class ConfigManager {
     try {
       const configData = await fs.readFile(this.configFile, 'utf8');
       const loadedConfig = JSON.parse(configData);
+      this._migrateConfig(loadedConfig); // Ensure old configs are compatible
       this.config = merge({}, this.defaultConfig, loadedConfig);
     } catch (error) {
       if (error.code === 'ENOENT') {
@@ -125,6 +134,21 @@ class ConfigManager {
 
   async save() {
     await fs.writeFile(this.configFile, JSON.stringify(this.config, null, 2));
+  }
+
+  _migrateConfig(config) {
+    if (config.services?.qdrantHost || config.services?.qdrantPort) {
+      config.vectorStore = config.vectorStore || {};
+      config.vectorStore.provider = 'qdrant';
+      config.vectorStore.qdrant = {
+        host: config.services.qdrantHost || 'localhost',
+        port: config.services.qdrantPort || 6333
+      };
+      
+      delete config.services.qdrantHost;
+      delete config.services.qdrantPort;
+    }
+    return config;
   }
 
   async updateConfig(updates) {
