@@ -1,16 +1,139 @@
 const ConfigManager = require('../../core/ConfigManager');
 const logger = require('../utils/logger');
 const ora = require('ora');
+const inquirer = require('inquirer');
+const fs = require('fs').promises;
 
 async function init(options) {
-  const spinner = ora('Initializing Git Contextor...').start();
+  const spinner = ora('Checking repository status...').start();
+  const configManager = new ConfigManager(process.cwd());
+
   try {
-    const configManager = new ConfigManager(process.cwd());
-    await configManager.init(options.force);
+    await fs.access(configManager.configFile);
+    if (!options.force) {
+      spinner.info('Git Contextor already initialized. Use --force to reinitialize.');
+      return;
+    }
+  } catch (error) {
+    if (error.code !== 'ENOENT') {
+      spinner.fail('Error checking initialization status.');
+      logger.error(error.message);
+      process.exit(1);
+    }
+    // Not initialized, which is the expected case, so we continue.
+  }
+  spinner.stop();
+
+  console.log('Welcome to Git Contextor initialization!');
+
+  const questions = [
+    {
+      type: 'list',
+      name: 'embeddingProvider',
+      message: 'Choose your embedding provider:',
+      choices: [
+        { name: 'Local (runs on your machine, no key needed)', value: 'local' },
+        { name: 'OpenAI', value: 'openai' },
+        { name: 'Google Gemini', value: 'gemini' },
+      ],
+      default: 'local',
+    },
+    {
+      type: 'password',
+      name: 'embeddingApiKey',
+      message: 'Enter your OpenAI API Key:',
+      mask: '*',
+      when: (answers) => answers.embeddingProvider === 'openai' && !process.env.OPENAI_API_KEY,
+      validate: (input) => !!input || 'API Key cannot be empty.',
+    },
+    {
+      type: 'password',
+      name: 'embeddingApiKey',
+      message: 'Enter your Google Gemini API Key:',
+      mask: '*',
+      when: (answers) => answers.embeddingProvider === 'gemini' && !process.env.GOOGLE_API_KEY,
+      validate: (input) => !!input || 'API Key cannot be empty.',
+    },
+    {
+        type: 'list',
+        name: 'chatProvider',
+        message: 'Choose your chat model provider (for conversational search):',
+        choices: [
+          { name: 'OpenAI', value: 'openai' },
+          { name: 'Google Gemini', value: 'gemini' },
+        ],
+        default: 'openai',
+      },
+      {
+        type: 'input',
+        name: 'chatModel',
+        message: 'Enter the chat model to use:',
+        default: (answers) => (answers.chatProvider === 'openai' ? 'gpt-4o-mini' : 'gemini-1.5-flash'),
+      },
+      {
+        type: 'confirm',
+        name: 'useSameApiKey',
+        message: (answers) => `Use the same API key for the chat provider (${answers.chatProvider})?`,
+        default: true,
+        when: (answers) => answers.embeddingProvider === answers.chatProvider && answers.embeddingProvider !== 'local',
+      },
+      {
+        type: 'password',
+        name: 'chatApiKey',
+        message: 'Enter your OpenAI API Key for chat:',
+        mask: '*',
+        when: (answers) =>
+          answers.chatProvider === 'openai' &&
+          !answers.useSameApiKey && // if they said no to using the same key
+          !process.env.OPENAI_API_KEY,
+        validate: (input) => !!input || 'API Key cannot be empty.',
+      },
+      {
+        type: 'password',
+        name: 'chatApiKey',
+        message: 'Enter your Google Gemini API Key for chat:',
+        mask: '*',
+        when: (answers) =>
+          answers.chatProvider === 'gemini' &&
+          !answers.useSameApiKey &&
+          !process.env.GOOGLE_API_KEY,
+        validate: (input) => !!input || 'API Key cannot be empty.',
+      },
+  ];
+
+  try {
+    const answers = await inquirer.prompt(questions);
+
+    spinner.start('Applying configuration...');
+
+    // Construct config from answers
+    const userConfig = {
+      embedding: {
+        provider: answers.embeddingProvider,
+        apiKey: answers.embeddingApiKey,
+      },
+      chat: {
+        provider: answers.chatProvider,
+        model: answers.chatModel,
+        apiKey: answers.useSameApiKey ? answers.embeddingApiKey : answers.chatApiKey,
+      },
+    };
+
+    // Set model and dimensions based on provider
+    if (answers.embeddingProvider === 'openai') {
+        userConfig.embedding.model = 'text-embedding-3-small';
+        userConfig.embedding.dimensions = 1536;
+    } else if (answers.embeddingProvider === 'gemini') {
+        userConfig.embedding.model = 'text-embedding-004';
+        userConfig.embedding.dimensions = 768;
+    }
+    // Local defaults are already set in ConfigManager
+
+    await configManager.init(userConfig, options.force);
+
     spinner.succeed('Git Contextor initialized successfully.');
-    logger.info(`Configuration file created at ${configManager.configFile}`);
-    logger.warn(`\nIMPORTANT: Please edit this file to add your embedding provider API key (e.g., for OpenAI or Gemini).`);
-    logger.info('\nRun "git-contextor start" to begin monitoring the repository.');
+    logger.info(`Configuration file saved to ${configManager.configFile}`);
+    logger.info('\nRun "git-contextor start" to begin monitoring and indexing the repository.');
   } catch (error) {
     spinner.fail('Initialization failed.');
     logger.error(error.message);

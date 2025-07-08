@@ -72,10 +72,11 @@ class ConfigManager {
     this.config = { ...this.defaultConfig };
   }
 
-  async init(force = false) {
+  async init(initialOverrides = {}, force = false) {
     try {
       await fs.access(this.configDir);
       if (!force) {
+        // This case is handled in the init command now, but we keep it for safety.
         throw new Error('Git Contextor already initialized. Use --force to reinitialize.');
       }
     } catch (error) {
@@ -87,7 +88,10 @@ class ConfigManager {
     await fs.mkdir(path.join(this.configDir, 'qdrant'), { recursive: true });
     await fs.mkdir(path.join(this.configDir, 'logs'), { recursive: true });
 
-    // Write default config
+    // Apply overrides to default config before saving
+    this.config = merge(this.config, initialOverrides);
+
+    // Write the merged config
     await this.save();
 
     // Create .gitignore entry
