@@ -84,6 +84,7 @@ class ContextOptimizer {
         currentTokens += chunkTokens;
         includedResults.push({
           ...result.payload,
+          filePath: result.payload.filePath,
           score: result.score,
         });
       } else {
