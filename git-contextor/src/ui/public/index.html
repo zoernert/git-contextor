@@ -88,6 +88,15 @@
                 <div id="chat-results-container" style="display: none;">
                     <h3>🤖 AI Response</h3>
                     <div id="chat-results"></div>
+                    <div id="chat-context-container" style="display: none; margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <h4 style="margin: 0; font-size: 1.1em; color: var(--subtle-text-color);">Context Used (<span id="chat-context-count">0</span> chunks)</h4>
+                            <button id="toggle-context-btn" class="button-secondary">Show</button>
+                        </div>
+                        <div id="chat-context-details" style="display: none; margin-top: 15px;">
+                            <!-- Context cards will be rendered here by JS -->
+                        </div>
+                    </div>
                 </div>
             </section>
 

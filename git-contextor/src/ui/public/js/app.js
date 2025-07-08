@@ -48,6 +48,10 @@ function initDashboard(API_BASE_URL) {
     const chatQuery = document.getElementById('chat-query');
     const chatResultsContainer = document.getElementById('chat-results-container');
     const chatResults = document.getElementById('chat-results');
+    const chatContextContainer = document.getElementById('chat-context-container');
+    const chatContextCount = document.getElementById('chat-context-count');
+    const toggleContextBtn = document.getElementById('toggle-context-btn');
+    const chatContextDetails = document.getElementById('chat-context-details');
 
     // Sharing elements
     const shareForm = document.getElementById('share-form');
@@ -264,6 +268,11 @@ else:
         chatResultsContainer.style.display = 'block';
         chatForm.querySelector('button').disabled = true;
 
+        // Reset context display for new query
+        chatContextContainer.style.display = 'none';
+        chatContextDetails.style.display = 'none';
+        toggleContextBtn.textContent = 'Show';
+
         try {
             const response = await fetch(`${API_BASE_URL}/chat`, {
                 method: 'POST',
@@ -273,7 +282,7 @@ else:
 
             if (!response.ok) {
                 const err = await response.json();
-                throw new Error(err.error || `HTTP error! status: ${response.status}`);
+                throw new Error(err.response || err.error || `HTTP error! status: ${response.status}`);
             }
 
             const result = await response.json();
@@ -281,6 +290,44 @@ else:
                 chatResults.innerHTML = marked.parse(result.response || 'No response from AI.');
             } else {
                 chatResults.textContent = result.response || 'No response from AI.';
+            }
+
+            // Render context chunks if available
+            if (result.context_chunks && Array.isArray(result.context_chunks) && result.context_chunks.length > 0) {
+                chatContextContainer.style.display = 'block';
+                chatContextCount.textContent = result.context_chunks.length;
+                chatContextDetails.innerHTML = ''; // Clear previous context
+
+                result.context_chunks.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'search-result-card'; // Reuse search result style
+
+                    const header = document.createElement('div');
+                    header.className = 'result-card-header';
+                    const filePath = item.metadata?.filePath || 'Unknown file';
+                    const score = item.score?.toFixed(3) || 'N/A';
+                    const lineInfo = item.metadata?.start_line ? ` (L${item.metadata.start_line}-${item.metadata.end_line})` : '';
+
+                    header.innerHTML = `<span class="file-path">${filePath}${lineInfo}</span><span class="score">Score: ${score}</span>`;
+
+                    const contentEl = document.createElement('pre');
+                    const codeEl = document.createElement('code');
+                    
+                    const extension = filePath.split('.').pop();
+                    const langMap = { 'js': 'javascript', 'ts': 'typescript', 'py': 'python', 'java': 'java', 'go': 'go', 'html': 'xml', 'css': 'css', 'json': 'json', 'md': 'markdown' };
+                    const lang = langMap[extension] || 'plaintext';
+                    codeEl.className = `language-${lang}`;
+                    codeEl.textContent = item.content || 'No content';
+                    
+                    contentEl.appendChild(codeEl);
+                    card.appendChild(header);
+                    card.appendChild(contentEl);
+                    chatContextDetails.appendChild(card);
+                    
+                    if (window.hljs) {
+                        hljs.highlightElement(codeEl);
+                    }
+                });
             }
 
         } catch (error) {
@@ -364,6 +411,13 @@ else:
     }
 
     chatForm.addEventListener('submit', performChat);
+
+    toggleContextBtn.addEventListener('click', () => {
+        const isHidden = chatContextDetails.style.display === 'none';
+        chatContextDetails.style.display = isHidden ? 'block' : 'none';
+        toggleContextBtn.textContent = isHidden ? 'Hide' : 'Show';
+    });
+
     shareForm.addEventListener('submit', createShare);
     refreshSharesButton.addEventListener('click', fetchShares);
     tunnelToggleBtn.addEventListener('click', toggleTunnel);

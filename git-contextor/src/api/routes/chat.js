@@ -37,7 +37,7 @@ module.exports = (services) => {
 
             res.json({
                 response: aiResponse,
-                context_chunks: searchResult.results.length,
+                context_chunks: searchResult.results, // Send the full chunk objects
                 conversation_id: conversation_id || generateConversationId(),
                 timestamp: new Date().toISOString()
             });
