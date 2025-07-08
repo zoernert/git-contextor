@@ -3,6 +3,14 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2025-07-08
+
+### Added
+- Das System verwendet nun automatisch einen In-Memory-Vektor-Speicher, falls keine Qdrant-URL konfiguriert ist. Dies ermöglicht eine sofortige Nutzung ohne externe Abhängigkeiten.
+
+### Fixed
+- Die Anzeige von Kontext-Chunks in der Benutzeroberfläche wurde korrigiert, sodass Dateiname und Inhalt wieder zuverlässig dargestellt werden.
+
 ## [1.1.0] - 2025-07-08
 
 ### Added
