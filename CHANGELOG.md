@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ein `USAGE_SCENARIOS.md`-Dokument wurde hinzugefügt, das gängige Anwendungsfälle und die Zusammenarbeit über die Sharing-Funktion erläutert.
 
 ### Fixed
+- Die Unterstützung für `.pptx`-Dateien wurde aufgrund einer fehlerhaften Abhängigkeit in der Verarbeitungsbibliothek (`@f-pri/pptx-to-text`) entfernt.
 - Die Bibliothek `mammoth` wurde durch `docx-parser` für die Verarbeitung von `.docx`-Dateien ersetzt, um ein Problem mit defekten Abhängigkeiten zu beheben.
 - Der "Suchen"-Button in der Web-Oberfläche löst nun die Suchaktion korrekt aus, ohne die Seite neu zu laden.
 - Die Suchergebnisse in der Benutzeroberfläche zeigen nun den Inhalt der gefundenen Chunks korrekt an.

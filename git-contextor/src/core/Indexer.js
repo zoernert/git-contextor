@@ -3,7 +3,6 @@ const path = require('path');
 const logger = require('../cli/utils/logger');
 const docxParser = require('docx-parser');
 const xlsx = require('xlsx');
-const pptx = require('@f-pri/pptx-to-text');
 const { chunkFile, chunkText } = require('../utils/chunking');
 const { getImageDescription } = require('../utils/vision');
 const { listGitFiles } = require('../utils/git');
@@ -15,10 +14,9 @@ function isImageFile(filePath) {
     return IMAGE_EXTENSIONS.includes(path.extname(filePath).toLowerCase());
 }
 
-const OFFICE_EXTENSIONS = ['.docx', '.xlsx', '.pptx'];
+const OFFICE_EXTENSIONS = ['.docx', '.xlsx'];
 const DOCX_EXT = '.docx';
 const XLSX_EXT = '.xlsx';
-const PPTX_EXT = '.pptx';
 
 function isOfficeFile(filePath) {
     return OFFICE_EXTENSIONS.includes(path.extname(filePath).toLowerCase());
@@ -98,9 +96,6 @@ class Indexer {
                         fullText.push(sheetText);
                     });
                     textContent = fullText.join('\n\n');
-                    break;
-                case PPTX_EXT:
-                    textContent = await pptx.getText(filePath);
                     break;
             }
 
