@@ -170,7 +170,7 @@ async function init(options) {
 
     spinner.succeed('Git Contextor initialized successfully.');
     logger.info(`Configuration file saved to ${configManager.configFile}`);
-    logger.info('\nRun "git-contextor start" to begin monitoring and indexing the repository.');
+    logger.info('\nRun "npx git-contextor start" to begin monitoring and indexing the repository.');
   } catch (error) {
     spinner.fail('Initialization failed.');
     logger.error(error.message);
