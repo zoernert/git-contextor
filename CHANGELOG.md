@@ -3,6 +3,17 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2] - 2025-07-10
+
+### Added
+- Unterstützung für die Indizierung von Office-Dokumenten (`.docx`, `.xlsx`, `.pptx`) hinzugefügt.
+- Ein `USAGE_SCENARIOS.md`-Dokument wurde hinzugefügt, das gängige Anwendungsfälle und die Zusammenarbeit über die Sharing-Funktion erläutert.
+
+### Fixed
+- Die Bibliothek `mammoth` wurde durch `docx-parser` für die Verarbeitung von `.docx`-Dateien ersetzt, um ein Problem mit defekten Abhängigkeiten zu beheben.
+- Der "Suchen"-Button in der Web-Oberfläche löst nun die Suchaktion korrekt aus, ohne die Seite neu zu laden.
+- Die Suchergebnisse in der Benutzeroberfläche zeigen nun den Inhalt der gefundenen Chunks korrekt an.
+
 ## [1.1.1] - 2025-07-08
 
 ### Added
