@@ -1,7 +1,7 @@
 const fs = require('fs').promises;
 const path = require('path');
 const logger = require('../cli/utils/logger');
-const mammoth = require('mammoth');
+const docxParser = require('docx-parser');
 const xlsx = require('xlsx');
 const pptx = require('@f-pri/pptx-to-text');
 const { chunkFile, chunkText } = require('../utils/chunking');
@@ -79,9 +79,14 @@ class Indexer {
         try {
             switch (ext) {
                 case DOCX_EXT:
-                    const docxBuffer = await fs.readFile(filePath);
-                    const docxResult = await mammoth.extractRawText({ buffer: docxBuffer });
-                    textContent = docxResult.value;
+                    textContent = await new Promise((resolve, reject) => {
+                        docxParser.parseDocx(filePath, (data, err) => {
+                            if (err) {
+                                return reject(err);
+                            }
+                            resolve(data);
+                        });
+                    });
                     break;
                 case XLSX_EXT:
                     const xlsxBuffer = await fs.readFile(filePath);
