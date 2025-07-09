@@ -47,6 +47,23 @@
                 </div>
             </section>
 
+            <section id="search-interface" class="card">
+                <h2>Semantic Search</h2>
+                <form id="shared-search-form">
+                    <div class="form-group">
+                        <label for="search-query-input">Search Query:</label>
+                        <textarea id="search-query-input" placeholder="Search for code snippets, documentation..." required rows="2"></textarea>
+                    </div>
+                    <button type="submit">Search</button>
+                </form>
+                <div id="search-results-container" style="display: none; margin-top: 20px;">
+                    <h3>Search Results</h3>
+                    <div id="search-results-list">
+                        <!-- Search results will be rendered here by JS -->
+                    </div>
+                </div>
+            </section>
+
             <section id="api-usage" class="card" style="display: none;">
                 <h2>API Usage</h2>
                 <p>You can also interact with this shared repository programmatically using the following endpoints and your Share API Key.</p>
@@ -65,6 +82,14 @@
                     <p>Send a query to the repository AI and receive a context-aware response.</p>
                     <h4>Example (cURL)</h4>
                     <pre id="snippet-chat-curl"></pre>
+                </div>
+                
+                <div class="api-endpoint">
+                    <h3>Semantic Search in the Repository</h3>
+                    <p><code>POST /shared/{shareId}/search</code></p>
+                    <p>Perform a semantic search to find relevant code chunks or documents.</p>
+                    <h4>Example (cURL)</h4>
+                    <pre id="snippet-search-curl"></pre>
                 </div>
             </section>
         </main>
