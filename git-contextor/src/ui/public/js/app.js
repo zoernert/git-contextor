@@ -170,7 +170,7 @@ function initDashboard(API_BASE_URL) {
                     const langMap = { 'js': 'javascript', 'ts': 'typescript', 'py': 'python', 'java': 'java', 'go': 'go', 'html': 'xml', 'css': 'css', 'json': 'json', 'md': 'markdown' };
                     const lang = langMap[extension] || 'plaintext';
                     code.className = `language-${lang}`;
-                    code.textContent = item.chunk || 'No content';
+                    code.textContent = item.content || 'No content';
                     
                     content.appendChild(code);
                     card.appendChild(header);
