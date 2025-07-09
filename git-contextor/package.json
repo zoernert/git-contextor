@@ -49,6 +49,7 @@
     "url": "https://github.com/stromdao/git-contextor/issues"
   },
   "dependencies": {
+    "@f-pri/pptx-to-text": "^0.2.0",
     "@google/generative-ai": "^0.15.0",
     "@qdrant/js-client-rest": "^1.9.0",
     "@xenova/transformers": "^2.6.0",
@@ -62,6 +63,7 @@
     "ignore": "^5.3.0",
     "inquirer": "^8.2.6",
     "lodash": "^4.17.21",
+    "mammoth": "^1.8.0",
     "marked": "^12.0.0",
     "openai": "^4.20.1",
     "ora": "^5.4.1",
@@ -71,7 +73,8 @@
     "tree-sitter": "^0.20.4",
     "tree-sitter-javascript": "^0.20.1",
     "tree-sitter-python": "^0.20.4",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "eslint": "^8.52.0",

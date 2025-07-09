@@ -1,6 +1,9 @@
 const fs = require('fs').promises;
 const path = require('path');
 const logger = require('../cli/utils/logger');
+const mammoth = require('mammoth');
+const xlsx = require('xlsx');
+const pptx = require('@f-pri/pptx-to-text');
 const { chunkFile, chunkText } = require('../utils/chunking');
 const { getImageDescription } = require('../utils/vision');
 const { listGitFiles } = require('../utils/git');
@@ -10,6 +13,15 @@ const IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp'];
 
 function isImageFile(filePath) {
     return IMAGE_EXTENSIONS.includes(path.extname(filePath).toLowerCase());
+}
+
+const OFFICE_EXTENSIONS = ['.docx', '.xlsx', '.pptx'];
+const DOCX_EXT = '.docx';
+const XLSX_EXT = '.xlsx';
+const PPTX_EXT = '.pptx';
+
+function isOfficeFile(filePath) {
+    return OFFICE_EXTENSIONS.includes(path.extname(filePath).toLowerCase());
 }
 
 /**
@@ -58,6 +70,45 @@ class Indexer {
           }
         } else {
           logger.debug(`Skipping image file (vision support disabled): ${relativeFilePath}`);
+        }
+      } else if (isOfficeFile(filePath)) {
+        logger.info(`Extracting text from Office file: ${relativeFilePath}`);
+        let textContent = '';
+        const ext = path.extname(filePath).toLowerCase();
+
+        try {
+            switch (ext) {
+                case DOCX_EXT:
+                    const docxBuffer = await fs.readFile(filePath);
+                    const docxResult = await mammoth.extractRawText({ buffer: docxBuffer });
+                    textContent = docxResult.value;
+                    break;
+                case XLSX_EXT:
+                    const xlsxBuffer = await fs.readFile(filePath);
+                    const workbook = xlsx.read(xlsxBuffer, { type: 'buffer' });
+                    let fullText = [];
+                    workbook.SheetNames.forEach(sheetName => {
+                        const sheet = workbook.Sheets[sheetName];
+                        const sheetText = xlsx.utils.sheet_to_csv(sheet);
+                        fullText.push(sheetText);
+                    });
+                    textContent = fullText.join('\n\n');
+                    break;
+                case PPTX_EXT:
+                    textContent = await pptx.getText(filePath);
+                    break;
+            }
+
+            if (textContent && textContent.trim().length > 0) {
+                chunks = chunkText(textContent, relativeFilePath, this.config.chunking);
+                if (!chunks || chunks.length === 0) {
+                    logger.warn(`Extracted text from ${relativeFilePath} resulted in 0 chunks.`);
+                }
+            } else {
+                logger.warn(`Could not extract any text from Office file ${relativeFilePath}. Skipping.`);
+            }
+        } catch(extractError) {
+             logger.error(`Failed to extract text from ${relativeFilePath}:`, extractError);
         }
       } else {
         logger.info(`Indexing file: ${relativeFilePath}`);
