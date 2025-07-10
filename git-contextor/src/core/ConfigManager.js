@@ -16,6 +16,11 @@ class ConfigManager {
         name: path.basename(repoPath),
         branch: 'main'
       },
+      features: {
+        fileBrowser: {
+          enabled: true
+        }
+      },
       embedding: {
         provider: 'local', // Safe default - no API key needed
         model: 'Xenova/all-MiniLM-L6-v2',

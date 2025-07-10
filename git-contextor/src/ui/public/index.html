@@ -24,6 +24,7 @@
         <nav id="view-nav">
             <a href="#dashboard" class="active">Dashboard</a>
             <a href="#activity">Live Activity</a>
+            <a href="#files">File Browser</a>
             <a href="#sharing">Sharing</a>
         </nav>
         <!-- Dashboard View -->
@@ -106,6 +107,27 @@
                 <ul id="activity-log">
                     <li>Waiting for events...</li>
                 </ul>
+            </section>
+        </div>
+
+        <!-- File Browser View -->
+        <div id="view-files" class="hidden">
+            <section id="file-browser" class="card">
+                <h2>File Browser</h2>
+                <div class="file-browser-container">
+                    <div id="file-tree-panel" class="file-tree-panel">
+                        <p>Loading files...</p>
+                    </div>
+                    <div id="file-viewer-panel" class="file-viewer-panel" style="display: none;">
+                        <div class="file-viewer-header">
+                            <h3 id="file-viewer-filename"></h3>
+                            <div class="file-viewer-actions">
+                                 <button id="file-ask-ai-btn" class="button-secondary">Ask AI about this file</button>
+                            </div>
+                        </div>
+                        <div id="file-viewer-content" class="docs-content"></div>
+                    </div>
+                </div>
             </section>
         </div>
 

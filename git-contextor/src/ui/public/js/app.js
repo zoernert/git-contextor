@@ -29,7 +29,6 @@ function initDashboard(API_BASE_URL) {
         repoName: document.getElementById('repo-name'),
         repoPath: document.getElementById('repo-path'),
         serviceStatus: document.getElementById('service-status'),
-        indexedFiles: document.getElementById('indexed-files'),
         totalChunks: document.getElementById('total-chunks'),
         watcherStatus: document.getElementById('watcher-status'),
     };
@@ -52,6 +51,16 @@ function initDashboard(API_BASE_URL) {
     const chatContextCount = document.getElementById('chat-context-count');
     const toggleContextBtn = document.getElementById('toggle-context-btn');
     const chatContextDetails = document.getElementById('chat-context-details');
+
+    // File Browser elements
+    const fileTreePanel = document.getElementById('file-tree-panel');
+    const fileViewerPanel = document.getElementById('file-viewer-panel');
+    const fileViewerFilename = document.getElementById('file-viewer-filename');
+    const fileViewerContent = document.getElementById('file-viewer-content');
+    const fileAskAiBtn = document.getElementById('file-ask-ai-btn');
+
+    // Global state for file-focused chat
+    let fileChatContext = null;
 
     // Sharing elements
     const shareForm = document.getElementById('share-form');
@@ -93,7 +102,6 @@ function initDashboard(API_BASE_URL) {
                 watcherToggle.checked = (watcherStatus === 'enabled');
             }
 
-            statusElements.indexedFiles.textContent = data.indexer?.totalFiles ?? 'N/A';
             statusElements.totalChunks.textContent = data.indexer?.totalChunks ?? 'N/A';
             
             // Update activity log
@@ -120,7 +128,8 @@ function initDashboard(API_BASE_URL) {
             li.textContent = `[${new Date().toLocaleTimeString()}] ${log}`;
         } else {
             const eventText = log.event.charAt(0).toUpperCase() + log.event.slice(1);
-            li.innerHTML = `[${new Date(log.timestamp).toLocaleTimeString()}] <strong>${eventText}:</strong> ${log.path}`;
+            const pathLink = `<a href="#" class="file-link" data-path="${log.path}">${log.path}</a>`;
+            li.innerHTML = `[${new Date(log.timestamp).toLocaleTimeString()}] <strong>${eventText}:</strong> ${pathLink}`;
         }
         activityLog.prepend(li);
     }
@@ -161,7 +170,12 @@ function initDashboard(API_BASE_URL) {
                     header.className = 'result-card-header';
                     const filePath = item.filePath || 'Unknown file';
                     const score = item.score?.toFixed(3) || 'N/A';
-                    header.innerHTML = `<span class="file-path">${filePath}</span><span class="score">Score: ${score}</span>`;
+                    header.innerHTML = `
+                        <span class="file-path">${filePath}</span>
+                        <div class="result-actions">
+                            <span class="score">Score: ${score}</span>
+                            <button class="button-secondary view-file-btn" data-path="${filePath}">View File</button>
+                        </div>`;
 
                     const content = document.createElement('pre');
                     const code = document.createElement('code');
@@ -274,10 +288,17 @@ else:
         toggleContextBtn.textContent = 'Show';
 
         try {
+            const body = { query: query };
+            if (fileChatContext) {
+                body.options = { filePath: fileChatContext };
+                fileChatContext = null; // Reset after use
+                chatQuery.value = ''; // Clear input after submitting file-context question
+            }
+
             const response = await fetch(`${API_BASE_URL}/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
-                body: JSON.stringify({ query: query })
+                body: JSON.stringify(body)
             });
 
             if (!response.ok) {
@@ -304,11 +325,16 @@ else:
 
                     const header = document.createElement('div');
                     header.className = 'result-card-header';
-                    const filePath = item.metadata?.filePath || 'Unknown file';
+                    const filePath = item.metadata?.filePath || item.filePath || 'Unknown file';
                     const score = item.score?.toFixed(3) || 'N/A';
                     const lineInfo = item.metadata?.start_line ? ` (L${item.metadata.start_line}-${item.metadata.end_line})` : '';
 
-                    header.innerHTML = `<span class="file-path">${filePath}${lineInfo}</span><span class="score">Score: ${score}</span>`;
+                    header.innerHTML = `
+                        <span class="file-path">${filePath}${lineInfo}</span>
+                        <div class="result-actions">
+                             <span class="score">Score: ${score}</span>
+                             <button class="button-secondary view-file-btn" data-path="${filePath}">View File</button>
+                        </div>`;
 
                     const contentEl = document.createElement('pre');
                     const codeEl = document.createElement('code');
@@ -569,14 +595,17 @@ else:
     const views = {
         '#dashboard': document.getElementById('view-dashboard'),
         '#activity': document.getElementById('view-activity'),
-        '#sharing': document.getElementById('view-sharing')
+        '#sharing': document.getElementById('view-sharing'),
+        '#files': document.getElementById('view-files')
     };
 
     function switchView(hash) {
         const targetHash = hash || '#dashboard';
-        
+        const [viewId, ...params] = targetHash.split('::');
+
         Object.entries(views).forEach(([viewHash, viewElement]) => {
-            if (viewHash === targetHash) {
+            if (!viewElement) return; // In case an element is not found
+            if (viewHash === viewId) {
                 viewElement.classList.remove('hidden');
             } else {
                 viewElement.classList.add('hidden');
@@ -584,12 +613,37 @@ else:
         });
 
         viewNav.querySelectorAll('a').forEach(a => {
-            if (a.getAttribute('href') === targetHash) {
+            a.classList.remove('active');
+            if (a.getAttribute('href') === viewId) {
                 a.classList.add('active');
-            } else {
-                a.classList.remove('active');
             }
         });
+
+        if (viewId === '#files') {
+            if (fileTreePanel && !fileTreePanel.dataset.initialized) {
+                fetchFileTree();
+            }
+            if (params.length > 0) {
+                const filePath = decodeURIComponent(params.join('::'));
+                fetchAndShowFile(filePath);
+
+                // Highlight the file in the tree
+                setTimeout(() => { // Allow tree to render first
+                    document.querySelectorAll('.file-tree-node.selected').forEach(el => el.classList.remove('selected'));
+                    const fileNode = document.querySelector(`.file-tree-node a[data-path="${filePath}"]`);
+                    if(fileNode) {
+                        const parentNode = fileNode.closest('.file-tree-node');
+                        if (parentNode) parentNode.classList.add('selected');
+                        
+                        let parent = parentNode.parentElement.closest('.file-tree-node.type-directory');
+                        while(parent) {
+                            parent.classList.add('open');
+                            parent = parent.parentElement.closest('.file-tree-node.type-directory');
+                        }
+                    }
+                }, 100);
+            }
+        }
     }
 
     viewNav.addEventListener('click', (e) => {
@@ -609,6 +663,7 @@ else:
     });
 
     // Initial view setup
+    setupFileBrowserListeners();
     switchView(window.location.hash);
 }
 
@@ -812,4 +867,150 @@ function initDocsPage(API_BASE_URL) {
     }
 
     init();
+}
+
+function showToast(message) {
+    const toast = document.createElement('div');
+    toast.className = 'toast show';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 500);
+    }, 3000);
+}
+
+function setupFileBrowserListeners() {
+    const chatQuery = document.getElementById('chat-query');
+    const fileAskAiBtn = document.getElementById('file-ask-ai-btn');
+
+    if (fileAskAiBtn) {
+        fileAskAiBtn.addEventListener('click', () => {
+            const filePath = fileAskAiBtn.dataset.filePath;
+            if (filePath) {
+                // This global variable is defined in initDashboard
+                fileChatContext = filePath; 
+                window.location.hash = '#dashboard';
+                setTimeout(() => {
+                    chatQuery.value = `Regarding the file ${filePath}, `;
+                    chatQuery.focus();
+                    showToast(`Context set to ${filePath}. Ask your question now.`);
+                }, 100);
+            }
+        });
+    }
+    
+    document.body.addEventListener('click', e => {
+        const fileLink = e.target.closest('.file-link, .view-file-btn');
+        if (fileLink) {
+            e.preventDefault();
+            const targetPath = fileLink.dataset.path;
+            if (targetPath) {
+                window.location.hash = `#files::${encodeURIComponent(targetPath)}`;
+            }
+            return;
+        }
+
+        const fileTreeNode = e.target.closest('.file-tree-node a');
+        if(fileTreeNode) {
+            e.preventDefault();
+            const node = fileTreeNode.parentElement;
+            if (node.classList.contains('type-file')) {
+                window.location.hash = fileTreeNode.getAttribute('href');
+            } else if (node.classList.contains('type-directory')) {
+                node.classList.toggle('open');
+            }
+        }
+    });
+}
+
+async function fetchFileTree() {
+    const fileTreePanel = document.getElementById('file-tree-panel');
+    if (!fileTreePanel) return;
+    fileTreePanel.dataset.initialized = 'true';
+    const apiKey = sessionStorage.getItem('gctx_apiKey');
+    try {
+        const response = await fetch(`/api/files/tree`, { headers: { 'x-api-key': apiKey } });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const tree = await response.json();
+        
+        fileTreePanel.innerHTML = '';
+        const treeRoot = document.createElement('ul');
+        treeRoot.className = 'file-tree';
+        renderFileTree(tree, treeRoot, 0);
+        fileTreePanel.appendChild(treeRoot);
+    } catch (error) {
+        fileTreePanel.innerHTML = '<p class="error">Could not load file tree. Are the API file routes configured in the server?</p>';
+        console.error('Error fetching file tree:', error);
+    }
+}
+
+function renderFileTree(nodes, container, depth) {
+    // Sort nodes: directories first, then alphabetically
+    nodes.sort((a, b) => {
+        if (a.type === b.type) return a.name.localeCompare(b.name);
+        return a.type === 'directory' ? -1 : 1;
+    });
+
+    nodes.forEach(node => {
+        const li = document.createElement('li');
+        li.className = `file-tree-node type-${node.type}`;
+        
+        const link = document.createElement('a');
+        const hrefPath = encodeURIComponent(node.path);
+        link.href = node.type === 'directory' ? `#` : `#files::${hrefPath}`;
+        link.dataset.path = node.path;
+        
+        const icon = document.createElement('span');
+        icon.className = 'icon';
+        
+        link.appendChild(icon);
+        link.appendChild(document.createTextNode(" " + node.name));
+        li.style.paddingLeft = `${depth * 15}px`;
+        li.appendChild(link);
+        
+        if (node.type === 'directory' && node.children?.length > 0) {
+            const childrenUl = document.createElement('ul');
+            childrenUl.className = 'file-tree-subtree';
+            renderFileTree(node.children, childrenUl, depth + 1);
+            li.appendChild(childrenUl);
+        }
+        container.appendChild(li);
+    });
+}
+
+async function fetchAndShowFile(filePath) {
+    const fileViewerPanel = document.getElementById('file-viewer-panel');
+    const fileViewerFilename = document.getElementById('file-viewer-filename');
+    const fileViewerContent = document.getElementById('file-viewer-content');
+    const fileAskAiBtn = document.getElementById('file-ask-ai-btn');
+
+    if (!fileViewerPanel) return;
+    fileViewerPanel.style.display = 'flex';
+    fileViewerFilename.textContent = 'Loading...';
+    fileViewerContent.innerHTML = '<div class="loading">Loading file content...</div>';
+    const apiKey = sessionStorage.getItem('gctx_apiKey');
+
+    try {
+        const response = await fetch(`/api/files/content?path=${encodeURIComponent(filePath)}`, { headers: { 'x-api-key': apiKey } });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json();
+
+        fileViewerFilename.textContent = filePath;
+        if(window.marked) {
+            fileViewerContent.innerHTML = window.marked.parse(data.content);
+        } else {
+             fileViewerContent.innerHTML = `<pre><code>${data.content.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</code></pre>`;
+        }
+        fileAskAiBtn.dataset.filePath = filePath;
+
+        // Highlight all code blocks
+        fileViewerContent.querySelectorAll('pre code').forEach((block) => {
+            if(window.hljs) hljs.highlightElement(block);
+        });
+    } catch (error) {
+        fileViewerFilename.textContent = `Error: ${filePath}`;
+        fileViewerContent.innerHTML = `<p class="error">Could not load file: ${error.message}</p>`;
+        console.error(`Error fetching file ${filePath}:`, error);
+    }
 }

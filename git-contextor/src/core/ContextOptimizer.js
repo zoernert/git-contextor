@@ -1,3 +1,5 @@
+const fs = require('fs').promises;
+const path = require('path');
 const { getEmbedding } = require('../utils/embeddings');
 const { countTokens } = require('../utils/tokenizer');
 const logger = require('../cli/utils/logger');
@@ -55,6 +57,7 @@ class ContextOptimizer {
     // 1. Modell und Filter bestimmen
     const llmType = options.llmType || this.config.llm?.model || 'claude-sonnet';
     const filter = options.filter || null;
+    let filePathToPrioritize = options.filePath || null;
 
     // 2. maxTokens für den Kontext dynamisch bestimmen
     let maxTokens = options.maxTokens;
@@ -69,7 +72,35 @@ class ContextOptimizer {
         }
     }
 
-    logger.info(`Performing search for query: "${query}" with maxTokens: ${maxTokens}`);
+    logger.info(`Performing search for query: "${query}" with maxTokens: ${maxTokens}, prioritizing file: ${filePathToPrioritize || 'None'}`);
+    
+    let allResults = [];
+
+    if (filePathToPrioritize) {
+        const absoluteFilePath = path.isAbsolute(filePathToPrioritize) ? filePathToPrioritize : path.join(this.config.repository.path, filePathToPrioritize);
+        try {
+            const fileContent = await fs.readFile(absoluteFilePath, 'utf8');
+            const fileTokens = countTokens(fileContent, llmType);
+
+            if (fileTokens < maxTokens) {
+                const prioritizedChunk = {
+                    score: 1.0, // Highest priority
+                    payload: {
+                        content: fileContent,
+                        filePath: filePathToPrioritize,
+                        source: 'file-priority'
+                    }
+                };
+                allResults.push(prioritizedChunk);
+                logger.info(`Added prioritized file ${filePathToPrioritize} to context candidates.`);
+            } else {
+                logger.warn(`File ${filePathToPrioritize} (${fileTokens} tokens) is too large for context window of ${maxTokens} tokens. Skipping file content prioritization.`);
+                filePathToPrioritize = null;
+            }
+        } catch (error) {
+            logger.error(`Could not read prioritized file ${filePathToPrioritize}:`, error);
+        }
+    }
 
     const queryVector = await getEmbedding(query, this.config.embedding);
     if (!queryVector) {
@@ -79,13 +110,18 @@ class ContextOptimizer {
 
     const searchLimit = 50;
     const searchResults = await this.vectorStore.search(queryVector, searchLimit, filter);
-
-    if (!searchResults || searchResults.length === 0) {
+    
+    if (searchResults && searchResults.length > 0) {
+        const filteredResults = filePathToPrioritize ? searchResults.filter(r => r.payload.filePath !== filePathToPrioritize) : searchResults;
+        allResults.push(...filteredResults);
+    }
+    
+    if (allResults.length === 0) {
       logger.warn('No results found for query.');
       return { query, optimizedContext: '', results: [] };
     }
 
-    const { optimizedContext, includedResults } = this.packContext(searchResults, maxTokens, llmType);
+    const { optimizedContext, includedResults } = this.packContext(allResults, maxTokens, llmType);
 
     const finalTokenCount = countTokens(optimizedContext, llmType);
     logger.info(`Returning ${includedResults.length} results with ${finalTokenCount} tokens.`);
