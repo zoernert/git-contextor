@@ -3,6 +3,18 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2025-07-11
+
+### Added
+- **File Browser**: A new "File Browser" has been added to both the main dashboard and the shared access pages. This allows users to navigate the repository's file tree, view file contents directly in the UI, and initiate AI chats with the full content of a specific file as context.
+- **Contextual AI Chat**: When viewing a file in the browser, users can now click "Ask AI about this file" to start a chat session where the entire content of that file is prioritized in the AI's context window.
+- **Enhanced Shared Sessions**: The user interface for shared sessions has been completely overhauled to mirror the main dashboard, including tabbed navigation for Chat, File Browser, and API Usage.
+
+### Fixed
+- A server crash that occurred when accessing the file browser on a shared page has been resolved.
+- The shared session page now correctly hides all interactive elements until a valid Share API Key has been entered and verified.
+- Navigation between views (Chat, File Browser) on the shared session page is now fully functional.
+
 ## [1.1.4] - 2025-07-10
 
 ### Fixed
