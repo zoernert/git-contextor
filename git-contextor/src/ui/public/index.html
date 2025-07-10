@@ -13,13 +13,15 @@
     <div class="container">
         <header>
             <h1>Git Contextor Dashboard</h1>
-            <nav>
-                <a href="/index.html" class="active">Dashboard</a>
-                <a href="/metrics.html">Metrics</a>
-                <a href="/config.html">Configuration</a><a href="/docs.html">Docs</a>
+            <nav id="view-nav">
+                <a href="#dashboard" class="active">Dashboard</a>
+                <a href="#activity">Live Activity</a>
+                <a href="#sharing">Sharing</a>
             </nav>
         </header>
-        <main>
+    <main>
+        <!-- Dashboard View -->
+        <div id="view-dashboard">
             <section id="status-overview" class="card">
                 <h2>Status Overview</h2>
                 <div class="status-grid">
@@ -38,14 +40,6 @@
                     <div><strong>Total Chunks:</strong> <span id="total-chunks">Loading...</span></div>
                 </div>
             </section>
-
-            <section id="live-feed" class="card">
-                <h2>Live Activity Feed</h2>
-                <ul id="activity-log">
-                    <li>Waiting for events...</li>
-                </ul>
-            </section>
-
             <section id="search-interface" class="card">
                 <h2>Semantic Search</h2>
                 <form id="search-form">
@@ -76,7 +70,6 @@
                     </div>
                 </div>
             </section>
-
             <section id="chat-interface" class="card">
                 <h2>AI Chat</h2>
                 <form id="chat-form">
@@ -99,7 +92,20 @@
                     </div>
                 </div>
             </section>
+        </div>
 
+        <!-- Live Activity View -->
+        <div id="view-activity" class="hidden">
+            <section id="live-feed" class="card">
+                <h2>Live Activity Feed</h2>
+                <ul id="activity-log">
+                    <li>Waiting for events...</li>
+                </ul>
+            </section>
+        </div>
+
+        <!-- Sharing View -->
+        <div id="view-sharing" class="hidden">
             <section id="sharing-interface" class="card">
                 <h2>Repository Sharing</h2>
                 <div class="sharing-grid">
@@ -158,7 +164,8 @@
                     </div>
                 </div>
             </section>
-        </main>
+        </div>
+    </main>
         <footer>
             <p>Git Contextor &copy; 2025 by <a href="https://stromdao.de/">STROMDAO GmbH</a></p>
         </footer>

@@ -44,20 +44,33 @@ header h1 {
 nav a {
     text-decoration: none;
     color: var(--primary-color);
-    margin-left: 20px;
+    margin-left: 10px;
     font-weight: 500;
-    padding: 8px 12px;
-    border-radius: 6px;
-    transition: background-color 0.2s;
+    padding: 8px 16px;
+    border-radius: 6px 6px 0 0;
+    transition: all 0.2s;
+    border-bottom: 3px solid transparent;
+    position: relative;
+    top: 1px;
 }
 
-nav a:hover, nav a.active {
+nav a:hover {
     background-color: #e8f2ed;
 }
 
+nav a.active {
+    background-color: var(--background-color);
+    border-bottom: 3px solid var(--primary-color);
+    color: var(--primary-color);
+    font-weight: bold;
+}
+
 main {
-    display: grid;
-    gap: 20px;
+    display: block; /* Changed from grid */
+}
+
+.hidden {
+    display: none;
 }
 
 .card {

@@ -563,6 +563,53 @@ else:
     getTunnelStatus();
     setInterval(fetchStatus, 5000); // Poll general status
     setInterval(getTunnelStatus, 3000); // Poll tunnel status frequently
+
+    // --- View Navigation ---
+    const viewNav = document.getElementById('view-nav');
+    const views = {
+        '#dashboard': document.getElementById('view-dashboard'),
+        '#activity': document.getElementById('view-activity'),
+        '#sharing': document.getElementById('view-sharing')
+    };
+
+    function switchView(hash) {
+        const targetHash = hash || '#dashboard';
+        
+        Object.entries(views).forEach(([viewHash, viewElement]) => {
+            if (viewHash === targetHash) {
+                viewElement.classList.remove('hidden');
+            } else {
+                viewElement.classList.add('hidden');
+            }
+        });
+
+        viewNav.querySelectorAll('a').forEach(a => {
+            if (a.getAttribute('href') === targetHash) {
+                a.classList.add('active');
+            } else {
+                a.classList.remove('active');
+            }
+        });
+    }
+
+    viewNav.addEventListener('click', (e) => {
+        if (e.target.tagName === 'A') {
+            const hash = e.target.getAttribute('href');
+            if (window.location.hash !== hash) {
+                 window.location.hash = hash;
+            } else {
+                // If clicking the same hash, manually trigger the switch
+                switchView(hash);
+            }
+        }
+    });
+
+    window.addEventListener('hashchange', () => {
+        switchView(window.location.hash);
+    });
+
+    // Initial view setup
+    switchView(window.location.hash);
 }
 
 
