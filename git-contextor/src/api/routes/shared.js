@@ -38,7 +38,7 @@ module.exports = (services) => {
     // --- File Browser Endpoints for Shared Access ---
 
     router.get('/:shareId/files/tree', async (req, res) => {
-        const repoPath = services.config.repository.path;
+        const repoPath = contextOptimizer.config.repository.path;
         try {
             const gitignorePath = path.join(repoPath, '.gitignore');
             const ig = ignore();
@@ -82,7 +82,7 @@ module.exports = (services) => {
             return res.status(400).json({ error: 'Invalid file path.' });
         }
 
-        const repoPath = services.config.repository.path;
+        const repoPath = contextOptimizer.config.repository.path;
         const absoluteFilePath = path.join(repoPath, relativeFilePath);
         
         if (!absoluteFilePath.startsWith(repoPath)) {
