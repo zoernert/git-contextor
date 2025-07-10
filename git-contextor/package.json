@@ -1,6 +1,6 @@
 {
   "name": "git-contextor",
-  "version": "1.1.1",
+  "version": "1.1.5",
   "description": "A code context tool with vector search and real-time monitoring, with optional Git integration.",
   "main": "src/index.js",
   "bin": {
@@ -49,7 +49,6 @@
     "url": "https://github.com/stromdao/git-contextor/issues"
   },
   "dependencies": {
-    "@f-pri/pptx-to-text": "^0.2.0",
     "@google/generative-ai": "^0.15.0",
     "@qdrant/js-client-rest": "^1.9.0",
     "@xenova/transformers": "^2.6.0",
