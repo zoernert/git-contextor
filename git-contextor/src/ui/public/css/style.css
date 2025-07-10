@@ -162,7 +162,7 @@ footer {
     font-size: 1em;
 }
 
-#search-form button {
+button {
     align-self: flex-start;
     padding: 10px 20px;
     border: none;
@@ -174,7 +174,7 @@ footer {
     transition: background-color 0.2s;
 }
 
-#search-form button:hover {
+button:hover {
     background-color: #106944;
 }
 
@@ -521,6 +521,18 @@ footer {
     margin-top: 15px;
     border-left: 3px solid var(--primary-color);
 }
+textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-family: monospace;
+    font-size: 0.9em;
+    min-height: 150px;
+    background-color: #fdfdfd;
+}
+
 
 /* Config page styles */
 #config-form textarea {
