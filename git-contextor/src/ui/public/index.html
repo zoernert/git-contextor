@@ -12,14 +12,20 @@
 <body>
     <div class="container">
         <header>
-            <h1>Git Contextor Dashboard</h1>
-            <nav id="view-nav">
-                <a href="#dashboard" class="active">Dashboard</a>
-                <a href="#activity">Live Activity</a>
-                <a href="#sharing">Sharing</a>
+            <h1>Git Contextor</h1>
+            <nav id="main-nav">
+                <a href="/index.html" class="active">Dashboard</a>
+                <a href="/metrics.html">Metrics</a>
+                <a href="/docs.html">Docs</a>
+                <a href="/config.html">Config</a>
             </nav>
         </header>
     <main>
+        <nav id="view-nav">
+            <a href="#dashboard" class="active">Dashboard</a>
+            <a href="#activity">Live Activity</a>
+            <a href="#sharing">Sharing</a>
+        </nav>
         <!-- Dashboard View -->
         <div id="view-dashboard">
             <section id="status-overview" class="card">
@@ -167,11 +173,6 @@
         </div>
     </main>
         <footer>
-            <p style="text-align: center; margin-bottom: 1rem;">
-                <a href="/metrics.html">Metrics</a> &bull;
-                <a href="/docs.html">Docs</a> &bull;
-                <a href="/config.html">Config</a>
-            </p>
             <p>Git Contextor &copy; 2025 by <a href="https://stromdao.de/">STROMDAO GmbH</a></p>
         </footer>
     </div>
