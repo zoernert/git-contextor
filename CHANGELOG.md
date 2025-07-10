@@ -3,6 +3,11 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.4] - 2025-07-10
+
+### Fixed
+- Ein Absturz wurde behoben, der auftrat, wenn das Tool außerhalb eines Git-Repositorys ausgeführt wurde. Die Dateierkennung greift nun korrekt auf einen Scan des Dateisystems zurück, anstatt zu versuchen, Git-Befehle auszuführen.
+
 ## [1.1.2] - 2025-07-10
 
 ### Added
