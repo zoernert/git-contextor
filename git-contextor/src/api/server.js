@@ -14,6 +14,7 @@ const reindexRoutes = require('./routes/reindex');
 const uiconfigRoutes = require('./routes/uiconfig');
 const docsRoutes = require('./routes/docs');
 const configRoutes = require('./routes/config');
+const filesRoutes = require('./routes/files');
 
 // Import routes for chat and sharing
 const chatRoutes = require('./routes/chat');
@@ -82,6 +83,7 @@ function start(config, services, serviceManager) {
     const apiRouter = express.Router();
     apiRouter.use(localOnly);
     apiRouter.use(apiKeyAuth(config)); // Protect all /api routes
+    apiRouter.use('/files', filesRoutes(config));
     apiRouter.use('/search', searchRoutes(services));
     apiRouter.use('/status', statusRoutes(serviceManager));
     apiRouter.use('/metrics', metricsRoutes(services));
