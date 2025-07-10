@@ -12,6 +12,7 @@ class ServiceManager {
         this.services = services; // { fileWatcher, indexer, vectorStore, contextOptimizer }
         this.sharingService = new SharingService(this.repoPath, this.config);
         this.pidFile = path.join(this.repoPath, '.gitcontextor', 'daemon.pid');
+        this.isGitRepo = false;
     }
 
     async validateEnvironment() {
@@ -19,9 +20,11 @@ class ServiceManager {
       try {
         const git = simpleGit(this.repoPath);
         await git.status();
+        this.isGitRepo = true;
         logger.info('Git repository detected. Git-related features are enabled.');
       } catch (error) {
-        logger.warn('No Git repository detected. Git-related features like .gitignore support will be disabled. Indexing all files in the directory.');
+        this.isGitRepo = false;
+        logger.warn('No Git repository detected. Operating in non-Git mode. File discovery will scan the directory.');
       }
     
       // Check write permissions
@@ -47,6 +50,14 @@ class ServiceManager {
         }
 
         await this.validateEnvironment();
+
+        // Inform services about git status
+        if (this.services.indexer) {
+            this.services.indexer.isGitRepo = this.isGitRepo;
+        }
+        if (this.services.fileWatcher) {
+            this.services.fileWatcher.isGitRepo = this.isGitRepo;
+        }
 
         if (await this.isRunning()) {
             const pid = await this.readPidFile();

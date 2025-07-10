@@ -35,6 +35,7 @@ class Indexer {
     this.repoPath = repoPath;
     this.vectorStore = vectorStore;
     this.config = config;
+    this.isGitRepo = false;
     this.status = 'idle';
     this.lastActivity = null;
     this.totalFiles = 0;
@@ -188,10 +189,18 @@ class Indexer {
       this.totalFiles = 0;
       this.totalChunks = 0;
 
-      const allGitFiles = await listGitFiles(this.repoPath);
+      let filesToConsider = [];
+      if (this.isGitRepo) {
+          logger.info('Discovering files via Git...');
+          filesToConsider = await listGitFiles(this.repoPath);
+      } else {
+          logger.info('Discovering files via file system scan (non-Git mode)...');
+          filesToConsider = await this._findAllFiles(this.repoPath);
+      }
+      
       const ig = ignore().add(this.config.indexing.excludePatterns);
 
-      const filesToIndex = allGitFiles.filter(file => {
+      const filesToIndex = filesToConsider.filter(file => {
         if (ig.ignores(file)) {
             return false;
         }
@@ -241,6 +250,43 @@ class Indexer {
       totalChunks: this.totalChunks,
       lastActivity: this.lastActivity,
     };
+  }
+
+  /**
+   * Recursively finds all files in a directory, for use in non-git repositories.
+   * Returns a list of paths relative to the startPath.
+   * @param {string} startPath - The absolute path to start the search from.
+   * @returns {Promise<string[]>} A list of relative file paths.
+   * @private
+   */
+  async _findAllFiles(startPath) {
+    const files = [];
+    // These should always be ignored in non-git mode, especially node_modules for performance.
+    const hardcodedIgnores = new Set(['.git', '.gitcontextor', 'node_modules']);
+
+    const walk = async (currentDir) => {
+        let entries;
+        try {
+            entries = await fs.readdir(currentDir, { withFileTypes: true });
+        } catch (err) {
+            logger.debug(`Could not read directory ${currentDir}, skipping. Error: ${err.message}`);
+            return;
+        }
+
+        for (const entry of entries) {
+            if (entry.isDirectory()) {
+                if (hardcodedIgnores.has(entry.name)) {
+                    continue;
+                }
+                await walk(path.join(currentDir, entry.name));
+            } else if (entry.isFile()) {
+                files.push(path.relative(startPath, path.join(currentDir, entry.name)));
+            }
+        }
+    };
+
+    await walk(startPath);
+    return files;
   }
 }
 

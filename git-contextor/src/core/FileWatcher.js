@@ -23,6 +23,7 @@ class FileWatcher {
     this.ignoreFilter = ignore().add(config.indexing.excludePatterns);
     this.activityLog = [];
     this.maxLogSize = 50;
+    this.isGitRepo = false;
   }
 
   /**
@@ -107,6 +108,10 @@ class FileWatcher {
    * @returns {boolean} True if the file is tracked by Git.
    */
   isGitTracked(filePath) {
+    if (!this.isGitRepo) {
+      // In a non-git folder, if a file is not ignored by our patterns, we treat it as "tracked".
+      return true;
+    }
     try {
       const relativePath = path.relative(this.repoPath, filePath);
       execSync(`git ls-files --error-unmatch "${relativePath}"`, {
