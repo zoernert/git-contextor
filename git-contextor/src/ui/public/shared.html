@@ -3,95 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Git Contextor - Shared Access</title>
+    <title>Git Contextor - Shared Session</title>
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Git Contextor Shared Access</h1>
+            <h1>Git Contextor - Shared Session</h1>
         </header>
         <main>
-            <section id="share-info" class="card">
-                <h2>Share Details</h2>
-                <p><strong>Description:</strong> <span id="share-description">Enter API key to view details.</span></p>
-                <p><strong>Expires:</strong> <span id="share-expires"></span></p>
+            <section class="card">
+                <div class="share-info">
+                    <p><strong>Description:</strong> <span id="share-description">Loading...</span></p>
+                    <p><strong>Expires:</strong> <span id="share-expires">Loading...</span></p>
+                    <div class="form-group" style="max-width: 500px;">
+                        <label for="share-api-key">Your API Key:</label>
+                        <input type="password" id="share-api-key" placeholder="Enter your shared access key...">
+                    </div>
+                </div>
             </section>
+            
+            <nav id="view-nav">
+                <a href="#chat" class="active">AI Chat</a>
+                <a href="#files">File Browser</a>
+                <a href="#usage">API Usage</a>
+            </nav>
 
-            <section id="chat-interface" class="card">
-                <h2>Ask the AI</h2>
-                <form id="shared-chat-form">
-                    <div class="form-group">
-                        <label for="share-api-key">Share API Key:</label>
-                        <input type="password" id="share-api-key" placeholder="Paste your share key here" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="chat-query">Your Question:</label>
-                        <textarea id="chat-query" placeholder="Ask about the repository..." required rows="4"></textarea>
-                    </div>
-                    <button type="submit">Ask</button>
-                </form>
-                <div id="chat-results-container" style="display: none;">
-                    <h3>🤖 AI Response</h3>
-                    <div id="chat-results"></div>
-                    <div id="chat-context-container" style="display: none; margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <h4 style="margin: 0; font-size: 1.1em; color: var(--subtle-text-color);">Context Used (<span id="chat-context-count">0</span> chunks)</h4>
-                            <button id="toggle-context-btn" class="button-secondary">Show</button>
+            <!-- Chat View -->
+            <div id="view-chat">
+                <section id="chat-interface" class="card">
+                    <form id="shared-chat-form">
+                        <div class="search-input-group">
+                            <textarea id="chat-query" placeholder="Ask the AI about the repository..." required rows="3"></textarea>
+                            <button type="submit">Ask</button>
                         </div>
-                        <div id="chat-context-details" style="display: none; margin-top: 15px;">
-                            <!-- Context cards will be rendered here by JS -->
+                    </form>
+                    <div id="chat-results-container" style="display: none;">
+                        <h3>🤖 AI Response</h3>
+                        <div id="chat-results" class="docs-content"></div>
+                        <div id="chat-context-container" style="display: none; margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <h4 style="margin: 0; font-size: 1.1em; color: var(--subtle-text-color);">Context Used (<span id="chat-context-count">0</span> chunks)</h4>
+                                <button id="toggle-context-btn" class="button-secondary">Show</button>
+                            </div>
+                            <div id="chat-context-details" style="display: none; margin-top: 15px;"></div>
                         </div>
                     </div>
-                </div>
-            </section>
+                </section>
+            </div>
 
-            <section id="search-interface" class="card">
-                <h2>Semantic Search</h2>
-                <form id="shared-search-form">
-                    <div class="form-group">
-                        <label for="search-query-input">Search Query:</label>
-                        <textarea id="search-query-input" placeholder="Search for code snippets, documentation..." required rows="2"></textarea>
+            <!-- File Browser View -->
+            <div id="view-files" class="hidden">
+                <section id="file-browser" class="card">
+                    <div class="file-browser-container">
+                        <div id="file-tree-panel" class="file-tree-panel"><p>Loading files...</p></div>
+                        <div id="file-viewer-panel" class="file-viewer-panel" style="display: none;">
+                            <div class="file-viewer-header">
+                                <h3 id="file-viewer-filename"></h3>
+                                <div class="file-viewer-actions">
+                                     <button id="file-ask-ai-btn" class="button-secondary">Ask AI about this file</button>
+                                </div>
+                            </div>
+                            <div id="file-viewer-content" class="docs-content"></div>
+                        </div>
                     </div>
-                    <button type="submit">Search</button>
-                </form>
-                <div id="search-results-container" style="display: none; margin-top: 20px;">
-                    <h3>Search Results</h3>
-                    <div id="search-results-list">
-                        <!-- Search results will be rendered here by JS -->
-                    </div>
-                </div>
-            </section>
+                </section>
+            </div>
 
-            <section id="api-usage" class="card" style="display: none;">
-                <h2>API Usage</h2>
-                <p>You can also interact with this shared repository programmatically using the following endpoints and your Share API Key.</p>
-                
-                <div class="api-endpoint">
-                    <h3>Get Share Information</h3>
-                    <p><code>GET /shared/{shareId}/info</code></p>
-                    <p>Retrieve details about the share, such as its description, expiration date, and query usage.</p>
-                    <h4>Example (cURL)</h4>
-                    <pre id="snippet-info-curl"></pre>
-                </div>
-                
-                <div class="api-endpoint">
-                    <h3>Chat with the Repository</h3>
-                    <p><code>POST /shared/{shareId}/chat</code></p>
-                    <p>Send a query to the repository AI and receive a context-aware response.</p>
-                    <h4>Example (cURL)</h4>
-                    <pre id="snippet-chat-curl"></pre>
-                </div>
-                
-                <div class="api-endpoint">
-                    <h3>Semantic Search in the Repository</h3>
-                    <p><code>POST /shared/{shareId}/search</code></p>
-                    <p>Perform a semantic search to find relevant code chunks or documents.</p>
-                    <h4>Example (cURL)</h4>
-                    <pre id="snippet-search-curl"></pre>
-                </div>
-            </section>
+            <!-- API Usage View -->
+            <div id="view-usage" class="hidden">
+                 <section id="api-usage" class="card">
+                    <h2>API Usage Examples</h2>
+                    <div class="tabs">
+                        <button class="tab-button active" data-lang="curl">cURL</button>
+                    </div>
+                    <div id="snippet-content">
+                        <h4>Get Share Info</h4>
+                        <pre id="snippet-info-curl" class="snippet active"></pre>
+                        <h4>Invoke Chat</h4>
+                        <pre id="snippet-chat-curl" class="snippet active"></pre>
+                    </div>
+                </section>
+            </div>
         </main>
         <footer>
             <p>Powered by Git Contextor</p>
