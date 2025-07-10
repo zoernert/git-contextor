@@ -1,7 +1,8 @@
 const express = require('express');
 const path = require('path');
-const { OpenAI } = require('openai');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const fs = require('fs').promises;
+const ignore = require('ignore');
+const logger = require('../../cli/utils/logger');
 const { handleChatQuery } = require('./chat');
 
 /**
@@ -31,6 +32,71 @@ module.exports = (services) => {
             next();
         } catch (error) {
             res.status(401).json({ error: error.message });
+        }
+    });
+
+    // --- File Browser Endpoints for Shared Access ---
+
+    router.get('/:shareId/files/tree', async (req, res) => {
+        const repoPath = services.config.repository.path;
+        try {
+            const gitignorePath = path.join(repoPath, '.gitignore');
+            const ig = ignore();
+            try {
+                const gitignoreContent = await fs.readFile(gitignorePath, 'utf8');
+                ig.add(gitignoreContent);
+            } catch (e) {
+                if (e.code !== 'ENOENT') logger.warn('Could not read .gitignore file for share:', e);
+            }
+            ig.add('.gitcontextor/*');
+
+            const buildFileTree = async (dir, rootDir) => {
+                const dirents = await fs.readdir(dir, { withFileTypes: true });
+                const tree = [];
+                for (const dirent of dirents) {
+                    const fullPath = path.join(dir, dirent.name);
+                    const relativePath = path.relative(rootDir, fullPath);
+                    if (ig.ignores(relativePath)) continue;
+
+                    if (dirent.isDirectory()) {
+                        tree.push({ name: dirent.name, type: 'directory', path: relativePath, children: await buildFileTree(fullPath, rootDir) });
+                    } else if (dirent.isFile()) {
+                        tree.push({ name: dirent.name, type: 'file', path: relativePath });
+                    }
+                }
+                return tree;
+            };
+            
+            const fileTree = await buildFileTree(repoPath, repoPath);
+            await sharingService.incrementUsage(req.params.shareId);
+            res.json(fileTree);
+        } catch (error) {
+            logger.error('Error building file tree for share:', error);
+            res.status(500).json({ error: 'Failed to build file tree.' });
+        }
+    });
+
+    router.get('/:shareId/files/content', async (req, res) => {
+        const relativeFilePath = req.query.path;
+        if (!relativeFilePath || path.isAbsolute(relativeFilePath) || relativeFilePath.includes('..')) {
+            return res.status(400).json({ error: 'Invalid file path.' });
+        }
+
+        const repoPath = services.config.repository.path;
+        const absoluteFilePath = path.join(repoPath, relativeFilePath);
+        
+        if (!absoluteFilePath.startsWith(repoPath)) {
+            return res.status(400).json({ error: 'File path is outside the repository.' });
+        }
+        
+        try {
+            const content = await fs.readFile(absoluteFilePath, 'utf8');
+            await sharingService.incrementUsage(req.params.shareId);
+            res.json({ content });
+        } catch (error) {
+            if (error.code === 'ENOENT') return res.status(404).json({ error: 'File not found.' });
+            logger.error(`Error reading file content for share ${req.params.shareId}:`, error);
+            res.status(500).json({ error: 'Failed to read file content.' });
         }
     });
 
