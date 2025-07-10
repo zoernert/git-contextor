@@ -658,3 +658,171 @@ input:checked + .slider {
 input:checked + .slider:before {
     transform: translateX(20px);
 }
+
+.result-card-header .result-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-left: auto;
+}
+
+/* File Browser Styles */
+.file-browser-container {
+    display: flex;
+    gap: 20px;
+    min-height: 70vh;
+    max-height: 70vh;
+}
+
+.file-tree-panel {
+    flex: 0 0 320px;
+    background-color: var(--background-color);
+    border-radius: 6px;
+    padding: 10px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+}
+
+.file-viewer-panel {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.file-viewer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.file-viewer-header h3 {
+    margin: 0;
+    font-family: monospace;
+    font-size: 1.1em;
+    color: var(--primary-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.file-viewer-content {
+    flex-grow: 1;
+    background-color: #fdfdfd;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.file-viewer-content pre {
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+/* File Tree Specifics */
+.file-tree {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    font-size: 0.9em;
+}
+
+.file-tree-node {
+    padding: 2px 0;
+}
+
+.file-tree-node a {
+    display: flex;
+    align-items: center;
+    padding: 5px 8px;
+    text-decoration: none;
+    color: var(--text-color);
+    border-radius: 4px;
+    transition: background-color 0.2s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.file-tree-node a:hover {
+    background-color: #e8f2ed;
+}
+
+.file-tree-node.selected > a {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.file-tree-node .icon {
+    margin-right: 8px;
+    width: 1em;
+    display: inline-block;
+}
+
+.file-tree-subtree {
+    list-style: none;
+    padding-left: 0;
+    display: none;
+}
+
+.file-tree-node.open > .file-tree-subtree {
+    display: block;
+}
+
+.type-directory {
+    cursor: pointer;
+}
+
+.type-directory > a .icon::before {
+    content: '▶';
+    font-size: 0.8em;
+    display: inline-block;
+    transition: transform 0.1s linear;
+}
+
+.file-tree-node.open > a .icon::before {
+    transform: rotate(90deg);
+}
+
+
+/* Toast Notifications */
+.toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background-color: #2c3e50;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    z-index: 1000;
+    opacity: 0;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* Highlighting for file content */
+mark {
+    background-color: #fcf8e3;
+    padding: 2px 1px;
+    border-radius: 3px;
+    border: 1px solid #fbeed5;
+}
+
+a.file-link {
+    text-decoration: underline;
+    cursor: pointer;
+    color: var(--primary-color);
+}
+a.file-link:hover {
+    color: #106944;
+}

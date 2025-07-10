@@ -10,7 +10,8 @@ module.exports = (config) => {
     router.get('/', (req, res) => {
         // Only expose what the client needs
         res.json({
-            apiKey: config.services.apiKey
+            apiKey: config.services.apiKey,
+            features: config.features || {}
         });
     });
     return router;
