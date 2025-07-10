@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const apiUsageContainer = document.getElementById('api-usage');
     const snippetInfoCurl = document.getElementById('snippet-info-curl');
     const snippetChatCurl = document.getElementById('snippet-chat-curl');
+    const sharedContent = document.getElementById('shared-content');
 
     // Store API key in sessionStorage to persist across reloads for convenience
     apiKeyInput.value = sessionStorage.getItem(`gctx_share_key_${shareId}`) || '';
@@ -28,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
             shareDescriptionEl.textContent = 'Enter API key to view details.';
             shareExpiresEl.textContent = '';
             updateApiUsage(null, null); // Hide API usage details
+            sharedContent.style.display = 'none';
             return;
         }
 
@@ -38,6 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (!response.ok) {
                 const err = await response.json();
+                sharedContent.style.display = 'none';
                 throw new Error(err.error || `HTTP ${response.status}`);
             }
             
@@ -45,10 +48,12 @@ document.addEventListener('DOMContentLoaded', () => {
             shareDescriptionEl.textContent = data.description;
             shareExpiresEl.textContent = new Date(data.expires_at).toLocaleString();
             updateApiUsage(shareId, apiKey);
+            sharedContent.style.display = 'block';
         } catch (error) {
             shareDescriptionEl.textContent = `Error: ${error.message}`;
             shareExpiresEl.textContent = 'Could not load details.';
             updateApiUsage(null, null); // Hide API usage details on error
+            sharedContent.style.display = 'none';
         }
     }
 

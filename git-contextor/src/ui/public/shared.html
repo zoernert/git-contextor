@@ -24,67 +24,69 @@
                 </div>
             </section>
             
-            <nav id="view-nav">
-                <a href="#chat" class="active">AI Chat</a>
-                <a href="#files">File Browser</a>
-                <a href="#usage">API Usage</a>
-            </nav>
-
-            <!-- Chat View -->
-            <div id="view-chat">
-                <section id="chat-interface" class="card">
-                    <form id="shared-chat-form">
-                        <div class="search-input-group">
-                            <textarea id="chat-query" placeholder="Ask the AI about the repository..." required rows="3"></textarea>
-                            <button type="submit">Ask</button>
-                        </div>
-                    </form>
-                    <div id="chat-results-container" style="display: none;">
-                        <h3>🤖 AI Response</h3>
-                        <div id="chat-results" class="docs-content"></div>
-                        <div id="chat-context-container" style="display: none; margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <h4 style="margin: 0; font-size: 1.1em; color: var(--subtle-text-color);">Context Used (<span id="chat-context-count">0</span> chunks)</h4>
-                                <button id="toggle-context-btn" class="button-secondary">Show</button>
+            <div id="shared-content" style="display: none;">
+                <nav id="view-nav">
+                    <a href="#chat" class="active">AI Chat</a>
+                    <a href="#files">File Browser</a>
+                    <a href="#usage">API Usage</a>
+                </nav>
+    
+                <!-- Chat View -->
+                <div id="view-chat">
+                    <section id="chat-interface" class="card">
+                        <form id="shared-chat-form">
+                            <div class="search-input-group">
+                                <textarea id="chat-query" placeholder="Ask the AI about the repository..." required rows="3"></textarea>
+                                <button type="submit">Ask</button>
                             </div>
-                            <div id="chat-context-details" style="display: none; margin-top: 15px;"></div>
-                        </div>
-                    </div>
-                </section>
-            </div>
-
-            <!-- File Browser View -->
-            <div id="view-files" class="hidden">
-                <section id="file-browser" class="card">
-                    <div class="file-browser-container">
-                        <div id="file-tree-panel" class="file-tree-panel"><p>Loading files...</p></div>
-                        <div id="file-viewer-panel" class="file-viewer-panel" style="display: none;">
-                            <div class="file-viewer-header">
-                                <h3 id="file-viewer-filename"></h3>
-                                <div class="file-viewer-actions">
-                                     <button id="file-ask-ai-btn" class="button-secondary">Ask AI about this file</button>
+                        </form>
+                        <div id="chat-results-container" style="display: none;">
+                            <h3>🤖 AI Response</h3>
+                            <div id="chat-results" class="docs-content"></div>
+                            <div id="chat-context-container" style="display: none; margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <h4 style="margin: 0; font-size: 1.1em; color: var(--subtle-text-color);">Context Used (<span id="chat-context-count">0</span> chunks)</h4>
+                                    <button id="toggle-context-btn" class="button-secondary">Show</button>
                                 </div>
+                                <div id="chat-context-details" style="display: none; margin-top: 15px;"></div>
                             </div>
-                            <div id="file-viewer-content" class="docs-content"></div>
                         </div>
-                    </div>
-                </section>
-            </div>
-
-            <!-- API Usage View -->
-            <div id="view-usage" class="hidden">
-                 <section id="api-usage" class="card">
-                    <h2>API Usage Examples</h2>
-                    <div class="tabs">
-                        <button class="tab-button active" data-lang="curl">cURL</button>
-                    </div>
-                    <div id="snippet-content">
-                        <h4>Get Share Info</h4>
-                        <pre id="snippet-info-curl" class="snippet active"></pre>
-                        <h4>Invoke Chat</h4>
-                        <pre id="snippet-chat-curl" class="snippet active"></pre>
-                    </div>
-                </section>
+                    </section>
+                </div>
+    
+                <!-- File Browser View -->
+                <div id="view-files" class="hidden">
+                    <section id="file-browser" class="card">
+                        <div class="file-browser-container">
+                            <div id="file-tree-panel" class="file-tree-panel"><p>Loading files...</p></div>
+                            <div id="file-viewer-panel" class="file-viewer-panel" style="display: none;">
+                                <div class="file-viewer-header">
+                                    <h3 id="file-viewer-filename"></h3>
+                                    <div class="file-viewer-actions">
+                                         <button id="file-ask-ai-btn" class="button-secondary">Ask AI about this file</button>
+                                    </div>
+                                </div>
+                                <div id="file-viewer-content" class="docs-content"></div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+    
+                <!-- API Usage View -->
+                <div id="view-usage" class="hidden">
+                     <section id="api-usage" class="card">
+                        <h2>API Usage Examples</h2>
+                        <div class="tabs">
+                            <button class="tab-button active" data-lang="curl">cURL</button>
+                        </div>
+                        <div id="snippet-content">
+                            <h4>Get Share Info</h4>
+                            <pre id="snippet-info-curl" class="snippet active"></pre>
+                            <h4>Invoke Chat</h4>
+                            <pre id="snippet-chat-curl" class="snippet active"></pre>
+                        </div>
+                    </section>
+                </div>
             </div>
         </main>
         <footer>
