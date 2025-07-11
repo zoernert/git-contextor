@@ -160,7 +160,15 @@ class ContextOptimizer {
   }
 
   async summarizeCollection(options = {}) {
-    if (!this.config.llm || !this.config.llm.provider) {
+    // Determine the correct LLM configuration, preferring chat settings.
+    const config = this.config;
+    const chatConfig = config.chat || {};
+    let llmConfig = chatConfig.llm || config.llm;
+    if ((!llmConfig || !llmConfig.provider) && chatConfig.provider) {
+        llmConfig = chatConfig;
+    }
+
+    if (!llmConfig || !llmConfig.provider) {
         throw new Error('LLM configuration is missing or incomplete. Please set your provider and API key, e.g., by running `npx git-contextor config set llm.provider openai` and `npx git-contextor config set llm.apiKey YOUR_OPENAI_KEY`.');
     }
     const numClusters = options.numClusters || 10;
@@ -199,7 +207,7 @@ class ContextOptimizer {
       {
         systemPrompt: 'Generate a summary based on the provided text clusters.'
       },
-      this.config
+      { llm: llmConfig }
     );
 
     logger.info('Generated collection summary. Now indexing it.');
