@@ -20,6 +20,7 @@ async function generateText(prompt, options = {}, config = {}) {
         });
         return response.choices[0].message.content;
       }
+      case 'gemini':
       case 'google': {
          const googleAI = new GoogleGenerativeAI(llm.apiKey || process.env.GOOGLE_API_KEY);
          const model = googleAI.getGenerativeModel({ model: finalModel });
