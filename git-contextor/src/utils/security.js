@@ -9,14 +9,22 @@ function apiKeyAuth(config) {
     return (req, res, next) => {
         const isMcpRoute = req.originalUrl.startsWith('/mcp/');
 
-        // Check req.ip, the underlying socket, and the hostname for robustness.
-        const isIpLocal = ['::1', '127.0.0.1', '::ffff:127.0.0.1'].includes(req.ip);
-        const isSocketLocal = req.socket?.remoteAddress === '::1' || req.socket?.remoteAddress === '127.0.0.1';
-        const isHostnameLocal = ['localhost', '127.0.0.1'].includes(req.hostname);
-        const isLocalhost = isIpLocal || isSocketLocal || isHostnameLocal;
+        // Check req.ip, the underlying socket, the hostname, and the Host header for robustness.
+        const ip = req.ip;
+        const socketAddr = req.socket?.remoteAddress;
+        const hostname = req.hostname;
+        const hostHeader = req.headers['host'];
+
+        const isIpLocal = ['::1', '127.0.0.1', '::ffff:127.0.0.1'].includes(ip);
+        const isSocketLocal = ['::1', '127.0.0.1'].includes(socketAddr);
+        const isHostnameLocal = ['localhost', '127.0.0.1'].includes(hostname);
+        // The host header includes the port, e.g., 'localhost:3333'. Check if it starts with a local identifier.
+        const isHostHeaderLocal = hostHeader && (hostHeader.startsWith('localhost') || hostHeader.startsWith('127.0.0.1'));
+        
+        const isLocalhost = isIpLocal || isSocketLocal || isHostnameLocal || isHostHeaderLocal;
 
         // Log details for debugging auth issues on localhost
-        logger.debug(`Auth check: IP=${req.ip}, SocketAddr=${req.socket?.remoteAddress}, Host=${req.hostname}, URL=${req.originalUrl}, isLocalhost=${isLocalhost}, isMcpRoute=${isMcpRoute}`);
+        logger.debug(`Auth check: IP=${ip}, SocketAddr=${socketAddr}, Host=${hostname}, HostHeader=${hostHeader}, URL=${req.originalUrl}, isLocalhost=${isLocalhost}, isMcpRoute=${isMcpRoute}`);
 
         // Allow unauthenticated access to MCP routes from localhost
         if (isMcpRoute && isLocalhost) {
