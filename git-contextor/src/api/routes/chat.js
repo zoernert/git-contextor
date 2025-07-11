@@ -13,12 +13,18 @@ async function handleChatQuery(query, services, context_type = 'general', option
     const searchResult = await contextOptimizer.search(query, options);
     
     // Generate conversational response
-    const chatConfig = contextOptimizer.config.chat;
+    const chatConfig = contextOptimizer.config.chat || {};
+    const llmConfig = chatConfig.llm || contextOptimizer.config.llm;
+
+    if (!llmConfig) {
+        throw new Error('LLM configuration is missing. Please configure `llm` in your .gitcontextor/config.json.');
+    }
+
     const aiResponse = await generateConversationalResponse(
         query, 
         searchResult.optimizedContext, 
         context_type, 
-        chatConfig
+        llmConfig
     );
 
     return {
@@ -61,7 +67,7 @@ module.exports = (services) => {
 
 module.exports.handleChatQuery = handleChatQuery;
 
-async function generateConversationalResponse(query, context, contextType, chatConfig) {
+async function generateConversationalResponse(query, context, contextType, llmConfig) {
     const systemPrompt = `You are an AI assistant that helps developers understand codebases. 
     You have access to relevant code context and should provide helpful, accurate responses about the repository.
     
@@ -83,7 +89,7 @@ async function generateConversationalResponse(query, context, contextType, chatC
     return generateText(
         userPrompt,
         { systemPrompt },
-        { llm: chatConfig.llm }
+        { llm: llmConfig }
     );
 }
 
