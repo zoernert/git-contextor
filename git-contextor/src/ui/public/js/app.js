@@ -442,20 +442,24 @@ else:
 
     async function fetchAndDisplaySummary() {
         if (!summaryContent) return;
-        summaryContent.textContent = 'Loading summary...';
+        summaryContent.innerHTML = '<p>Loading summary...</p>';
         try {
             const response = await fetch(`${API_BASE_URL}/collection/summary`, {
                 headers: { 'x-api-key': apiKey }
             });
             if (response.ok) {
                 const text = await response.text();
-                summaryContent.textContent = text || 'Summary is empty or not yet generated.';
+                if (window.marked && text) {
+                    summaryContent.innerHTML = marked.parse(text);
+                } else {
+                    summaryContent.textContent = text || 'Summary is empty or not yet generated.';
+                }
             } else {
-                summaryContent.textContent = 'Could not load summary. Generate one using the "Update Summary" button.';
+                summaryContent.innerHTML = '<p>Could not load summary. Generate one using the "Update Summary" button.</p>';
             }
         } catch (error) {
             console.error('Error loading summary:', error);
-            summaryContent.textContent = 'Error loading summary.';
+            summaryContent.innerHTML = '<p class="error">Error loading summary.</p>';
         }
     }
 
@@ -463,7 +467,7 @@ else:
         if (!updateSummaryBtn) return;
         updateSummaryBtn.disabled = true;
         updateSummaryBtn.textContent = 'Starting...';
-        summaryContent.textContent = 'Summary generation initiated. This can take several minutes...';
+        summaryContent.innerHTML = '<p>Summary generation initiated. This can take several minutes...</p>';
         
         try {
             const response = await fetch(`${API_BASE_URL}/collection/summarize`, {
@@ -472,16 +476,16 @@ else:
             });
 
             if (response.status === 202) {
-                summaryContent.textContent += '\nProcess started successfully. The new summary will appear here once ready. You can refresh the page or wait.';
+                summaryContent.innerHTML += '<p>Process started successfully. The new summary will appear here once ready. You can refresh the page or wait.</p>';
                 // Refresh view after 20s to show the new summary
                 setTimeout(fetchAndDisplaySummary, 20000);
             } else {
                 const errorData = await response.json();
-                summaryContent.textContent = `Error starting update: ${errorData.error || response.statusText}`;
+                summaryContent.innerHTML = `<p class="error">Error starting update: ${errorData.error || response.statusText}</p>`;
             }
         } catch (error) {
             console.error('Error triggering summary update:', error);
-            summaryContent.textContent = `An error occurred while trying to start the update.`;
+            summaryContent.innerHTML = `<p class="error">An error occurred while trying to start the update.</p>`;
         } finally {
             updateSummaryBtn.disabled = false;
             updateSummaryBtn.textContent = 'Update Summary';
