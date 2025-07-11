@@ -160,6 +160,9 @@ class ContextOptimizer {
   }
 
   async summarizeCollection(options = {}) {
+    if (!this.config.llm || !this.config.llm.provider) {
+        throw new Error('LLM configuration is missing or incomplete. Please set your provider and API key, e.g., by running `npx git-contextor config set llm.provider openai` and `npx git-contextor config set llm.apiKey YOUR_OPENAI_KEY`.');
+    }
     const numClusters = options.numClusters || 10;
     const pointsPerCluster = options.pointsPerCluster || 5;
     logger.info(`Starting collection summary generation with ${numClusters} clusters.`);

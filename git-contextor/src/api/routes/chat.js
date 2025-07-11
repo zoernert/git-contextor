@@ -16,8 +16,8 @@ async function handleChatQuery(query, services, context_type = 'general', option
     const chatConfig = contextOptimizer.config.chat || {};
     const llmConfig = chatConfig.llm || contextOptimizer.config.llm;
 
-    if (!llmConfig) {
-        throw new Error('LLM configuration is missing. Please configure `llm` in your .gitcontextor/config.json.');
+    if (!llmConfig || !llmConfig.provider) {
+        throw new Error('LLM configuration is missing or incomplete. Please set your provider and API key, e.g., by running `npx git-contextor config set llm.provider openai` and `npx git-contextor config set llm.apiKey YOUR_OPENAI_KEY`.');
     }
 
     const aiResponse = await generateConversationalResponse(
