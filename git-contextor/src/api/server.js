@@ -123,6 +123,10 @@ function start(config, services, serviceManager) {
 
     // Spec-Endpunkt
     mcpRouter.route('/spec')
+        .head((req, res) => {
+            // Handle HEAD requests first, as some clients use this to probe the endpoint.
+            res.status(200).end();
+        })
         .get((req, res) => {
             const repoName = config.repository.name;
             res.json({
@@ -143,10 +147,6 @@ function start(config, services, serviceManager) {
                     }
                 }]
             });
-        })
-        .head((req, res) => {
-            // Handle HEAD requests used by some clients (e.g., extensions) to check for endpoint existence.
-            res.status(200).end();
         });
 
     // Tool Invocation Endpunkt
@@ -157,10 +157,11 @@ function start(config, services, serviceManager) {
         }
 
         try {
-            const searchResults = await services.contextOptimizer.search(query);
+            // Correctly access the results array from the search response
+            const searchResponse = await services.contextOptimizer.search(query);
             
-            const formattedResults = searchResults.map(r => 
-                `File: ${r.metadata.filePath}\nLines: ${r.metadata.startLine}-${r.metadata.endLine}\n\`\`\`\n${r.pageContent}\n\`\`\``
+            const formattedResults = searchResponse.results.map(r => 
+                `File: ${r.filePath}\nLines: ${r.startLine}-${r.endLine}\n\`\`\`\n${r.content}\n\`\`\``
             ).join('\n\n---\n\n');
 
             // Only increment usage if the request came through a share token
