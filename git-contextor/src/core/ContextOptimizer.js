@@ -49,6 +49,101 @@ class ContextOptimizer {
   }
 
   /**
+   * Optimizes context from search results to fit within token limits.
+   * @param {Array} searchResults - Array of search result objects.
+   * @param {string} query - The search query.
+   * @param {number} maxTokens - Maximum tokens allowed.
+   * @returns {Promise<object>} Optimized context object.
+   */
+  async optimizeContext(searchResults, query, maxTokens) {
+    if (!searchResults || searchResults.length === 0) {
+      return {
+        optimizedContext: '',
+        tokenCount: 0,
+        chunkCount: 0
+      };
+    }
+
+    // Sort results by score (highest first)
+    const sortedResults = searchResults.sort((a, b) => (b.score || 0) - (a.score || 0));
+    
+    let context = '';
+    let tokenCount = 0;
+    let chunkCount = 0;
+    let clusteredGroups = null;
+
+    // Check if clustering is enabled
+    if (this.config.optimization?.clustering?.enabled) {
+      // Simple clustering implementation - group by file extension or keyword similarity
+      clusteredGroups = this._clusterResults(sortedResults);
+    }
+
+    for (const result of sortedResults) {
+      const chunk = result.payload || result;
+      const chunkContext = `File: ${chunk.filePath}\nLines ${chunk.start_line}-${chunk.end_line}:\n${chunk.content}\n---\n\n`;
+      const chunkTokens = this.countTokens(chunkContext);
+      
+      if (tokenCount + chunkTokens <= maxTokens) {
+        context += chunkContext;
+        tokenCount += chunkTokens;
+        chunkCount++;
+      } else {
+        break;
+      }
+    }
+
+    const result = {
+      optimizedContext: context,
+      tokenCount,
+      chunkCount
+    };
+
+    if (clusteredGroups) {
+      result.clusteredGroups = clusteredGroups;
+    }
+
+    return result;
+  }
+
+  /**
+   * Simple clustering implementation
+   * @param {Array} results - Search results to cluster
+   * @returns {Array} Clustered groups
+   * @private
+   */
+  _clusterResults(results) {
+    // Simple clustering by file extension
+    const clusters = {};
+    
+    results.forEach(result => {
+      const chunk = result.payload || result;
+      const ext = chunk.filePath.split('.').pop() || 'unknown';
+      
+      if (!clusters[ext]) {
+        clusters[ext] = [];
+      }
+      clusters[ext].push(result);
+    });
+
+    return Object.entries(clusters).map(([ext, items]) => ({
+      type: ext,
+      items: items.length,
+      files: items.map(item => (item.payload || item).filePath)
+    }));
+  }
+
+  /**
+   * Counts tokens in text (simple approximation).
+   * @param {string} text - Text to count tokens in.
+   * @returns {number} Estimated token count.
+   */
+  countTokens(text) {
+    if (!text) return 0;
+    // Simple approximation: ~4 characters per token
+    return Math.ceil(text.length / 4);
+  }
+
+  /**
    * Performs a search and optimizes the results for a given token limit.
    * @param {string} query - The search query.
    * @param {object} [options={}] - Search options.

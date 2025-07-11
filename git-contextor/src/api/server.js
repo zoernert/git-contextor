@@ -266,7 +266,7 @@ function start(config, services, serviceManager) {
         const port = config.services.port;
         server = app.listen(port, () => {
             logger.info(`Application server with UI running at http://localhost:${port}`);
-            resolve();
+            resolve(server);
         });
     });
 }
