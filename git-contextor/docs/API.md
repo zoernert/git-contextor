@@ -6,6 +6,7 @@ This document outlines the REST API endpoints provided by Git Contextor.
 **Authentication:** All endpoints require an API key passed in the `x-api-key` header.
 
 ---
+## General
 
 ### Health Check
 
@@ -19,8 +20,6 @@ This document outlines the REST API endpoints provided by Git Contextor.
     "timestamp": "2023-10-27T10:00:00.000Z"
   }
   ```
-
----
 
 ### Service Status
 
@@ -46,8 +45,6 @@ This document outlines the REST API endpoints provided by Git Contextor.
     }
   }
   ```
-
----
 
 ### Metrics
 
@@ -75,6 +72,7 @@ This document outlines the REST API endpoints provided by Git Contextor.
   ```
 
 ---
+## Context & Search
 
 ### Semantic Search
 
@@ -85,51 +83,100 @@ This document outlines the REST API endpoints provided by Git Contextor.
   ```json
   {
     "query": "how to implement user authentication",
-    "maxTokens": 4096,
-    "filter": {
-      "fileTypes": ["js", "py"]
-    },
-    "llmType": "gemini-1.5-flash-latest"
+    "maxTokens": 4096
   }
   ```
 - **Success Response (200 OK):**
   ```json
   {
     "query": "how to implement user authentication",
-    "optimizedContext": "...",
+    "optimizedContext": "--- File: src/auth/jwt.js (Score: 0.92) ---\n...",
     "results": [
       {
         "filePath": "src/auth/jwt.js",
         "score": 0.92,
-        "chunk": "..."
+        "content": "...",
+        "startLine": 10,
+        "endLine": 25
       }
     ],
     "tokenCount": 1024
   }
   ```
 
+### AI Chat
+
+- **Endpoint:** `/api/chat`
+- **Method:** `POST`
+- **Description:** Sends a query to the AI, using repository context to generate an answer.
+- **Request Body:**
+  ```json
+  {
+    "query": "Explain the auth flow",
+    "include_summary": true
+  }
+  ```
+- **Success Response (200 OK):**
+  ```json
+  {
+    "query": "Explain the auth flow",
+    "response": "The authentication flow starts with a user providing credentials...",
+    "context": [
+      {
+        "filePath": "src/auth/jwt.js",
+        "score": 0.91,
+        "content": "..."
+      }
+    ]
+  }
+  ```
+
 ---
+## Indexing & Management
 
 ### Reindex Repository
 
 - **Endpoint:** `/api/reindex`
 - **Method:** `POST`
-- **Description:** Triggers a re-indexing process for the entire repository or a specific file. This is an asynchronous operation.
-- **Request Body (Optional for full reindex):**
-  ```json
-  {
-    "file": "src/components/main.js"
-  }
-  ```
-- **Success Response (202 Accepted for full reindex):**
+- **Description:** Triggers a full re-indexing of the entire repository. This is an asynchronous operation.
+- **Request Body:** Empty.
+- **Success Response (202 Accepted):**
   ```json
   {
     "message": "Full repository reindex started."
   }
   ```
-- **Success Response (200 OK for single file):**
+
+### Get or Create Collection Summary
+
+- **Endpoint:** `/api/collection/summary`
+- **Method:** `GET`
+- **Description:** Retrieves the AI-generated collection summary. If it doesn't exist, it will be generated on-demand before responding.
+- **Success Response (200 OK):**
+  - **Content-Type:** `text/plain`
+  - **Body:** A Markdown-formatted string containing the summary.
+    ```markdown
+    # Collection Summary
+
+    ## Cluster 1: Authentication & User Management
+    Key technologies: JWT, bcrypt, Express.js
+    ...
+    ```
+
+### Trigger Summary Generation
+
+- **Endpoint:** `/api/collection/summarize`
+- **Method:** `POST`
+- **Description:** Manually triggers the generation of a new collection summary. This is an asynchronous operation.
+- **Request Body (Optional):**
   ```json
   {
-    "message": "Successfully reindexed file: src/components/main.js"
+    "numClusters": 15
+  }
+  ```
+- **Success Response (202 Accepted):**
+  ```json
+  {
+    "message": "Collection summary generation started. This may take a few minutes."
   }
   ```
