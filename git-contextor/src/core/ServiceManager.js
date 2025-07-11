@@ -13,6 +13,9 @@ class ServiceManager {
         this.sharingService = new SharingService(this.repoPath, this.config);
         this.pidFile = path.join(this.repoPath, '.gitcontextor', 'daemon.pid');
         this.isGitRepo = false;
+        this.summaryUpdateInterval = null;
+        this.isUpdatingSummary = false;
+        this.lastSummaryUpdateTime = null;
     }
 
     async validateEnvironment() {
@@ -113,6 +116,9 @@ class ServiceManager {
 
             logger.success('Git Contextor services started successfully.');
 
+            // Start the idle summary updater
+            this.summaryUpdateInterval = setInterval(() => this.checkForIdleAndUpdateSummary(), 5000); // Check every 5 seconds
+
         } catch (error) {
             logger.error('Failed to start Git Contextor services:', error);
             // Attempt to clean up if startup failed
@@ -143,6 +149,10 @@ class ServiceManager {
         // Stop file watcher
         if (this.services.fileWatcher) {
             this.services.fileWatcher.stop();
+        }
+
+        if (this.summaryUpdateInterval) {
+            clearInterval(this.summaryUpdateInterval);
         }
 
         // Stop API and UI servers
@@ -221,6 +231,40 @@ class ServiceManager {
             return parseInt(pidString, 10);
         } catch (error) {
             return null;
+        }
+    }
+
+    async checkForIdleAndUpdateSummary() {
+        if (this.isUpdatingSummary) {
+            return;
+        }
+
+        const indexerStatus = await this.services.indexer.getStatus();
+        if (indexerStatus.status !== 'idle' || !indexerStatus.lastActivity) {
+            return;
+        }
+        
+        const lastActivityTime = new Date(indexerStatus.lastActivity).getTime();
+        
+        // If we've already updated the summary since the last activity, do nothing.
+        if (this.lastSummaryUpdateTime && lastActivityTime < this.lastSummaryUpdateTime) {
+            return;
+        }
+
+        const idleTime = Date.now() - lastActivityTime;
+
+        if (idleTime > 20000) { // More than 20 seconds idle
+            this.isUpdatingSummary = true;
+            logger.info('Indexer has been idle for over 20 seconds. Automatically updating collection summary...');
+            try {
+                await this.services.contextOptimizer.summarizeCollection();
+                this.lastSummaryUpdateTime = Date.now();
+                logger.info('Automatic collection summary update completed successfully.');
+            } catch (error) {
+                logger.error('Automatic collection summary update failed:', error);
+            } finally {
+                this.isUpdatingSummary = false;
+            }
         }
     }
 }
