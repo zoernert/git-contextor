@@ -40,7 +40,7 @@ module.exports = (services) => {
     /**
      * Handles conversational queries about the repository
      */
-    router.post('/', apiKeyAuth(services.config), async (req, res) => {
+    router.post('/', apiKeyAuth(contextOptimizer.config), async (req, res) => {
         const { query, context_type, include_summary } = req.body;
         
         if (!query) {

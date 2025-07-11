@@ -7,7 +7,7 @@ module.exports = (services) => {
     const { contextOptimizer } = services;
 
     // Trigger the generation of the collection summary
-    router.post('/summarize', apiKeyAuth(services.config), async (req, res) => {
+    router.post('/summarize', apiKeyAuth(contextOptimizer.config), async (req, res) => {
         try {
             logger.info('API call received to summarize collection.');
             // This can be a long-running process, so we don't await it.
