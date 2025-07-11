@@ -9,6 +9,8 @@ const VectorStore = require('../../core/VectorStore');
 const MemoryVectorStore = require('../../core/MemoryVectorStore');
 const ContextOptimizer = require('../../core/ContextOptimizer');
 const FileWatcher = require('../../core/FileWatcher');
+const apiServer = require('../../api/server');
+const SharingService = require('../../core/SharingService');
 
 async function mcp() {
   const repoPath = process.cwd();
@@ -53,7 +55,10 @@ async function mcp() {
     const fileWatcher = new FileWatcher(repoPath, indexer, config);
     fileWatcher.isGitRepo = isGitRepo;
 
-    const services = { indexer, vectorStore, contextOptimizer, fileWatcher };
+    const sharingService = new SharingService(repoPath, config);
+    await sharingService.init();
+
+    const services = { indexer, vectorStore, contextOptimizer, fileWatcher, sharingService };
 
     // 3. Initial indexing logic
     const isConfigValid = await vectorStore.validateCollectionConfig();
@@ -105,6 +110,24 @@ async function mcp() {
             }
         }
     }, 5000);
+
+    // --- API Server Start ---
+    const serviceManager = {
+      getStatus: async () => {
+        const indexerStatus = await indexer.getStatus();
+        const watcherStatusValue = config.monitoring.watchEnabled ? 'enabled' : 'disabled';
+        return {
+          status: 'running',
+          repository: config.repository,
+          watcher: { status: watcherStatusValue },
+          indexer: indexerStatus,
+          fileWatcher: { latestActivity: fileWatcher.getActivityLog() }
+        };
+      }
+    };
+    apiServer.start(config, services, serviceManager).catch(err => {
+        logger.error('Failed to start API server in MCP mode:', err);
+    });
 
     // --- MCP Server Start ---
     const mcpServer = new MCPServer(services, config);
