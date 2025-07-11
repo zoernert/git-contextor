@@ -178,7 +178,7 @@ function start(config, services, serviceManager) {
             }
             
             // Get the streaming response generator
-            const stream = chatRoutes.generateConversationalResponseStream(
+            const stream = services.contextOptimizer.generateConversationalResponseStream(
                 query,
                 searchResult.optimizedContext,
                 'general',

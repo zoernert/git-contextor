@@ -1,45 +1,6 @@
 const express = require('express');
-const { OpenAI } = require('openai');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-const VectorStore = require('../../core/VectorStore');
-const { generateText, generateTextStream } = require('../../utils/llm');
 const logger = require('../../cli/utils/logger');
 const { apiKeyAuth } = require('../../utils/security');
-
-async function handleChatQuery(query, services, context_type = 'general', options = {}) {
-    const { contextOptimizer } = services;
-
-    // Use existing search infrastructure. It will use settings from config.chat by default.
-    const searchResult = await contextOptimizer.search(query, options);
-    
-    // Generate conversational response
-    const config = contextOptimizer.config;
-    const chatConfig = config.chat || {};
-
-    // Determine the correct LLM configuration.
-    // Priority: 1. chat.llm, 2. global llm, 3. chat object itself (for simple config)
-    let llmConfig = chatConfig.llm || config.llm;
-    if ((!llmConfig || !llmConfig.provider) && chatConfig.provider) {
-        llmConfig = chatConfig;
-    }
-
-    if (!llmConfig || !llmConfig.provider) {
-        throw new Error('LLM configuration is missing or incomplete. Please set your provider and API key, e.g., by running `npx git-contextor config set llm.provider openai` and `npx git-contextor config set llm.apiKey YOUR_OPENAI_KEY`.');
-    }
-
-    const aiResponse = await generateConversationalResponse(
-        query, 
-        searchResult.optimizedContext, 
-        context_type, 
-        llmConfig
-    );
-
-    return {
-        query: query,
-        response: aiResponse,
-        context: searchResult.results
-    };
-}
 
 /**
  * Creates and returns the chat router for conversational AI.
@@ -48,7 +9,7 @@ async function handleChatQuery(query, services, context_type = 'general', option
  */
 module.exports = (services) => {
     const router = express.Router();
-    const { contextOptimizer, indexer } = services;
+    const { contextOptimizer } = services;
 
     /**
      * Handles conversational queries about the repository
@@ -61,7 +22,10 @@ module.exports = (services) => {
         }
 
         try {
-            const result = await handleChatQuery(query, services, context_type, { includeSummary: !!include_summary });
+            const result = await contextOptimizer.chat(query, { 
+                context_type, 
+                includeSummary: !!include_summary 
+            });
             res.json(result);
         } catch (error) {
             logger.error('Error in chat route:', error);
@@ -71,58 +35,3 @@ module.exports = (services) => {
 
     return router;
 };
-
-module.exports.handleChatQuery = handleChatQuery;
-
-async function* generateConversationalResponseStream(query, context, contextType, llmConfig) {
-    const systemPrompt = `You are an AI assistant that helps developers understand codebases. 
-    You have access to relevant code context and should provide helpful, accurate responses about the repository.
-    
-    Context type: ${contextType}
-    Available code context: ${context ? 'Yes' : 'No'}
-    
-    Guidelines:
-    - Be concise but thorough
-    - Focus on code patterns and architecture
-    - If you don't know the answer, say so. Do not invent information.
-    - When referencing code, mention the file path.`;
-
-    const userPrompt = `Based on the provided context, answer the following query: "${query}"
-
-    --- Context ---
-    ${context || 'No context available.'}
-    --- End Context ---`;
-    
-    yield* generateTextStream(userPrompt, { systemPrompt }, { llm: llmConfig });
-}
-module.exports.generateConversationalResponseStream = generateConversationalResponseStream;
-
-async function generateConversationalResponse(query, context, contextType, llmConfig) {
-    const systemPrompt = `You are an AI assistant that helps developers understand codebases. 
-    You have access to relevant code context and should provide helpful, accurate responses about the repository.
-    
-    Context type: ${contextType}
-    Available code context: ${context ? 'Yes' : 'No'}
-    
-    Guidelines:
-    - Be concise but thorough
-    - Focus on code patterns and architecture
-    - If you don't know the answer, say so. Do not invent information.
-    - When referencing code, mention the file path.`;
-
-    const userPrompt = `Based on the provided context, answer the following query: "${query}"
-
-    --- Context ---
-    ${context || 'No context available.'}
-    --- End Context ---`;
-    
-    return generateText(
-        userPrompt,
-        { systemPrompt },
-        { llm: llmConfig }
-    );
-}
-
-function generateConversationId() {
-    return 'conv_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-}

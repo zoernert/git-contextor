@@ -4,7 +4,7 @@ const { getEmbedding } = require('../utils/embeddings');
 const { countTokens } = require('../utils/tokenizer');
 const logger = require('../cli/utils/logger');
 const { kmeans } = require('ml-kmeans');
-const { generateText } = require('../utils/llm');
+const { generateText, generateTextStream } = require('../utils/llm');
 
 const COLLECTION_SUMMARY_PATH = 'gitcontextor://system/collection-summary.md';
 
@@ -253,6 +253,84 @@ class ContextOptimizer {
       tokenCount: finalTokenCount
     };
   }
+  
+    async chat(query, options = {}) {
+      // This logic is moved from api/routes/chat.js
+      const searchResult = await this.search(query, options);
+    
+      const config = this.config;
+      const chatConfig = config.chat || {};
+    
+      let llmConfig = chatConfig.llm || config.llm;
+      if ((!llmConfig || !llmConfig.provider) && chatConfig.provider) {
+          llmConfig = chatConfig;
+      }
+    
+      if (!llmConfig || !llmConfig.provider) {
+          throw new Error('LLM configuration is missing or incomplete. Please set your provider and API key.');
+      }
+    
+      const aiResponse = await this._generateConversationalResponse(
+          query,
+          searchResult.optimizedContext,
+          options.context_type || 'general',
+          llmConfig
+      );
+    
+      return {
+          query: query,
+          response: aiResponse,
+          context_chunks: searchResult.results // Fix: use context_chunks for UI
+      };
+    }
+    
+    async* generateConversationalResponseStream(query, context, contextType, llmConfig) {
+      const systemPrompt = `You are an AI assistant that helps developers understand codebases. 
+      You have access to relevant code context and should provide helpful, accurate responses about the repository.
+        
+      Context type: ${contextType}
+      Available code context: ${context ? 'Yes' : 'No'}
+        
+      Guidelines:
+      - Be concise but thorough
+      - Focus on code patterns and architecture
+      - If you don't know the answer, say so. Do not invent information.
+      - When referencing code, mention the file path.`;
+    
+      const userPrompt = `Based on the provided context, answer the following query: "${query}"
+    
+      --- Context ---
+      ${context || 'No context available.'}
+      --- End Context ---`;
+        
+      yield* generateTextStream(userPrompt, { systemPrompt }, { llm: llmConfig });
+    }
+    
+    async _generateConversationalResponse(query, context, contextType, llmConfig) {
+      const systemPrompt = `You are an AI assistant that helps developers understand codebases. 
+      You have access to relevant code context and should provide helpful, accurate responses about the repository.
+        
+      Context type: ${contextType}
+      Available code context: ${context ? 'Yes' : 'No'}
+        
+      Guidelines:
+      - Be concise but thorough
+      - Focus on code patterns and architecture
+      - If you don't know the answer, say so. Do not invent information.
+      - When referencing code, mention the file path.`;
+    
+      const userPrompt = `Based on the provided context, answer the following query: "${query}"
+    
+      --- Context ---
+      ${context || 'No context available.'}
+      --- End Context ---`;
+        
+      return generateText(
+          userPrompt,
+          { systemPrompt },
+          { llm: llmConfig }
+      );
+    }
 
   async summarizeCollection(options = {}) {
     // Determine the correct LLM configuration, preferring chat settings.

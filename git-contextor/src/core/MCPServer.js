@@ -248,8 +248,7 @@ class MCPServer {
     const { query, includeSummary = false } = args;
     
     try {
-      const { handleChatQuery } = require('../api/routes/chat');
-      const result = await handleChatQuery(query, this.services, 'mcp', { includeSummary });
+      const result = await this.services.contextOptimizer.chat(query, { includeSummary });
 
       return {
         content: [
