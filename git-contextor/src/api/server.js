@@ -25,6 +25,26 @@ const sharedRoutes = require('./routes/shared');
 // Nach den Imports hinzufügen
 function mcpAuth(sharingService) {
     return async (req, res, next) => {
+        const ip = req.ip;
+        const socketAddr = req.socket?.remoteAddress;
+        const hostname = req.hostname;
+        const hostHeader = req.headers['host'];
+
+        const isIpLocal = ['::1', '127.0.0.1', '::ffff:127.0.0.1'].includes(ip);
+        const isSocketLocal = ['::1', '127.0.0.1'].includes(socketAddr);
+        const isHostnameLocal = ['localhost', '127.0.0.1'].includes(hostname);
+        const isHostHeaderLocal = hostHeader && (hostHeader.startsWith('localhost') || hostHeader.startsWith('127.0.0.1'));
+        
+        const isLocalhost = isIpLocal || isSocketLocal || isHostnameLocal || isHostHeaderLocal;
+
+        logger.debug(`MCP Auth check: IP=${ip}, SocketAddr=${socketAddr}, Host=${hostname}, HostHeader=${hostHeader}, isLocalhost=${isLocalhost}`);
+
+        // If the request is from localhost, bypass token validation.
+        if (isLocalhost) {
+            logger.debug(`Bypassing MCP auth for local request to ${req.originalUrl}`);
+            return next();
+        }
+
         const authHeader = req.headers.authorization;
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
             return res.status(401).json({ error: 'Unauthorized: Missing Bearer token.' });
@@ -138,7 +158,10 @@ function start(config, services, serviceManager) {
                 `File: ${r.metadata.filePath}\nLines: ${r.metadata.startLine}-${r.metadata.endLine}\n\`\`\`\n${r.pageContent}\n\`\`\``
             ).join('\n\n---\n\n');
 
-            await services.sharingService.incrementUsage(req.share.id);
+            // Only increment usage if the request came through a share token
+            if (req.share && req.share.id) {
+                await services.sharingService.incrementUsage(req.share.id);
+            }
 
             res.status(200).json({
                 content: formattedResults || "No relevant context found for the query."
