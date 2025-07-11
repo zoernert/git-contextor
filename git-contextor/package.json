@@ -1,6 +1,6 @@
 {
   "name": "git-contextor",
-  "version": "1.1.5",
+  "version": "1.1.6",
   "description": "A code context tool with vector search and real-time monitoring, with optional Git integration.",
   "main": "src/index.js",
   "bin": {
@@ -9,8 +9,15 @@
   "scripts": {
     "start": "node bin/git-contextor.js start",
     "test": "jest",
+    "test:unit": "jest test/unit",
+    "test:integration": "jest test/integration",
+    "test:e2e": "jest test/integration/e2e.test.js",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:ci": "jest --ci --coverage --watchAll=false",
     "dev": "nodemon bin/git-contextor.js start",
     "lint": "eslint src/**/*.js",
+    "lint:fix": "eslint src/**/*.js --fix",
     "build": "echo 'No build step required'",
     "postinstall": "node scripts/postinstall.js"
   },
@@ -64,6 +71,7 @@
     "inquirer": "^8.2.6",
     "lodash": "^4.17.21",
     "marked": "^12.0.0",
+    "ml-kmeans": "^6.0.0",
     "openai": "^4.20.1",
     "ora": "^5.4.1",
     "pdf-parse": "^1.1.1",
