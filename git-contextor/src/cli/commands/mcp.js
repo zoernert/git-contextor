@@ -39,23 +39,8 @@ async function mcp(options) {
     // Create and start MCP server
     const mcpServer = new MCPServer(services, config);
     
-    if (options.websocket) {
-      const port = options.port || 3334;
-      await mcpServer.startWebSocket(port);
-      logger.info(`MCP WebSocket server running on port ${port}`);
-      
-      // Keep process alive
-      process.on('SIGINT', async () => {
-        await mcpServer.stop();
-        process.exit(0);
-      });
-      
-      // Wait indefinitely
-      await new Promise(() => {});
-    } else {
-      // Default: stdio transport for VS Code
-      await mcpServer.startStdio();
-    }
+    // Default: stdio transport for VS Code
+    await mcpServer.startStdio();
 
   } catch (error) {
     logger.error('Failed to start MCP server:', error);

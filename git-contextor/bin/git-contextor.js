@@ -116,8 +116,6 @@ program
 program
   .command('mcp')
   .description('Start Git Contextor as an MCP server')
-  .option('--websocket', 'Use WebSocket transport instead of stdio')
-  .option('--port <port>', 'WebSocket port (default: 3334)', '3334')
   .action(mcpCommand);
 
 program.parse(process.argv);

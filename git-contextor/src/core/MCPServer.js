@@ -1,6 +1,5 @@
 const { Server } = require('@modelcontextprotocol/sdk/server/index.js');
 const { StdioServerTransport } = require('@modelcontextprotocol/sdk/server/stdio.js');
-const { WebSocketTransport } = require('@modelcontextprotocol/sdk/server/websocket.js');
 const {
   CallToolRequestSchema,
   ListToolsRequestSchema,
@@ -449,17 +448,6 @@ class MCPServer {
     this.transport = new StdioServerTransport();
     await this.server.connect(this.transport);
     logger.info('MCP server started with stdio transport');
-  }
-
-  // Start MCP server with WebSocket transport (for web clients)
-  async startWebSocket(port = 3334) {
-    if (!this.server) {
-      this.createServer();
-    }
-
-    this.transport = new WebSocketTransport(port);
-    await this.server.connect(this.transport);
-    logger.info(`MCP server started with WebSocket transport on port ${port}`);
   }
 
   async stop() {
