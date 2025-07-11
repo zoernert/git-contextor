@@ -205,7 +205,10 @@ class Indexer {
             return false;
         }
         const ext = path.extname(file).toLowerCase();
-        return this.config.indexing.includeExtensions.includes(ext);
+        const isIncludedExtension = this.config.indexing.includeExtensions.includes(ext);
+        const isVisionCandidate = this.config.vision?.enabled && isImageFile(file);
+        
+        return isIncludedExtension || isVisionCandidate;
       });
       
       this.totalFiles = filesToIndex.length;
