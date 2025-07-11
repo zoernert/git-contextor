@@ -74,16 +74,32 @@ npx git-contextor share create --tunnel localtunnel --duration 2h
 
 ## 🔥 Real-World Examples
 
-### VS Code Integration
-```javascript
-// Add to VS Code tasks.json
+### VS Code Integration (with GitHub Copilot)
+
+Integrate Git Contextor directly with GitHub Copilot Chat to provide deep, semantic context about your entire workspace. This is the recommended way to use Git Contextor in VS Code.
+
+1.  Open your VS Code `settings.json` file (Ctrl+Shift+P, then "Open User Settings (JSON)").
+2.  Add the following configuration:
+
+```json
 {
-    "label": "Ask Git Contextor",
-    "type": "shell", 
-    "command": "npx git-contextor query \"${selectedText}\"",
-    "group": "build"
+    "mcp": {
+        "servers": {
+            "git-contextor": {
+                "command": "npx",
+                "args": ["git-contextor", "mcp"],
+                "cwd": "/path/to/your/repository"
+            }
+        }
+    }
 }
 ```
+
+Replace `"/path/to/your/repository"` with the **absolute path** to your project folder where you ran `git-contextor init`.
+
+3.  Restart VS Code for the changes to take effect.
+
+Now, when you use `@workspace` in Copilot Chat, it will use Git Contextor's understanding of your codebase to provide more accurate and context-aware answers.
 
 ### n8n Workflow
 ```javascript
