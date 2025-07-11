@@ -3,6 +3,20 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.2] - 2025-07-12
+
+### Added
+- **Native MCP Server**: Implemented a native Model Context Protocol (MCP) server. This allows seamless integration with VS Code's Copilot Chat and other MCP-compatible tools, enabling them to use Git Contextor's deep repository understanding for context.
+- **Autonomous MCP Mode**: The `git-contextor mcp` command is now fully autonomous. It automatically starts all necessary background services (indexing, file watching, auto-summary) without requiring a separate `git-contextor start` process, greatly improving the user experience for VS Code integration.
+
+### Changed
+- The WebSocket transport layer for the MCP server was removed to simplify the implementation, as VS Code uses the standard I/O (stdio) transport.
+- Refactored the chat logic from the API layer into the `ContextOptimizer` service for better code structure and to resolve cyclic dependencies.
+- Updated the `README.md` to document the new, preferred method for VS Code integration using the MCP server.
+
+### Fixed
+- A bug was fixed where the context chunks used in an AI chat response were not correctly passed to the frontend, preventing them from being displayed in the UI. This was addressed during the chat logic refactoring.
+
 ## [1.2.1] - 2025-07-11
 
 ### Added
