@@ -3,6 +3,21 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2025-07-11
+
+### Added
+- Automatische Aktualisierungen der Sammlungsübersicht werden jetzt ausgelöst, wenn der Indexer länger als 20 Sekunden inaktiv ist.
+
+### Changed
+- Die Sammlungsübersicht im Dashboard wird zur besseren Lesbarkeit jetzt als HTML anstatt als reiner Text gerendert.
+- Die API-Dokumentation (`API.md`) wurde aktualisiert, um neue Endpunkte aufzunehmen und Beschreibungen zu präzisieren.
+
+### Fixed
+- Die Erstellung der Sammlungsübersicht verwendet jetzt korrekt die flexible Chat-LLM-Konfiguration, was Fehler behebt, wenn keine globale `llm`-Konfiguration vorhanden ist.
+- Das Panel für die Zusammenfassung in der Dashboard-Benutzeroberfläche wurde korrigiert, um eine korrekte Anzeige sicherzustellen.
+- Mehrere Probleme beim Laden von LLM-Konfigurationen wurden behoben, insbesondere für den `gemini`-Anbieter, und es wird sichergestellt, dass die `chat`-Konfiguration korrekt priorisiert wird.
+- Ein Fehler bei der API-Schlüssel-Authentifizierung wurde durch die Bereitstellung des korrekten Konfigurationsobjekts an die Middleware behoben.
+
 ## [1.2.0] - 2025-07-11
 
 ### Added
