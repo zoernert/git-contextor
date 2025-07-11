@@ -22,5 +22,22 @@ module.exports = (services) => {
         }
     });
 
+    router.get('/summary', apiKeyAuth(contextOptimizer.config), async (req, res) => {
+        try {
+            logger.info('API call received to get or create collection summary.');
+            const summaryContent = await contextOptimizer.getOrCreateSummary();
+    
+            if (summaryContent) {
+                res.setHeader('Content-Type', 'text/plain');
+                res.status(200).send(summaryContent);
+            } else {
+                res.status(404).json({ error: 'Could not retrieve or create collection summary.' });
+            }
+        } catch (error) {
+            logger.error('Error handling /summary request:', error);
+            res.status(500).json({ error: 'Failed to process summary request.' });
+        }
+    });
+
     return router;
 };
