@@ -230,6 +230,34 @@ class VectorStore {
       return { status: 'error', message: error.message };
     }
   }
+
+  async getAllPoints() {
+    await this.ensureCollection();
+    try {
+      logger.info(`Retrieving all points from Qdrant collection: ${this.collectionName}`);
+      const allPoints = [];
+      let nextOffset = null;
+      do {
+        const page = await this.client.scroll(this.collectionName, {
+          offset: nextOffset,
+          limit: 1000,
+          with_payload: true,
+          with_vector: true,
+        });
+        allPoints.push(...page.points);
+        nextOffset = page.next_page_offset;
+      } while (nextOffset);
+
+      logger.info(`Retrieved ${allPoints.length} points.`);
+      return allPoints;
+    } catch (error) {
+      if (error.status === 404) {
+        return [];
+      }
+      logger.error(`Error retrieving all points from ${this.collectionName}:`, error);
+      throw error;
+    }
+  }
 }
 
 module.exports = VectorStore;

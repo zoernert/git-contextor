@@ -142,6 +142,11 @@ class MemoryVectorStore {
       vectorCount: this.points.length,
     };
   }
+
+  async getAllPoints() {
+    logger.info(`Retrieving all ${this.points.length} points from in-memory store.`);
+    return this.points;
+  }
 }
 
 module.exports = MemoryVectorStore;

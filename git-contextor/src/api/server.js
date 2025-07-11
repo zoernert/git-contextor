@@ -15,6 +15,7 @@ const uiconfigRoutes = require('./routes/uiconfig');
 const docsRoutes = require('./routes/docs');
 const configRoutes = require('./routes/config');
 const filesRoutes = require('./routes/files');
+const collectionRoutes = require('./routes/collection');
 
 // Import routes for chat and sharing
 const chatRoutes = require('./routes/chat');
@@ -89,6 +90,7 @@ function start(config, services, serviceManager) {
     apiRouter.use('/metrics', metricsRoutes(services));
     apiRouter.use('/reindex', reindexRoutes(services));
     apiRouter.use('/chat', chatRoutes(services));
+    apiRouter.use('/collection', collectionRoutes(services));
     apiRouter.use('/share', shareRoutes(services));
     apiRouter.use('/config', configRoutes(config, serviceManager));
     app.use('/api', apiRouter);

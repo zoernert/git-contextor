@@ -2,25 +2,29 @@ const express = require('express');
 const { OpenAI } = require('openai');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const VectorStore = require('../../core/VectorStore');
+const { generateText } = require('../../utils/llm');
+const logger = require('../../cli/utils/logger');
+const { apiKeyAuth } = require('../../utils/security');
 
-async function handleChatQuery(query, services, context_type = 'general') {
+async function handleChatQuery(query, services, context_type = 'general', options = {}) {
     const { contextOptimizer } = services;
 
     // Use existing search infrastructure. It will use settings from config.chat by default.
-    const searchResult = await contextOptimizer.search(query);
+    const searchResult = await contextOptimizer.search(query, options);
     
     // Generate conversational response
     const chatConfig = contextOptimizer.config.chat;
     const aiResponse = await generateConversationalResponse(
         query, 
         searchResult.optimizedContext, 
-        context_type,
+        context_type, 
         chatConfig
     );
 
     return {
+        query: query,
         response: aiResponse,
-        context_chunks: searchResult.results, // Send the full chunk objects
+        context: searchResult.results
     };
 }
 
@@ -36,37 +40,19 @@ module.exports = (services) => {
     /**
      * Handles conversational queries about the repository
      */
-    router.post('/', async (req, res, next) => {
-        const { query, conversation_id, context_type = 'general' } = req.body;
-
+    router.post('/', apiKeyAuth(services.config), async (req, res) => {
+        const { query, context_type, include_summary } = req.body;
+        
         if (!query) {
-            return res.status(400).json({ error: 'Missing required field: query' });
+            return res.status(400).json({ error: 'Query is required' });
         }
 
         try {
-            const result = await handleChatQuery(query, services, context_type);
-
-            res.json({
-                ...result,
-                conversation_id: conversation_id || generateConversationId(),
-                timestamp: new Date().toISOString()
-            });
-
+            const result = await handleChatQuery(query, services, context_type, { includeSummary: !!include_summary });
+            res.json(result);
         } catch (error) {
-            if (VectorStore.isDimensionMismatch(error)) {
-                // This specific error means the config (e.g., embedding model) has changed
-                // and is incompatible with the existing data in the vector store.
-                indexer.reindexAll().catch(err => {
-                    console.error('Background re-index triggered by chat failed:', err);
-                });
-                return res.status(503).json({
-                    response: 'Configuration mismatch detected. The vector database is being re-indexed to match the new settings. Please wait a few minutes and try your question again.',
-                    context_chunks: 0,
-                    conversation_id: conversation_id || generateConversationId(),
-                    timestamp: new Date().toISOString()
-                });
-            }
-            next(error);
+            logger.error('Error in chat route:', error);
+            res.status(500).json({ error: 'An error occurred during your request.' });
         }
     });
 
@@ -77,7 +63,7 @@ module.exports.handleChatQuery = handleChatQuery;
 
 async function generateConversationalResponse(query, context, contextType, chatConfig) {
     const systemPrompt = `You are an AI assistant that helps developers understand codebases. 
-    You have access to relevant code context and should provide helpful, accurate responses about the repository structure, patterns, and implementation details.
+    You have access to relevant code context and should provide helpful, accurate responses about the repository.
     
     Context type: ${contextType}
     Available code context: ${context ? 'Yes' : 'No'}
@@ -85,38 +71,20 @@ async function generateConversationalResponse(query, context, contextType, chatC
     Guidelines:
     - Be concise but thorough
     - Focus on code patterns and architecture
-    - Suggest specific files or functions when relevant
-    - If context is insufficient, say so clearly
-    - Never reveal sensitive information like API keys or credentials`;
+    - If you don't know the answer, say so. Do not invent information.
+    - When referencing code, mention the file path.`;
 
-    const userPrompt = `Based on this code context from the repository:
+    const userPrompt = `Based on the provided context, answer the following query: "${query}"
 
-${context || 'No specific context found'}
-
-Answer this question: ${query}`;
-
-    // Use configured LLM provider's API for chat completion
-    if (chatConfig && chatConfig.provider === 'openai' && chatConfig.apiKey) {
-        const openai = new OpenAI({ apiKey: chatConfig.apiKey });
-        const completion = await openai.chat.completions.create({
-            model: chatConfig.model || 'gpt-4',
-            messages: [
-                { role: 'system', content: systemPrompt },
-                { role: 'user', content: userPrompt }
-            ],
-            max_tokens: 1000
-        });
-        return completion.choices[0].message.content;
-    } else if (chatConfig && chatConfig.provider === 'gemini' && chatConfig.apiKey) {
-        const genAI = new GoogleGenerativeAI(chatConfig.apiKey);
-        const model = genAI.getGenerativeModel({ model: chatConfig.model || 'gemini-pro' });
-        const result = await model.generateContent(`${systemPrompt}\n\n${userPrompt}`);
-        return result.response.text();
-    } else {
-        // Fallback: return formatted search results without LLM
-        const reason = chatConfig ? `The configured provider ('${chatConfig.provider}') is not supported for chat or the API key is missing.` : 'No chat provider is configured.';
-        return `Based on the repository context, here's what I found:\n\n${context}\n\nNote: Could not generate an AI response. ${reason} Please configure a 'chat' provider (like 'openai' or 'gemini') with an API key in the UI config.`;
-    }
+    --- Context ---
+    ${context || 'No context available.'}
+    --- End Context ---`;
+    
+    return generateText(
+        userPrompt,
+        { systemPrompt },
+        { llm: chatConfig.llm }
+    );
 }
 
 function generateConversationId() {

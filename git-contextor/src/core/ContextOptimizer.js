@@ -3,6 +3,10 @@ const path = require('path');
 const { getEmbedding } = require('../utils/embeddings');
 const { countTokens } = require('../utils/tokenizer');
 const logger = require('../cli/utils/logger');
+const kMeans = require('k-means-js');
+const { generateText } = require('../utils/llm');
+
+const COLLECTION_SUMMARY_PATH = 'gitcontextor://system/collection-summary.md';
 
 const MODEL_CONTEXT_WINDOWS = {
   // OpenAI
@@ -58,6 +62,7 @@ class ContextOptimizer {
     const llmType = options.llmType || this.config.llm?.model || 'claude-sonnet';
     const filter = options.filter || null;
     let filePathToPrioritize = options.filePath || null;
+    const includeSummary = options.includeSummary || false;
 
     // 2. maxTokens für den Kontext dynamisch bestimmen
     let maxTokens = options.maxTokens;
@@ -72,9 +77,26 @@ class ContextOptimizer {
         }
     }
 
-    logger.info(`Performing search for query: "${query}" with maxTokens: ${maxTokens}, prioritizing file: ${filePathToPrioritize || 'None'}`);
+    logger.info(`Performing search for query: "${query}" with maxTokens: ${maxTokens}, prioritizing file: ${filePathToPrioritize || 'None'}, including summary: ${includeSummary}`);
     
     let allResults = [];
+
+    if (includeSummary) {
+      try {
+        const summaryDoc = await this.vectorStore.search(
+            await getEmbedding('repository overview summary', this.config.embedding),
+            1, 
+            { must: [{ key: 'filePath', match: { value: COLLECTION_SUMMARY_PATH } }] }
+        );
+        if (summaryDoc && summaryDoc.length > 0) {
+            summaryDoc[0].score = 1.1; // Highest score to prioritize
+            allResults.push(...summaryDoc);
+            logger.info(`Added collection summary to context candidates.`);
+        }
+      } catch (error) {
+        logger.warn('Could not retrieve collection summary.', error);
+      }
+    }
 
     if (filePathToPrioritize) {
         const absoluteFilePath = path.isAbsolute(filePathToPrioritize) ? filePathToPrioritize : path.join(this.config.repository.path, filePathToPrioritize);
@@ -84,7 +106,7 @@ class ContextOptimizer {
 
             if (fileTokens < maxTokens) {
                 const prioritizedChunk = {
-                    score: 1.0, // Highest priority
+                    score: 1.0, // High priority, but lower than summary
                     payload: {
                         content: fileContent,
                         filePath: filePathToPrioritize,
@@ -112,8 +134,11 @@ class ContextOptimizer {
     const searchResults = await this.vectorStore.search(queryVector, searchLimit, filter);
     
     if (searchResults && searchResults.length > 0) {
-        const filteredResults = filePathToPrioritize ? searchResults.filter(r => r.payload.filePath !== filePathToPrioritize) : searchResults;
-        allResults.push(...filteredResults);
+        const uniqueResults = searchResults.filter(r => 
+            r.payload.filePath !== COLLECTION_SUMMARY_PATH &&
+            r.payload.filePath !== filePathToPrioritize
+        );
+        allResults.push(...uniqueResults);
     }
     
     if (allResults.length === 0) {
@@ -132,6 +157,61 @@ class ContextOptimizer {
       results: includedResults,
       tokenCount: finalTokenCount
     };
+  }
+
+  async summarizeCollection(options = {}) {
+    const numClusters = options.numClusters || 10;
+    const pointsPerCluster = options.pointsPerCluster || 5;
+    logger.info(`Starting collection summary generation with ${numClusters} clusters.`);
+
+    const allPoints = await this.vectorStore.getAllPoints();
+    if (allPoints.length < numClusters) {
+      logger.warn('Not enough data points to generate a meaningful summary. Aborting.');
+      return { success: false, message: 'Not enough data points.' };
+    }
+
+    const vectors = allPoints.map(p => p.vector);
+    const clusters = kMeans(vectors, { k: numClusters });
+
+    let summaryPrompt = 'You are an expert software architect. Below are clustered chunks of code and text from a repository. For each cluster, summarize its core topic or theme in a single, concise headline. Then, list the key technologies, patterns, or concepts found within that cluster. Format the output in Markdown.\n\n';
+
+    for (let i = 0; i < clusters.length; i++) {
+      const clusterPoints = clusters[i].map(pointIndex => allPoints[pointIndex]);
+      const samplePoints = clusterPoints.slice(0, pointsPerCluster);
+
+      if (samplePoints.length === 0) continue;
+
+      summaryPrompt += `--- Cluster ${i + 1} ---\n`;
+      samplePoints.forEach(point => {
+        summaryPrompt += `File: ${point.payload.filePath}\n\`\`\`\n${point.payload.content}\n\`\`\`\n\n`;
+      });
+    }
+
+    const summaryContent = await generateText(
+      summaryPrompt,
+      {
+        systemPrompt: 'Generate a summary based on the provided text clusters.'
+      },
+      this.config
+    );
+
+    logger.info('Generated collection summary. Now indexing it.');
+
+    await this.vectorStore.removeFile(COLLECTION_SUMMARY_PATH);
+
+    await this.vectorStore.upsertChunks([
+      {
+        content: summaryContent,
+        metadata: {
+          filePath: COLLECTION_SUMMARY_PATH,
+          startLine: 1,
+          endLine: summaryContent.split('\n').length,
+        },
+      },
+    ]);
+    
+    logger.info('Collection summary updated successfully.');
+    return { success: true, message: 'Collection summary updated.' };
   }
 
   /**
