@@ -123,7 +123,7 @@ function start(config, services, serviceManager) {
 
     // Spec-Endpunkt
     mcpRouter.get('/spec', (req, res) => {
-        const repoName = services.config.repository.name;
+        const repoName = config.repository.name;
         res.json({
             name: `Git Contextor: ${repoName}`,
             description: `Provides context-aware search for the ${repoName} repository.`,
