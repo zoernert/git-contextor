@@ -3,7 +3,7 @@ const path = require('path');
 const { getEmbedding } = require('../utils/embeddings');
 const { countTokens } = require('../utils/tokenizer');
 const logger = require('../cli/utils/logger');
-const kMeans = require('k-means-js');
+const { kmeans } = require('ml-kmeans');
 const { generateText } = require('../utils/llm');
 
 const COLLECTION_SUMMARY_PATH = 'gitcontextor://system/collection-summary.md';
@@ -171,7 +171,11 @@ class ContextOptimizer {
     }
 
     const vectors = allPoints.map(p => p.vector);
-    const clusters = kMeans(vectors, { k: numClusters });
+    const ans = kmeans(vectors, numClusters, { maxIterations: 100 });
+    const clusters = Array.from({ length: numClusters }, () => []);
+    ans.clusters.forEach((clusterId, pointIndex) => {
+        clusters[clusterId].push(pointIndex);
+    });
 
     let summaryPrompt = 'You are an expert software architect. Below are clustered chunks of code and text from a repository. For each cluster, summarize its core topic or theme in a single, concise headline. Then, list the key technologies, patterns, or concepts found within that cluster. Format the output in Markdown.\n\n';
 
