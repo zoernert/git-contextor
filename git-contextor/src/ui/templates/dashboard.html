@@ -1,7 +1,13 @@
-<!-- This is a template file. The UI server could potentially use this to render the main dashboard. -->
-<!-- For the current static file server implementation, public/index.html is used as the dashboard. -->
-<!-- This file's content can be expanded to support server-side rendering in the future. -->
-<h1>Dashboard Template</h1>
-<p>
-    This content comes from `templates/dashboard.html`.
-</p>
+<!-- 
+  This component can be integrated into your main dashboard view (e.g., inside the element with id="view-dashboard" in public/index.html).
+  It provides a UI for viewing and updating the AI-generated Collection Summary.
+-->
+<div id="summary-panel" class="panel">
+    <div class="panel-header">
+        <h2>Collection Summary</h2>
+        <button id="update-summary-btn" class="button">Update Summary</button>
+    </div>
+    <div class="panel-content">
+        <pre id="summary-content" style="white-space: pre-wrap; word-wrap: break-word;">Loading...</pre>
+    </div>
+</div>

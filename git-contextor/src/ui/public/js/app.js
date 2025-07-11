@@ -69,6 +69,10 @@ function initDashboard(API_BASE_URL) {
     const shareCreateResult = document.getElementById('share-create-result');
     const activeSharesList = document.getElementById('active-shares-list');
     const refreshSharesButton = document.getElementById('refresh-shares-btn');
+        
+    // Summary elements
+    const summaryContent = document.getElementById('summary-content');
+    const updateSummaryBtn = document.getElementById('update-summary-btn');
     
     // Tunnel elements
     const tunnelToggleBtn = document.getElementById('tunnel-toggle-btn');
@@ -436,6 +440,54 @@ else:
         }
     }
 
+    async function fetchAndDisplaySummary() {
+        if (!summaryContent) return;
+        summaryContent.textContent = 'Loading summary...';
+        try {
+            const response = await fetch(`${API_BASE_URL}/collection/summary`, {
+                headers: { 'x-api-key': apiKey }
+            });
+            if (response.ok) {
+                const text = await response.text();
+                summaryContent.textContent = text || 'Summary is empty or not yet generated.';
+            } else {
+                summaryContent.textContent = 'Could not load summary. Generate one using the "Update Summary" button.';
+            }
+        } catch (error) {
+            console.error('Error loading summary:', error);
+            summaryContent.textContent = 'Error loading summary.';
+        }
+    }
+
+    async function triggerSummaryUpdate() {
+        if (!updateSummaryBtn) return;
+        updateSummaryBtn.disabled = true;
+        updateSummaryBtn.textContent = 'Starting...';
+        summaryContent.textContent = 'Summary generation initiated. This can take several minutes...';
+        
+        try {
+            const response = await fetch(`${API_BASE_URL}/collection/summarize`, {
+                method: 'POST',
+                headers: { 'x-api-key': apiKey }
+            });
+
+            if (response.status === 202) {
+                summaryContent.textContent += '\nProcess started successfully. The new summary will appear here once ready. You can refresh the page or wait.';
+                // Refresh view after 20s to show the new summary
+                setTimeout(fetchAndDisplaySummary, 20000);
+            } else {
+                const errorData = await response.json();
+                summaryContent.textContent = `Error starting update: ${errorData.error || response.statusText}`;
+            }
+        } catch (error) {
+            console.error('Error triggering summary update:', error);
+            summaryContent.textContent = `An error occurred while trying to start the update.`;
+        } finally {
+            updateSummaryBtn.disabled = false;
+            updateSummaryBtn.textContent = 'Update Summary';
+        }
+    }
+
     chatForm.addEventListener('submit', performChat);
 
     toggleContextBtn.addEventListener('click', () => {
@@ -446,6 +498,9 @@ else:
 
     shareForm.addEventListener('submit', createShare);
     refreshSharesButton.addEventListener('click', fetchShares);
+    if (updateSummaryBtn) {
+        updateSummaryBtn.addEventListener('click', triggerSummaryUpdate);
+    }
     tunnelToggleBtn.addEventListener('click', toggleTunnel);
 
     async function toggleWatcher(event) {
@@ -587,6 +642,7 @@ else:
     fetchStatus();
     fetchShares();
     getTunnelStatus();
+    fetchAndDisplaySummary();
     setInterval(fetchStatus, 5000); // Poll general status
     setInterval(getTunnelStatus, 3000); // Poll tunnel status frequently
 
