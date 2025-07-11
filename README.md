@@ -145,7 +145,7 @@ Go beyond simple search. Have a deep conversation with your codebase and securel
 
 - **`git-contextor chat`**: Ask complex questions and get AI-generated answers.
 - **`git-contextor share`**: Create temporary, secure links for external AI-powered code reviews.
-- **Collection Summary**: Generate an AI-powered overview of your entire repository for superior context, improving the AI's understanding.
+- **Auto-Summary**: Git Contextor automatically creates an AI-powered overview of your repository. This gives the AI a "thinking step" to understand the big picture before diving into code details.
 
 [➡️ Learn more about Advanced AI Features in the documentation](docs/features/context-generation.md)
 
