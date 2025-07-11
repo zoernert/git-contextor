@@ -2,7 +2,7 @@ const express = require('express');
 const { OpenAI } = require('openai');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const VectorStore = require('../../core/VectorStore');
-const { generateText } = require('../../utils/llm');
+const { generateText, generateTextStream } = require('../../utils/llm');
 const logger = require('../../cli/utils/logger');
 const { apiKeyAuth } = require('../../utils/security');
 
@@ -73,6 +73,29 @@ module.exports = (services) => {
 };
 
 module.exports.handleChatQuery = handleChatQuery;
+
+async function* generateConversationalResponseStream(query, context, contextType, llmConfig) {
+    const systemPrompt = `You are an AI assistant that helps developers understand codebases. 
+    You have access to relevant code context and should provide helpful, accurate responses about the repository.
+    
+    Context type: ${contextType}
+    Available code context: ${context ? 'Yes' : 'No'}
+    
+    Guidelines:
+    - Be concise but thorough
+    - Focus on code patterns and architecture
+    - If you don't know the answer, say so. Do not invent information.
+    - When referencing code, mention the file path.`;
+
+    const userPrompt = `Based on the provided context, answer the following query: "${query}"
+
+    --- Context ---
+    ${context || 'No context available.'}
+    --- End Context ---`;
+    
+    yield* generateTextStream(userPrompt, { systemPrompt }, { llm: llmConfig });
+}
+module.exports.generateConversationalResponseStream = generateConversationalResponseStream;
 
 async function generateConversationalResponse(query, context, contextType, llmConfig) {
     const systemPrompt = `You are an AI assistant that helps developers understand codebases. 

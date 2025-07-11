@@ -149,6 +149,56 @@ function start(config, services, serviceManager) {
             });
         });
 
+    // MCP Chat Streaming Endpunkt
+    mcpRouter.post('/chat', async (req, res) => {
+        res.writeHead(200, {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+        });
+
+        const { query, options = {} } = req.body;
+        if (!query) {
+            res.write(`data: ${JSON.stringify({ type: 'error', error: 'Missing query' })}\n\n`);
+            return res.end();
+        }
+
+        try {
+            // Context is fetched first by performing a search
+            const searchResult = await services.contextOptimizer.search(query, options);
+
+            // Determine LLM configuration
+            const chatConfig = config.chat || {};
+            let llmConfig = chatConfig.llm || config.llm;
+            if ((!llmConfig || !llmConfig.provider) && chatConfig.provider) {
+                llmConfig = chatConfig;
+            }
+            if (!llmConfig || !llmConfig.provider) {
+                throw new Error('LLM configuration is missing for streaming chat.');
+            }
+            
+            // Get the streaming response generator
+            const stream = chatRoutes.generateConversationalResponseStream(
+                query,
+                searchResult.optimizedContext,
+                'general',
+                llmConfig
+            );
+
+            for await (const chunk of stream) {
+                res.write(`data: ${JSON.stringify({ type: 'chunk', content: chunk })}\n\n`);
+            }
+            
+            res.write(`data: ${JSON.stringify({ type: 'end' })}\n\n`);
+            res.end();
+
+        } catch (error) {
+            logger.error('Error in MCP chat stream:', error);
+            res.write(`data: ${JSON.stringify({ type: 'error', error: error.message })}\n\n`);
+            res.end();
+        }
+    });
+
     // Tool Invocation Endpunkt
     mcpRouter.post('/tools/code_search/invoke', async (req, res) => {
         const { query } = req.body;
