@@ -158,6 +158,35 @@ Go beyond simple search. Have a deep conversation with your codebase and securel
 - **Code Reviews**: Understand changes faster
 - **Onboarding**: Help new developers understand codebases
 
+## 📖 Documentation
+
+### 📋 Getting Started
+- **[User Guide](docs/GUIDE.md)** - Complete setup and usage guide
+- **[CLI Reference](docs/CLI_REFERENCE.md)** - All command-line options
+- **[Usage Scenarios](docs/USAGE_SCENARIOS.md)** - Real-world examples and workflows
+
+### 🔧 Configuration & Advanced Topics
+- **[Advanced Configuration](docs/ADVANCED_CONFIGURATION.md)** - Performance tuning and customization
+- **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and solutions
+- **[Features Overview](docs/FEATURES.md)** - Complete feature list
+
+### 🛠️ API & Integration
+- **[REST API Reference](docs/API_REFERENCE.md)** - Complete API documentation
+- **[Integration Guide](docs/INTEGRATION.md)** - How to integrate with external tools
+- **[OpenAPI Spec](docs/openapi.json)** - Machine-readable API specification
+
+### 🔌 Platform-Specific Guides
+- **[VS Code Integration](docs/integrations/vscode.md)** - VS Code setup and usage
+- **[n8n Integration](docs/integrations/n8n.md)** - Workflow automation
+- **[LangChain Integration](docs/integrations/langchain.md)** - Python AI framework
+- **[Node-RED Integration](docs/integrations/node-red.md)** - Visual programming
+- **[Model Context Protocol](docs/integrations/mcp.md)** - AI tool integration
+- **[Programmatic Usage](docs/integrations/programmatic.md)** - Custom applications
+
+### 🎯 Feature Deep Dives
+- **[Context Generation](docs/features/context-generation.md)** - How AI context is created
+- **[Sharing & Chat](docs/features/sharing-and-chat.md)** - Collaboration features
+
 ## 📊 Performance
 
 | Repository Size | Index Time | Search Speed | Memory Usage |
