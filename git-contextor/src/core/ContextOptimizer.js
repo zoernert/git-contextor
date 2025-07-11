@@ -219,6 +219,49 @@ class ContextOptimizer {
   }
 
   /**
+   * Retrieves the collection summary, creating it if it doesn't exist.
+   * @returns {Promise<string|null>} The summary content as a string, or null on failure.
+   */
+  async getOrCreateSummary() {
+    try {
+      const filter = {
+        must: [{ key: 'filePath', match: { value: COLLECTION_SUMMARY_PATH } }]
+      };
+      
+      let points = await this.vectorStore.getPoints(filter);
+
+      if (points && points.length > 0) {
+        logger.info('Retrieved existing collection summary.');
+        // The summary might be chunked, but for now it's treated as a single doc.
+        return points.map(p => p.payload.content).join('\n\n');
+      }
+
+      // If not found, create it.
+      logger.info('No collection summary found, generating a new one.');
+      const summaryResult = await this.summarizeCollection();
+
+      if (!summaryResult || !summaryResult.success) {
+        logger.error('Failed to generate collection summary during getOrCreateSummary.');
+        return null;
+      }
+
+      // Fetch it again.
+      points = await this.vectorStore.getPoints(filter);
+
+      if (points && points.length > 0) {
+        logger.info('Retrieved newly generated collection summary.');
+        return points.map(p => p.payload.content).join('\n\n');
+      } else {
+        logger.warn('Could not retrieve collection summary even after generating it.');
+        return null;
+      }
+    } catch (error) {
+      logger.error('Error in getOrCreateSummary:', error);
+      return null;
+    }
+  }
+
+  /**
    * Packs the most relevant context into a string that respects the token limit.
    * @param {Array<object>} results - Search results from the vector store.
    * @param {number} maxTokens - The maximum number of tokens allowed.

@@ -231,6 +231,35 @@ class VectorStore {
     }
   }
 
+  async getPoints(filter) {
+    await this.ensureCollection();
+    try {
+      logger.info(`Retrieving points from Qdrant collection ${this.collectionName} with filter.`);
+      const allPoints = [];
+      let nextOffset = null;
+      do {
+        const page = await this.client.scroll(this.collectionName, {
+          filter,
+          offset: nextOffset,
+          limit: 1000,
+          with_payload: true,
+          with_vector: false,
+        });
+        allPoints.push(...page.points);
+        nextOffset = page.next_page_offset;
+      } while (nextOffset);
+
+      logger.info(`Retrieved ${allPoints.length} points with filter.`);
+      return allPoints;
+    } catch (error) {
+        if (error.status === 404) {
+            return [];
+        }
+        logger.error(`Error retrieving points from ${this.collectionName}:`, error);
+        throw error;
+    }
+  }
+
   async getAllPoints() {
     await this.ensureCollection();
     try {

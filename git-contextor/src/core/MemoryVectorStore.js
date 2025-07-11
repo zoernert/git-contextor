@@ -143,6 +143,23 @@ class MemoryVectorStore {
     };
   }
 
+  async getPoints(filter) {
+    logger.info(`Retrieving points from in-memory store with filter.`);
+    let candidates = this.points;
+    if (filter && filter.must) {
+      candidates = candidates.filter(point => {
+        return filter.must.every(condition => {
+          return point.payload[condition.key] === condition.match.value;
+        });
+      });
+    }
+
+    return candidates.map(point => ({
+      id: point.id,
+      payload: { ...point.payload },
+    }));
+  }
+
   async getAllPoints() {
     logger.info(`Retrieving all ${this.points.length} points from in-memory store.`);
     return this.points;
