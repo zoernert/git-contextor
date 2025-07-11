@@ -122,27 +122,32 @@ function start(config, services, serviceManager) {
     const mcpRouter = express.Router();
 
     // Spec-Endpunkt
-    mcpRouter.get('/spec', (req, res) => {
-        const repoName = config.repository.name;
-        res.json({
-            name: `Git Contextor: ${repoName}`,
-            description: `Provides context-aware search for the ${repoName} repository.`,
-            tools: [{
-                name: 'code_search',
-                description: 'Searches the repository for code snippets, file contents, and documentation relevant to the user query.',
-                parameters: {
-                    type: 'object',
-                    properties: {
-                        query: {
-                            type: 'string',
-                            description: 'The natural language query to search for.'
-                        }
-                    },
-                    required: ['query']
-                }
-            }]
+    mcpRouter.route('/spec')
+        .get((req, res) => {
+            const repoName = config.repository.name;
+            res.json({
+                name: `Git Contextor: ${repoName}`,
+                description: `Provides context-aware search for the ${repoName} repository.`,
+                tools: [{
+                    name: 'code_search',
+                    description: 'Searches the repository for code snippets, file contents, and documentation relevant to the user query.',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            query: {
+                                type: 'string',
+                                description: 'The natural language query to search for.'
+                            }
+                        },
+                        required: ['query']
+                    }
+                }]
+            });
+        })
+        .head((req, res) => {
+            // Handle HEAD requests used by some clients (e.g., extensions) to check for endpoint existence.
+            res.status(200).end();
         });
-    });
 
     // Tool Invocation Endpunkt
     mcpRouter.post('/tools/code_search/invoke', async (req, res) => {
