@@ -37,6 +37,7 @@ const queryCommand = require('../src/cli/commands/query');
 const reindexCommand = require('../src/cli/commands/reindex');
 const chatCommand = require('../src/cli/commands/chat');
 const shareCommand = require('../src/cli/commands/share');
+const mcpCommand = require('../src/cli/commands/mcp');
 
 program
   .name('git-contextor')
@@ -111,5 +112,12 @@ program
   .option('--max-queries <num>', 'Maximum queries allowed', '100')
   .option('-t, --tunnel [service]', 'Create public tunnel (ngrok|localtunnel|serveo)')
   .action(shareCommand);
+
+program
+  .command('mcp')
+  .description('Start Git Contextor as an MCP server')
+  .option('--websocket', 'Use WebSocket transport instead of stdio')
+  .option('--port <port>', 'WebSocket port (default: 3334)', '3334')
+  .action(mcpCommand);
 
 program.parse(process.argv);

@@ -57,6 +57,7 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.15.0",
+    "@modelcontextprotocol/sdk": "^0.1.0-alpha.25",
     "@qdrant/js-client-rest": "^1.9.0",
     "@xenova/transformers": "^2.6.0",
     "chalk": "^4.1.2",
@@ -81,6 +82,7 @@
     "tree-sitter-javascript": "^0.20.1",
     "tree-sitter-python": "^0.20.4",
     "uuid": "^9.0.1",
+    "ws": "^8.18.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
