@@ -13,8 +13,15 @@ async function handleChatQuery(query, services, context_type = 'general', option
     const searchResult = await contextOptimizer.search(query, options);
     
     // Generate conversational response
-    const chatConfig = contextOptimizer.config.chat || {};
-    const llmConfig = chatConfig.llm || contextOptimizer.config.llm;
+    const config = contextOptimizer.config;
+    const chatConfig = config.chat || {};
+
+    // Determine the correct LLM configuration.
+    // Priority: 1. chat.llm, 2. global llm, 3. chat object itself (for simple config)
+    let llmConfig = chatConfig.llm || config.llm;
+    if ((!llmConfig || !llmConfig.provider) && chatConfig.provider) {
+        llmConfig = chatConfig;
+    }
 
     if (!llmConfig || !llmConfig.provider) {
         throw new Error('LLM configuration is missing or incomplete. Please set your provider and API key, e.g., by running `npx git-contextor config set llm.provider openai` and `npx git-contextor config set llm.apiKey YOUR_OPENAI_KEY`.');
