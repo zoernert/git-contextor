@@ -30,7 +30,7 @@
 | Feature | Description | Why It Matters |
 |---------|-------------|----------------|
 | 🧠 **Semantic Search** | Find code by what it does, not what it's called | `"user authentication"` finds OAuth, JWT, sessions |
-| 🤖 **Automated Repo Summary** | AI-generated overview of your codebase using clustering and summarization. | Gives AI a "table of contents" for your project, leading to smarter, more accurate answers. |
+| 🤖 **Auto-Summary** | Automatically creates an AI-generated summary of your project when idle. | Provides a high-level overview for the AI's "thinking step," leading to smarter, more accurate answers. |
 | 💬 **AI Chat & Secure Sharing** | Chat with your repo; share a secure web UI with AI chat and semantic search | Let external collaborators safely interact with your code via AI |
 | 🛡️ **Hardened Security** | Tunnels only expose shared links, not the admin UI | Collaborate externally without risking unauthorized access |
 | 🔄 **Real-time Sync** | Auto-updates as you write code | Always current, never stale |
@@ -39,19 +39,18 @@
 | 🎯 **Token Optimized** | Smart context packing for any LLM | Maximizes AI understanding |
 | 📊 **Beautiful Dashboard** | Monitor indexing and search activity | See your codebase come alive |
 
-## 🚀 Quick Start (60 seconds)
+## 🚀 Quick Start (30 seconds)
+
+Git Contextor uses an in-memory vector store by default, so you can get started right away without any external dependencies.
 
 ```bash
 # 1. Navigate to your project directory
 cd your-awesome-project
 
-# 2. Initialize the project (this will also install Git Contextor locally if needed)
+# 2. Initialize the project
 npx git-contextor@latest init
 
-# 3. Start the vector database (Qdrant)
-docker run -p 6333:6333 qdrant/qdrant
-
-# 4. Start the indexing service and dashboard
+# 3. Start the indexing service and dashboard
 npx git-contextor start
 
 # That's it! Your dashboard is now running.
@@ -167,7 +166,9 @@ Go beyond simple search. Have a deep conversation with your codebase and securel
 | Medium (1K files) | 5 minutes | < 200ms | 200MB |
 | Large (10K files) | 30 minutes | < 500ms | 1GB |
 
-## 🐳 Docker Support
+## 🐳 Docker Support (Optional)
+
+For production use or persistent storage between sessions, you can use Qdrant as the vector database.
 
 ```yaml
 # docker-compose.yml

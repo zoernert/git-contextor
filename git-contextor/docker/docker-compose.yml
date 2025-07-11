@@ -1,3 +1,5 @@
+# This file is optional. It's only needed if you want to use Qdrant for
+# persistent storage instead of the default in-memory vector store.
 version: '3.8'
 services:
   qdrant:
