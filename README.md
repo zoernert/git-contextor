@@ -30,6 +30,7 @@
 | Feature | Description | Why It Matters |
 |---------|-------------|----------------|
 | 🧠 **Semantic Search** | Find code by what it does, not what it's called | `"user authentication"` finds OAuth, JWT, sessions |
+| 🤖 **Automated Repo Summary** | AI-generated overview of your codebase using clustering and summarization. | Gives AI a "table of contents" for your project, leading to smarter, more accurate answers. |
 | 💬 **AI Chat & Secure Sharing** | Chat with your repo; share a secure web UI with AI chat and semantic search | Let external collaborators safely interact with your code via AI |
 | 🛡️ **Hardened Security** | Tunnels only expose shared links, not the admin UI | Collaborate externally without risking unauthorized access |
 | 🔄 **Real-time Sync** | Auto-updates as you write code | Always current, never stale |
@@ -139,14 +140,15 @@ POST http://localhost:3333/api/search
 }
 ```
 
-## 💬 AI Chat & Secure Sharing
+## 💬 Advanced AI Capabilities
 
-Go beyond search. Have a conversation with your codebase and securely share its context with collaborators.
+Go beyond simple search. Have a deep conversation with your codebase and securely share its context with collaborators.
 
 - **`git-contextor chat`**: Ask complex questions and get AI-generated answers.
 - **`git-contextor share`**: Create temporary, secure links for external AI-powered code reviews.
+- **Collection Summary**: Generate an AI-powered overview of your entire repository for superior context, improving the AI's understanding.
 
-[➡️ Learn more about Chat & Sharing in the documentation](docs/features/sharing-and-chat.md)
+[➡️ Learn more about Advanced AI Features in the documentation](docs/features/context-generation.md)
 
 ## 🔌 Integrations
 
