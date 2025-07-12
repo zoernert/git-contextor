@@ -54,6 +54,13 @@ class ServiceManager {
 
         await this.validateEnvironment();
 
+        try {
+            await fs.writeFile(this.pidFile, process.pid.toString());
+        } catch (err) {
+            logger.error('Failed to write PID file.', err);
+            throw new Error(`Could not write PID file to ${this.pidFile}. Check permissions.`);
+        }
+
         if (this.services.indexer) {
             this.services.indexer.isGitRepo = this.isGitRepo;
         }

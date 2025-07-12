@@ -3,7 +3,8 @@ const ConfigManager = require('../../core/ConfigManager');
 const logger = require('../utils/logger');
 const path = require('path');
 const { spawn } = require('child_process');
-const fs = require('fs').promises;
+const fs = require('fs');
+const fsp = fs.promises;
 const ora = require('ora');
 const { checkQdrant } = require('../utils/checkQdrant');
 
@@ -28,7 +29,7 @@ async function start(options) {
   const spinner = ora('Preparing to start Git Contextor...').start();
 
   try {
-    await fs.access(path.join(repoPath, '.gitcontextor', 'config.json'));
+    await fsp.access(path.join(repoPath, '.gitcontextor', 'config.json'));
   } catch (error) {
     spinner.fail('Start failed.');
     logger.error('Git Contextor not initialized. Please run "git-contextor init" first.');
@@ -62,32 +63,36 @@ async function start(options) {
   spinner.text = 'Connecting to Qdrant...';
   await checkQdrant(configManager);
 
-  spinner.text = 'Starting services... This may take a moment for initial indexing.';
-  const contextor = new GitContextor(repoPath);
+  spinner.text = 'Starting background service...';
 
-  try {
-      await contextor.start();
-      if (!await waitForService(config.services.port)) {
-          spinner.fail('Service failed to start within 30 seconds');
-          logger.debug('Service startup failed. Check configuration and logs for details.');
-          process.exit(1);
-      } else {
-          spinner.succeed(`
+  const logFile = path.join(configManager.configDir, 'daemon.log');
+  const out = fs.openSync(logFile, 'a');
+  const err = fs.openSync(logFile, 'a');
+  const mainScript = path.resolve(process.argv[1]);
+
+  const child = spawn(process.execPath, [mainScript, 'mcp'], {
+      detached: true,
+      stdio: ['ignore', out, err],
+      cwd: repoPath,
+  });
+
+  child.unref();
+
+  spinner.text = 'Waiting for service to become available...';
+
+  if (await waitForService(config.services.port)) {
+      spinner.succeed(`
 🚀 Git Contextor is running!
 
+PID: ${child.pid}
+Logs: ${logFile}
 📊 Dashboard: http://localhost:${config.services.port}
 🔍 Quick search: git-contextor query "your question"
-📚 Documentation: git-contextor config --show
-
-Tip: Try querying "authentication logic" or "error handling" to see it in action!
+📚 To stop: git-contextor stop
 `);
-      }
-  } catch (error) {
-      spinner.fail('Failed to start Git Contextor.');
-      logger.error(error.message);
-      if (error.stack) {
-          logger.debug(error.stack);
-      }
+  } else {
+      spinner.fail('Service failed to start within 30 seconds.');
+      logger.error(`Check the log file for errors: ${logFile}`);
       process.exit(1);
   }
 }
