@@ -68,26 +68,31 @@ class ServiceManager {
             this.services.fileWatcher.isGitRepo = this.isGitRepo;
         }
 
-        try {
-            await this.services.indexer.reindexAll();
-            logger.info('Initial index complete.');
-        } catch (error) {
-            logger.error('Initial repository index failed. Continuing startup, but the index may be incomplete.', error);
-        }
-
-        if (this.config.monitoring.watchEnabled) {
-            this.services.fileWatcher.start();
-        } else {
-            logger.info('File watcher is disabled by configuration.');
-        }
-
+        // Start API server first to respond to health checks quickly
         const servicesForApi = {
             ...this.services,
             sharingService: this.sharingService
         };
         await apiServer.start({ config: this.config, services: servicesForApi });
 
-        logger.success('Git Contextor services started successfully.');
+        logger.success('Git Contextor services started successfully. API is up.');
+
+        // Now start other services
+        if (this.config.monitoring.watchEnabled) {
+            this.services.fileWatcher.start();
+        } else {
+            logger.info('File watcher is disabled by configuration.');
+        }
+
+        // Start initial indexing in the background
+        logger.info('Starting initial repository index in the background...');
+        this.services.indexer.reindexAll()
+            .then(() => {
+                logger.info('Initial index complete.');
+            })
+            .catch(error => {
+                logger.error('Initial repository index failed. The index may be incomplete.', error);
+            });
 
         // Start the idle summary updater
         this.summaryUpdateInterval = setInterval(() => this.checkForIdleAndUpdateSummary(), 5000); // Check every 5 seconds
