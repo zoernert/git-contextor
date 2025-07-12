@@ -54,7 +54,6 @@ class ServiceManager {
 
         await this.validateEnvironment();
 
-        // Inform services about git status
         if (this.services.indexer) {
             this.services.indexer.isGitRepo = this.isGitRepo;
         }
@@ -62,69 +61,24 @@ class ServiceManager {
             this.services.fileWatcher.isGitRepo = this.isGitRepo;
         }
 
-        if (await this.isRunning()) {
-            const pid = await this.readPidFile();
-            logger.warn(`Git Contextor is already running (PID: ${pid}).`);
-            if (pid) process.exit(0);
-        }
-
-        // Write PID file to indicate the service is running
-        await fs.writeFile(this.pidFile, process.pid.toString());
-
         try {
-            // Initialize sharing service
-            await this.sharingService.init();
-            this.services.sharingService = this.sharingService;
-
-            // Start API and UI servers
-            await apiServer.start(this.config, this.services, this);
-
-            const isConfigValid = await this.services.vectorStore.validateCollectionConfig();
-            const vectorStoreStatus = await this.services.vectorStore.getStatus();
-
-            const needsReindex = !isConfigValid;
-            const needsInitialIndex = isConfigValid && (!vectorStoreStatus.vectorCount || vectorStoreStatus.vectorCount === 0);
-
-            if (needsReindex) {
-                logger.warn('Configuration mismatch detected. Triggering a full repository re-index in the background...');
-                // Don't await, let it run in the background. The server can start and endpoints will handle inconsistency.
-                this.services.indexer.reindexAll().catch(err => {
-                    logger.error('Background re-index on startup failed:', err);
-                });
-            } else if (needsInitialIndex) {
-                logger.info('Vector store is empty. Performing initial repository index...');
-                try {
-                    // This one we can await as it's part of the initial setup.
-                    await this.services.indexer.reindexAll();
-                    logger.info('Initial index complete.');
-                } catch (error) {
-                    logger.error('Initial repository index failed. Continuing startup, but the index may be incomplete.', error);
-                }
-            } else {
-                // This is the case where config is valid and collection is not empty
-                logger.info(`Found ${vectorStoreStatus.vectorCount} vectors in existing collection. Skipping index operation.`);
-                const indexerStatus = await this.services.indexer.getStatus();
-                logger.info(`Indexer state loaded: ${indexerStatus.totalFiles ?? 'N/A'} files, ${indexerStatus.totalChunks} chunks.`);
-            }
-
-            // Start the file watcher if enabled
-            if (this.config.monitoring.watchEnabled) {
-                this.services.fileWatcher.start();
-            } else {
-                logger.info('File watcher is disabled by configuration.');
-            }
-
-            logger.success('Git Contextor services started successfully.');
-
-            // Start the idle summary updater
-            this.summaryUpdateInterval = setInterval(() => this.checkForIdleAndUpdateSummary(), 5000); // Check every 5 seconds
-
+            await this.services.indexer.reindexAll();
+            logger.info('Initial index complete.');
         } catch (error) {
-            logger.error('Failed to start Git Contextor services:', error);
-            // Attempt to clean up if startup failed
-            await this.stop({ silent: true });
-            throw error;
+            logger.error('Initial repository index failed. Continuing startup, but the index may be incomplete.', error);
         }
+
+        if (this.config.monitoring.watchEnabled) {
+            this.services.fileWatcher.start();
+        } else {
+            logger.info('File watcher is disabled by configuration.');
+        }
+
+        logger.success('Git Contextor services started successfully.');
+
+        // Start the idle summary updater
+        this.summaryUpdateInterval = setInterval(() => this.checkForIdleAndUpdateSummary(), 5000); // Check every 5 seconds
+
     }
 
     async stop({ silent = false } = {}) {
