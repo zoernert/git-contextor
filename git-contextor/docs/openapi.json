@@ -1,0 +1,1935 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Git Contextor API",
+    "version": "1.1.6",
+    "description": "A comprehensive API for Git Contextor - a code context tool with vector search, AI chat, and real-time monitoring capabilities. Git Contextor indexes your codebase and provides semantic search, AI-powered chat, and code sharing features.",
+    "contact": {
+      "name": "Git Contextor Support",
+      "url": "https://github.com/stromdao/git-contextor"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3333",
+      "description": "Local development server (default port)"
+    }
+  ],
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health Check",
+        "description": "Checks if the API server is running and responsive. This endpoint is publicly accessible and doesn't require authentication.",
+        "operationId": "healthCheck",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Service is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "ok"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time",
+                      "example": "2023-10-27T10:00:00.000Z"
+                    },
+                    "version": {
+                      "type": "string",
+                      "example": "1.1.6"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service is unhealthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/status": {
+      "get": {
+        "summary": "Service Status",
+        "description": "Retrieves the current status of all Git Contextor services, including the indexer and repository information.",
+        "operationId": "getServiceStatus",
+        "responses": {
+          "200": {
+            "description": "Service status retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "running"
+                    },
+                    "repository": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "example": "my-project"
+                        },
+                        "path": {
+                          "type": "string",
+                          "example": "/path/to/my-project"
+                        }
+                      }
+                    },
+                    "indexer": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "example": "idle"
+                        },
+                        "totalFiles": {
+                          "type": "integer",
+                          "example": 150
+                        },
+                        "totalChunks": {
+                          "type": "integer",
+                          "example": 2500
+                        },
+                        "lastActivity": {
+                          "type": "string",
+                          "format": "date-time",
+                          "example": "2023-10-27T09:55:00.000Z"
+                        }
+                      }
+                    },
+                    "watcher": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "example": "enabled"
+                        }
+                      }
+                    },
+                    "fileWatcher": {
+                      "type": "object",
+                      "properties": {
+                        "latestActivity": {
+                          "type": "array",
+                          "items": {
+                            "type": "object"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/metrics": {
+      "get": {
+        "summary": "System Metrics",
+        "description": "Provides detailed performance and usage metrics for the Git Contextor system.",
+        "operationId": "getMetrics",
+        "responses": {
+          "200": {
+            "description": "Metrics retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time",
+                      "example": "2023-10-27T10:01:00.000Z"
+                    },
+                    "indexer": {
+                      "type": "object",
+                      "properties": {
+                        "totalFiles": {
+                          "type": "integer",
+                          "example": 150
+                        },
+                        "totalChunks": {
+                          "type": "integer",
+                          "example": 2500
+                        },
+                        "errorCount": {
+                          "type": "integer",
+                          "example": 5
+                        }
+                      }
+                    },
+                    "vectorStore": {
+                      "type": "object",
+                      "properties": {
+                        "totalVectors": {
+                          "type": "integer",
+                          "example": 2500
+                        },
+                        "avgDimensions": {
+                          "type": "integer",
+                          "example": 1536
+                        }
+                      }
+                    },
+                    "system": {
+                      "type": "object",
+                      "properties": {
+                        "memoryUsageMb": {
+                          "type": "string",
+                          "example": "128.50"
+                        },
+                        "cpuUsage": {
+                          "type": "number",
+                          "example": 0
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/search": {
+      "post": {
+        "summary": "Semantic Search",
+        "description": "Performs a semantic search for contextually relevant code chunks using vector similarity.",
+        "operationId": "semanticSearch",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["query"],
+                "properties": {
+                  "query": {
+                    "type": "string",
+                    "description": "Natural language query to search for",
+                    "example": "how to implement user authentication"
+                  },
+                  "maxTokens": {
+                    "type": "integer",
+                    "description": "Maximum number of tokens to return in the response",
+                    "example": 4096
+                  },
+                  "filter": {
+                    "type": "object",
+                    "description": "Optional filters to apply to the search"
+                  },
+                  "llmType": {
+                    "type": "string",
+                    "description": "Type of LLM to optimize context for"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Search results returned successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "query": {
+                      "type": "string",
+                      "example": "how to implement user authentication"
+                    },
+                    "optimizedContext": {
+                      "type": "string",
+                      "description": "Optimized context string for LLM consumption",
+                      "example": "--- File: src/auth/jwt.js (Score: 0.92) ---\\n..."
+                    },
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SearchResult"
+                      }
+                    },
+                    "tokenCount": {
+                      "type": "integer",
+                      "example": 1024
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - missing query parameter",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable - configuration mismatch detected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/chat": {
+      "post": {
+        "summary": "AI Chat",
+        "description": "Sends a query to the AI using repository context to generate an answer.",
+        "operationId": "chatQuery",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["query"],
+                "properties": {
+                  "query": {
+                    "type": "string",
+                    "description": "Natural language query for the AI",
+                    "example": "Explain the auth flow"
+                  },
+                  "context_type": {
+                    "type": "string",
+                    "description": "Type of context to use for the query",
+                    "example": "general"
+                  },
+                  "include_summary": {
+                    "type": "boolean",
+                    "description": "Whether to include a collection summary in the response",
+                    "example": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "AI response generated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "query": {
+                      "type": "string",
+                      "example": "Explain the auth flow"
+                    },
+                    "response": {
+                      "type": "string",
+                      "description": "AI-generated response",
+                      "example": "The authentication flow starts with a user providing credentials..."
+                    },
+                    "context": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SearchResult"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - missing query parameter",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reindex": {
+      "post": {
+        "summary": "Reindex Repository",
+        "description": "Triggers a full re-indexing of the entire repository or a specific file. This is an asynchronous operation.",
+        "operationId": "reindexRepository",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "description": "Optional specific file to reindex (relative path)",
+                    "example": "src/auth/jwt.js"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "File reindexed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Successfully reindexed file: src/auth/jwt.js"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Full repository reindex started",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Full repository reindex started."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - invalid file path",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Clear Index",
+        "description": "Clears the entire vector index and collection data.",
+        "operationId": "clearIndex",
+        "responses": {
+          "200": {
+            "description": "Index cleared successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Collection and index data cleared successfully."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/collection/summary": {
+      "get": {
+        "summary": "Get Collection Summary",
+        "description": "Retrieves the AI-generated collection summary. If it doesn't exist, it will be generated on-demand.",
+        "operationId": "getCollectionSummary",
+        "responses": {
+          "200": {
+            "description": "Collection summary retrieved successfully",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "description": "Markdown-formatted collection summary",
+                  "example": "# Collection Summary\\n\\n## Cluster 1: Authentication & User Management\\nKey technologies: JWT, bcrypt, Express.js\\n..."
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Could not retrieve or create collection summary",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/collection/summarize": {
+      "post": {
+        "summary": "Trigger Summary Generation",
+        "description": "Manually triggers the generation of a new collection summary. This is an asynchronous operation.",
+        "operationId": "triggerSummaryGeneration",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "numClusters": {
+                    "type": "integer",
+                    "description": "Number of clusters to generate for the summary",
+                    "example": 15
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Summary generation started",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Collection summary generation started. This may take a few minutes."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/files/tree": {
+      "get": {
+        "summary": "Get File Tree",
+        "description": "Returns the file and directory structure of the repository, respecting .gitignore rules.",
+        "operationId": "getFileTree",
+        "responses": {
+          "200": {
+            "description": "File tree retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FileTreeNode"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Failed to build file tree",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/files/content": {
+      "get": {
+        "summary": "Get File Content",
+        "description": "Returns the content of a specific file.",
+        "operationId": "getFileContent",
+        "parameters": [
+          {
+            "name": "path",
+            "in": "query",
+            "required": true,
+            "description": "Relative path to the file",
+            "schema": {
+              "type": "string",
+              "example": "src/auth/jwt.js"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File content retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "content": {
+                      "type": "string",
+                      "description": "File content as text"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - invalid or missing file path",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "File not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/share": {
+      "post": {
+        "summary": "Create Share",
+        "description": "Creates a new share for public access to repository context.",
+        "operationId": "createShare",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShareRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Share created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShareResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "List Active Shares",
+        "description": "Lists all active shares.",
+        "operationId": "listShares",
+        "responses": {
+          "200": {
+            "description": "Shares retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "shares": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ShareResponse"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/share/tunnel": {
+      "post": {
+        "summary": "Start Tunnel",
+        "description": "Starts a tunnel service to expose the Git Contextor server publicly.",
+        "operationId": "startTunnel",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["service"],
+                "properties": {
+                  "service": {
+                    "type": "string",
+                    "description": "Tunnel service to use",
+                    "example": "localtunnel"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Tunnel service is starting",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Tunnel service 'localtunnel' is starting."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - invalid service",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Get Tunnel Status",
+        "description": "Gets the current status of the tunnel service.",
+        "operationId": "getTunnelStatus",
+        "responses": {
+          "200": {
+            "description": "Tunnel status retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": ["stopped", "starting", "running", "error"],
+                      "example": "running"
+                    },
+                    "url": {
+                      "type": "string",
+                      "nullable": true,
+                      "example": "https://abc123.localtunnel.me"
+                    },
+                    "service": {
+                      "type": "string",
+                      "nullable": true,
+                      "example": "localtunnel"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Stop Tunnel",
+        "description": "Stops the active tunnel service.",
+        "operationId": "stopTunnel",
+        "responses": {
+          "200": {
+            "description": "Tunnel stopped successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Tunnel stopped."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/config": {
+      "get": {
+        "summary": "Get Configuration",
+        "description": "Retrieves the current Git Contextor configuration.",
+        "operationId": "getConfig",
+        "responses": {
+          "200": {
+            "description": "Configuration retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Config"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Update Configuration",
+        "description": "Updates the Git Contextor configuration. Changes require a service restart to take effect.",
+        "operationId": "updateConfig",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Config"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Configuration updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Configuration saved. Please restart the service to apply changes."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/config/monitoring": {
+      "post": {
+        "summary": "Update Monitoring Settings",
+        "description": "Updates monitoring settings specifically.",
+        "operationId": "updateMonitoringConfig",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["enabled"],
+                "properties": {
+                  "enabled": {
+                    "type": "boolean",
+                    "description": "Whether to enable file watching",
+                    "example": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Monitoring settings updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Monitoring settings updated. Please restart the service to apply changes."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - enabled field must be boolean",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/uiconfig": {
+      "get": {
+        "summary": "Get UI Configuration",
+        "description": "Retrieves configuration settings needed by the UI. This endpoint is only available on localhost.",
+        "operationId": "getUIConfig",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "UI configuration retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "apiKey": {
+                      "type": "string",
+                      "description": "API key for authenticated requests"
+                    },
+                    "features": {
+                      "type": "object",
+                      "description": "Enabled features configuration"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/docs": {
+      "get": {
+        "summary": "List Documentation Files",
+        "description": "Lists all available documentation files. This endpoint is only available on localhost.",
+        "operationId": "listDocs",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Documentation files listed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "description": "Human-readable name of the documentation file"
+                      },
+                      "filename": {
+                        "type": "string",
+                        "description": "Filename of the documentation file"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/docs/{filename}": {
+      "get": {
+        "summary": "Get Documentation Content",
+        "description": "Retrieves the content of a specific documentation file. This endpoint is only available on localhost.",
+        "operationId": "getDocContent",
+        "security": [],
+        "parameters": [
+          {
+            "name": "filename",
+            "in": "path",
+            "required": true,
+            "description": "Name of the documentation file to retrieve",
+            "schema": {
+              "type": "string",
+              "example": "API.md"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Documentation content retrieved successfully",
+            "content": {
+              "text/markdown": {
+                "schema": {
+                  "type": "string",
+                  "description": "Markdown content of the documentation file"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - invalid filename",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "example": "Invalid request"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - access denied",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "example": "Forbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Documentation file not found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "example": "Documentation file not found."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/shared/{shareId}": {
+      "get": {
+        "summary": "Get Shared Repository Interface",
+        "description": "Serves the HTML interface for a shared repository. This endpoint is publicly accessible and doesn't require authentication.",
+        "operationId": "getSharedInterface",
+        "security": [],
+        "parameters": [
+          {
+            "name": "shareId",
+            "in": "path",
+            "required": true,
+            "description": "ID of the share",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTML interface served successfully",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/shared/{shareId}/files/tree": {
+      "get": {
+        "summary": "Get File Tree (Shared)",
+        "description": "Returns the file and directory structure for a shared repository access.",
+        "operationId": "getSharedFileTree",
+        "security": [
+          {
+            "ShareKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "shareId",
+            "in": "path",
+            "required": true,
+            "description": "ID of the share",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File tree retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FileTreeNode"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - invalid share credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/shared/{shareId}/files/content": {
+      "get": {
+        "summary": "Get File Content (Shared)",
+        "description": "Returns the content of a specific file for shared access.",
+        "operationId": "getSharedFileContent",
+        "security": [
+          {
+            "ShareKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "shareId",
+            "in": "path",
+            "required": true,
+            "description": "ID of the share",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "in": "query",
+            "required": true,
+            "description": "Relative path to the file",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File content retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "content": {
+                      "type": "string",
+                      "description": "File content as text"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - invalid file path",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - invalid share credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "File not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/shared/{shareId}/chat": {
+      "post": {
+        "summary": "Chat with Shared Repository",
+        "description": "Sends a chat query to the AI using the shared repository context.",
+        "operationId": "chatWithSharedRepo",
+        "security": [
+          {
+            "ShareKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "shareId",
+            "in": "path",
+            "required": true,
+            "description": "ID of the share",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["query"],
+                "properties": {
+                  "query": {
+                    "type": "string",
+                    "description": "Natural language query for the AI"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Chat response generated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "query": {
+                          "type": "string"
+                        },
+                        "response": {
+                          "type": "string"
+                        },
+                        "context": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/SearchResult"
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "share_id": {
+                          "type": "string"
+                        },
+                        "queries_remaining": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - missing query",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - invalid share credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/shared/{shareId}/info": {
+      "get": {
+        "summary": "Get Share Information",
+        "description": "Retrieves information about a specific share.",
+        "operationId": "getShareInfo",
+        "security": [
+          {
+            "ShareKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "shareId",
+            "in": "path",
+            "required": true,
+            "description": "ID of the share",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Share information retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "share_id": {
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "expires_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "queries_used": {
+                      "type": "integer"
+                    },
+                    "queries_remaining": {
+                      "type": "integer"
+                    },
+                    "scope": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - invalid share credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mcp/v1/spec": {
+      "get": {
+        "summary": "Get MCP Specification",
+        "description": "Returns the Model Context Protocol (MCP) specification for this repository.",
+        "operationId": "getMCPSpec",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "MCP specification retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "example": "Git Contextor: my-repo"
+                    },
+                    "description": {
+                      "type": "string",
+                      "example": "Provides context-aware search for the my-repo repository."
+                    },
+                    "tools": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "example": "code_search"
+                          },
+                          "description": {
+                            "type": "string",
+                            "example": "Searches the repository for code snippets, file contents, and documentation relevant to the user query."
+                          },
+                          "parameters": {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "type": "string",
+                                "example": "object"
+                              },
+                              "properties": {
+                                "type": "object"
+                              },
+                              "required": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - missing or invalid Bearer token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mcp/v1/tools/code_search/invoke": {
+      "post": {
+        "summary": "Invoke MCP Code Search",
+        "description": "Invokes the MCP code search tool to find relevant code snippets.",
+        "operationId": "invokeMCPCodeSearch",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["query"],
+                "properties": {
+                  "query": {
+                    "type": "string",
+                    "description": "The natural language query to search for"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Code search results returned successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "content": {
+                      "type": "string",
+                      "description": "Formatted search results"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - missing query",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - missing or invalid Bearer token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-api-key",
+        "description": "API key for authentication. You can get this from the UI config endpoint or from your Git Contextor configuration."
+      },
+      "ShareKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-share-key",
+        "description": "Share key for accessing shared repositories."
+      },
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Bearer token for MCP (Model Context Protocol) authentication. The token is the API key of the share."
+      }
+    },
+    "schemas": {
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Error message"
+          }
+        }
+      },
+      "SearchResult": {
+        "type": "object",
+        "properties": {
+          "filePath": {
+            "type": "string",
+            "description": "Path to the file containing the result",
+            "example": "src/auth/jwt.js"
+          },
+          "score": {
+            "type": "number",
+            "description": "Relevance score (0-1)",
+            "example": 0.92
+          },
+          "content": {
+            "type": "string",
+            "description": "Content of the code chunk"
+          },
+          "startLine": {
+            "type": "integer",
+            "description": "Starting line number",
+            "example": 10
+          },
+          "endLine": {
+            "type": "integer",
+            "description": "Ending line number",
+            "example": 25
+          }
+        }
+      },
+      "FileTreeNode": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the file or directory"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["file", "directory"],
+            "description": "Type of the node"
+          },
+          "path": {
+            "type": "string",
+            "description": "Relative path from repository root"
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FileTreeNode"
+            },
+            "description": "Child nodes (only for directories)"
+          }
+        }
+      },
+      "ShareRequest": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string",
+            "description": "Description of the share"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Expiration date of the share"
+          },
+          "max_queries": {
+            "type": "integer",
+            "description": "Maximum number of queries allowed"
+          },
+          "scope": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Scope of the share (file patterns, etc.)"
+          }
+        }
+      },
+      "ShareResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier of the share"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of the share"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Expiration date of the share"
+          },
+          "max_queries": {
+            "type": "integer",
+            "description": "Maximum number of queries allowed"
+          },
+          "access_count": {
+            "type": "integer",
+            "description": "Number of queries used"
+          },
+          "scope": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Scope of the share"
+          },
+          "api_key": {
+            "type": "string",
+            "description": "API key for accessing the share"
+          },
+          "url": {
+            "type": "string",
+            "description": "URL to access the share"
+          }
+        }
+      },
+      "Config": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string",
+            "example": "1.0.0"
+          },
+          "repository": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "Path to the repository"
+              },
+              "name": {
+                "type": "string",
+                "description": "Name of the repository"
+              },
+              "branch": {
+                "type": "string",
+                "description": "Git branch",
+                "example": "main"
+              }
+            }
+          },
+          "features": {
+            "type": "object",
+            "properties": {
+              "fileBrowser": {
+                "type": "object",
+                "properties": {
+                  "enabled": {
+                    "type": "boolean",
+                    "example": true
+                  }
+                }
+              }
+            }
+          },
+          "embedding": {
+            "type": "object",
+            "properties": {
+              "provider": {
+                "type": "string",
+                "enum": ["local", "openai", "gemini"],
+                "example": "local"
+              },
+              "model": {
+                "type": "string",
+                "example": "Xenova/all-MiniLM-L6-v2"
+              },
+              "apiKey": {
+                "type": "string",
+                "nullable": true,
+                "description": "API key for the embedding provider"
+              },
+              "dimensions": {
+                "type": "integer",
+                "example": 384
+              }
+            }
+          },
+          "chat": {
+            "type": "object",
+            "properties": {
+              "provider": {
+                "type": "string",
+                "enum": ["openai", "gemini"],
+                "example": "openai"
+              },
+              "model": {
+                "type": "string",
+                "example": "gpt-4o-mini"
+              },
+              "apiKey": {
+                "type": "string",
+                "nullable": true,
+                "description": "API key for the chat provider"
+              }
+            }
+          },
+          "vision": {
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "type": "boolean",
+                "example": false
+              },
+              "provider": {
+                "type": "string",
+                "nullable": true
+              },
+              "model": {
+                "type": "string",
+                "nullable": true
+              },
+              "apiKey": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          },
+          "chunking": {
+            "type": "object",
+            "properties": {
+              "strategy": {
+                "type": "string",
+                "example": "function"
+              },
+              "maxChunkSize": {
+                "type": "integer",
+                "example": 1024
+              },
+              "overlap": {
+                "type": "number",
+                "example": 0.25
+              },
+              "includeComments": {
+                "type": "boolean",
+                "example": true
+              }
+            }
+          },
+          "indexing": {
+            "type": "object",
+            "properties": {
+              "excludePatterns": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "example": ["node_modules/**", ".git/**", "*.test.js"]
+              },
+              "includeExtensions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "example": [".js", ".ts", ".py", ".md"]
+              },
+              "followSymlinks": {
+                "type": "boolean",
+                "example": false
+              }
+            }
+          },
+          "vectorStore": {
+            "type": "object",
+            "properties": {
+              "provider": {
+                "type": "string",
+                "enum": ["auto", "memory", "qdrant"],
+                "example": "auto"
+              },
+              "memory": {
+                "type": "object",
+                "properties": {
+                  "persistence": {
+                    "type": "boolean",
+                    "example": true
+                  }
+                }
+              },
+              "qdrant": {
+                "type": "object",
+                "properties": {
+                  "host": {
+                    "type": "string",
+                    "nullable": true,
+                    "example": "localhost"
+                  },
+                  "port": {
+                    "type": "integer",
+                    "example": 6333
+                  }
+                }
+              }
+            }
+          },
+          "services": {
+            "type": "object",
+            "properties": {
+              "port": {
+                "type": "integer",
+                "example": 3333
+              },
+              "apiKey": {
+                "type": "string",
+                "description": "API key for service authentication"
+              },
+              "keepCollectionOnExit": {
+                "type": "boolean",
+                "example": true
+              }
+            }
+          },
+          "monitoring": {
+            "type": "object",
+            "properties": {
+              "watchEnabled": {
+                "type": "boolean",
+                "example": true
+              },
+              "debounceMs": {
+                "type": "integer",
+                "example": 1000
+              },
+              "maxQueueSize": {
+                "type": "integer",
+                "example": 100
+              }
+            }
+          },
+          "performance": {
+            "type": "object",
+            "properties": {
+              "batchSize": {
+                "type": "integer",
+                "example": 10
+              },
+              "concurrency": {
+                "type": "integer",
+                "example": 3
+              },
+              "cacheEnabled": {
+                "type": "boolean",
+                "example": true
+              },
+              "cacheTtl": {
+                "type": "integer",
+                "example": 300000
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Health",
+      "description": "Health check and system status endpoints"
+    },
+    {
+      "name": "Search",
+      "description": "Semantic search and AI chat functionality"
+    },
+    {
+      "name": "Indexing",
+      "description": "Repository indexing and management"
+    },
+    {
+      "name": "Files",
+      "description": "File browsing and content retrieval"
+    },
+    {
+      "name": "Sharing",
+      "description": "Repository sharing and tunnel management"
+    },
+    {
+      "name": "Configuration",
+      "description": "System configuration management"
+    },
+    {
+      "name": "Documentation",
+      "description": "Built-in documentation access"
+    },
+    {
+      "name": "MCP",
+      "description": "Model Context Protocol integration"
+    }
+  ]
+}

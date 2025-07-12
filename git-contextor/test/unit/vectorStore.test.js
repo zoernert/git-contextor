@@ -12,8 +12,14 @@ describe('VectorStore', () => {
     let vectorStore;
     let mockQdrantClient;
     const config = {
-        repository: { name: 'test-repo' },
-        services: { qdrantPort: 6333 },
+        repository: { 
+            name: 'test-repo',
+            path: '/test/repo/path' 
+        },
+        services: { 
+            qdrantPort: 6333,
+            qdrantHost: 'localhost' 
+        },
         embedding: { dimensions: 4, provider: 'mock' }
     };
 
@@ -23,8 +29,8 @@ describe('VectorStore', () => {
             getCollections: jest.fn(),
             createCollection: jest.fn(),
             createPayloadIndex: jest.fn(),
-            upsertPoints: jest.fn(),
-            deletePoints: jest.fn(),
+            upsert: jest.fn(),
+            delete: jest.fn(),
             search: jest.fn(),
             getCollection: jest.fn(),
             scroll: jest.fn(),
@@ -36,6 +42,9 @@ describe('VectorStore', () => {
         uuidv4.mockReturnValue('mock-uuid');
 
         vectorStore = new VectorStore(config);
+        
+        // Store the actual collection name for testing
+        global.testCollectionName = vectorStore.collectionName;
     });
 
     afterEach(() => {
@@ -49,18 +58,26 @@ describe('VectorStore', () => {
             await vectorStore.ensureCollection();
 
             expect(mockQdrantClient.getCollections).toHaveBeenCalled();
-            expect(mockQdrantClient.createCollection).toHaveBeenCalledWith('gctx-test-repo', {
-                vectors: { size: 4, distance: 'Cosine' }
-            });
-            expect(mockQdrantClient.createPayloadIndex).toHaveBeenCalledWith('gctx-test-repo', {
-                field_name: 'filePath',
-                field_schema: 'keyword',
-                wait: true,
-            });
+            expect(mockQdrantClient.createCollection).toHaveBeenCalledWith(
+                expect.stringMatching(/^gctx-test-repo-[a-f0-9]{12}$/),
+                {
+                    vectors: { size: 4, distance: 'Cosine' }
+                }
+            );
+            expect(mockQdrantClient.createPayloadIndex).toHaveBeenCalledWith(
+                expect.stringMatching(/^gctx-test-repo-[a-f0-9]{12}$/),
+                {
+                    field_name: 'filePath',
+                    field_schema: 'keyword',
+                    wait: true,
+                }
+            );
         });
 
         it('should not create a collection if it already exists', async () => {
-            mockQdrantClient.getCollections.mockResolvedValue({ collections: [{ name: 'gctx-test-repo' }] });
+            mockQdrantClient.getCollections.mockResolvedValue({ 
+                collections: [{ name: vectorStore.collectionName }] 
+            });
 
             await vectorStore.ensureCollection();
 
@@ -78,7 +95,7 @@ describe('VectorStore', () => {
             await vectorStore.upsertChunks(chunks);
 
             expect(getEmbedding).toHaveBeenCalledWith('test content', config.embedding);
-            expect(mockQdrantClient.upsertPoints).toHaveBeenCalledWith('gctx-test-repo', {
+            expect(mockQdrantClient.upsert).toHaveBeenCalledWith(vectorStore.collectionName, {
                 points: [{
                     id: 'mock-uuid',
                     vector: [0.1, 0.2, 0.3, 0.4],
@@ -90,7 +107,7 @@ describe('VectorStore', () => {
 
         it('should not do anything if chunks array is empty', async () => {
             await vectorStore.upsertChunks([]);
-            expect(mockQdrantClient.upsertPoints).not.toHaveBeenCalled();
+            expect(mockQdrantClient.upsert).not.toHaveBeenCalled();
         });
     });
 
@@ -101,7 +118,7 @@ describe('VectorStore', () => {
 
             await vectorStore.removeFile(filePath);
 
-            expect(mockQdrantClient.deletePoints).toHaveBeenCalledWith('gctx-test-repo', {
+            expect(mockQdrantClient.delete).toHaveBeenCalledWith(vectorStore.collectionName, {
                 filter: {
                     must: [{
                         key: 'filePath',
@@ -122,7 +139,7 @@ describe('VectorStore', () => {
 
             const results = await vectorStore.search(queryVector, 5, { foo: 'bar' });
 
-            expect(mockQdrantClient.search).toHaveBeenCalledWith('gctx-test-repo', {
+            expect(mockQdrantClient.search).toHaveBeenCalledWith(vectorStore.collectionName, {
                 vector: queryVector,
                 limit: 5,
                 filter: { foo: 'bar' },
@@ -140,7 +157,7 @@ describe('VectorStore', () => {
             const status = await vectorStore.getStatus();
             
             expect(status).toEqual({
-                collectionName: 'gctx-test-repo',
+                collectionName: vectorStore.collectionName,
                 vectorCount: 123
             });
         });
@@ -151,7 +168,7 @@ describe('VectorStore', () => {
             const status = await vectorStore.getStatus();
 
             expect(status).toEqual({
-                collectionName: 'gctx-test-repo',
+                collectionName: vectorStore.collectionName,
                 vectorCount: 0
             });
         });
@@ -159,12 +176,14 @@ describe('VectorStore', () => {
 
     describe('getUniqueFileCount', () => {
         it('should return the count of unique files', async () => {
+            mockQdrantClient.getCollections.mockResolvedValue({ collections: [{ name: vectorStore.collectionName }] });
             mockQdrantClient.scroll.mockResolvedValue({
                 points: [
                     { payload: { filePath: 'a.js' } },
                     { payload: { filePath: 'b.js' } },
                     { payload: { filePath: 'a.js' } }
-                ]
+                ],
+                next_page_offset: null
             });
             
             const count = await vectorStore.getUniqueFileCount();
@@ -173,7 +192,11 @@ describe('VectorStore', () => {
         });
 
         it('should return 0 if collection does not exist', async () => {
-            mockQdrantClient.scroll.mockRejectedValue({ status: 404 });
+            mockQdrantClient.getCollections.mockResolvedValue({ collections: [] });
+            mockQdrantClient.scroll.mockResolvedValue({
+                points: [],
+                next_page_offset: null
+            });
             const count = await vectorStore.getUniqueFileCount();
             expect(count).toBe(0);
         });

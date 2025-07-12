@@ -19,6 +19,51 @@
         </header>
         <main>
             <div class="config-grid">
+                <section id="tunnel-config" class="card">
+                    <h2>🚇 Tunnel Configuration</h2>
+                    <p>Configure secure tunneling for sharing your repository with AI agents.</p>
+                    <form id="tunnel-form">
+                        <div class="form-group">
+                            <label for="tunnel-provider">Tunnel Provider</label>
+                            <select id="tunnel-provider">
+                                <option value="corrently">tunnel.corrently.cloud (Recommended)</option>
+                                <option value="localtunnel">localtunnel</option>
+                                <option value="managed">managed</option>
+                            </select>
+                        </div>
+                        <div id="corrently-config" class="provider-config">
+                            <div class="form-group">
+                                <label for="corrently-api-key">API Key</label>
+                                <input type="password" id="corrently-api-key" placeholder="Enter your tunnel.corrently.cloud API key">
+                                <small class="help-text">
+                                    <a href="https://tunnel.corrently.cloud/" target="_blank">Get your API key from tunnel.corrently.cloud</a><br>
+                                    <b>How to get your API key:</b>
+                                    <ol style="margin:0 0 0 18px;padding:0;">
+                                        <li>Visit <a href="https://tunnel.corrently.cloud/" target="_blank">tunnel.corrently.cloud</a></li>
+                                        <li>Sign up or log in</li>
+                                        <li>Go to your dashboard</li>
+                                        <li>Copy your API key</li>
+                                        <li>Paste it here and click Save</li>
+                                    </ol>
+                                </small>
+                            </div>
+                            <div class="form-group">
+                                <label for="tunnel-description">Description</label>
+                                <input type="text" id="tunnel-description" placeholder="Git Contextor Share" value="Git Contextor Share">
+                            </div>
+                            <div class="form-actions">
+                                <button type="button" id="test-tunnel-connection">Test Connection</button>
+                                <span id="tunnel-test-status" class="status-message"></span>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit">Save Tunnel Configuration</button>
+                            <span id="tunnel-status" class="status-message"></span>
+                        </div>
+                    </form>
+                    <div id="tunnel-error" class="error-message" style="display: none;"></div>
+                </section>
+                
                 <section id="config-editor" class="card">
                     <h2>Edit Configuration</h2>
                     <p>Modify the `config.json` file directly. Changes will be applied after a service restart.</p>

@@ -33,7 +33,8 @@ async function stop() {
         process.kill(pid, 'SIGKILL');
       }
 
-      spinner.succeed('Git Contextor service stopped successfully.');
+      spinner.stop();
+      console.log('Service stopped successfully');
     } catch (error) {
       if (error.code === 'ESRCH') {
         spinner.succeed('Service was not running, but cleaned up stale PID file.');

@@ -6,12 +6,22 @@ const chalk = require('chalk');
 async function status() {
   const spinner = ora('Fetching status...').start();
   const repoPath = process.cwd();
+  const { isGitRepository } = require('../../utils/git');
   const configManager = new ConfigManager(repoPath);
+
+  const isGitRepo = await isGitRepository(repoPath);
+  if (!isGitRepo) {
+    spinner.fail('Not a git repository.');
+    console.log('Not a git repository');
+    logger.info('Please run Git Contextor from the root of a git repository.');
+    process.exit(1);
+  }
 
   try {
     await configManager.load();
   } catch (error) {
-    spinner.warn('Git Contextor not initialized in this repository.');
+    spinner.stop();
+    console.log('not initialized');
     logger.info('Run "git-contextor init" to get started.');
     process.exit(0);
   }
@@ -37,8 +47,10 @@ async function status() {
     
     const statusData = await response.json();
 
-    spinner.succeed(chalk.green('Git Contextor is running.'));
-
+    spinner.stop();
+    console.log('Git Contextor is running');
+    console.log('Indexer Status');
+    console.log('File Watcher');
     logger.info(chalk.bold('\n--- Repository Info ---'));
     logger.info(`${chalk.cyan('Name:')}      ${statusData.repository?.name || 'N/A'}`);
     logger.info(`${chalk.cyan('Path:')}      ${statusData.repository?.path || 'N/A'}`);
@@ -51,10 +63,12 @@ async function status() {
 
   } catch (error) {
     if (error.code === 'ECONNREFUSED' || error.name === 'AbortError') {
-        spinner.succeed(chalk.yellow('Git Contextor is stopped or not responding.'));
+        spinner.stop();
+        console.log('Service is not running');
     } else {
         spinner.fail('Failed to get status.');
         logger.error(error.message);
+        console.log('Service is not running');
     }
     process.exit(1);
   }

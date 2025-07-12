@@ -21,6 +21,7 @@ const collectionRoutes = require('./routes/collection');
 const chatRoutes = require('./routes/chat');
 const shareRoutes = require('./routes/share');
 const sharedRoutes = require('./routes/shared');
+const tunnelRoutes = require('./routes/tunnel');
 
 // Nach den Imports hinzufügen
 function mcpAuth(sharingService) {
@@ -113,6 +114,8 @@ function start(config, services, serviceManager) {
     apiRouter.use('/collection', collectionRoutes(services));
     apiRouter.use('/share', shareRoutes(services));
     apiRouter.use('/config', configRoutes(config, serviceManager));
+    apiRouter.use('/tunnel', tunnelRoutes);
+    apiRouter.use('/tunnels', tunnelRoutes);
     app.use('/api', apiRouter);
 
     // Shared access routes (public, with their own validation)

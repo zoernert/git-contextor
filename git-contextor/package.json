@@ -1,6 +1,6 @@
 {
   "name": "git-contextor",
-  "version": "1.1.6",
+  "version": "1.2.2",
   "description": "A code context tool with vector search and real-time monitoring, with optional Git integration.",
   "main": "src/index.js",
   "bin": {
@@ -19,7 +19,8 @@
     "lint": "eslint src/**/*.js",
     "lint:fix": "eslint src/**/*.js --fix",
     "build": "echo 'No build step required'",
-    "postinstall": "node scripts/postinstall.js"
+    "postinstall": "node scripts/postinstall.js",
+    "migrate-tunnel": "node scripts/migrate-to-corrently.js"
   },
   "keywords": [
     "ai",
@@ -57,7 +58,7 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.15.0",
-    "@modelcontextprotocol/sdk": "^0.1.0-alpha.25",
+    "@modelcontextprotocol/sdk": "^1.15.1",
     "@qdrant/js-client-rest": "^1.9.0",
     "@xenova/transformers": "^2.6.0",
     "chalk": "^4.1.2",
@@ -68,6 +69,7 @@
     "dotenv": "^16.6.1",
     "express": "^4.18.2",
     "helmet": "^7.1.0",
+    "http-proxy-middleware": "^2.0.6",
     "ignore": "^5.3.0",
     "inquirer": "^8.2.6",
     "lodash": "^4.17.21",
@@ -82,8 +84,9 @@
     "tree-sitter-javascript": "^0.20.1",
     "tree-sitter-python": "^0.20.4",
     "uuid": "^9.0.1",
-    "ws": "^8.18.0",
-    "xlsx": "^0.18.5"
+    "ws": "^8.18.3",
+    "xlsx": "^0.18.5",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "eslint": "^8.52.0",

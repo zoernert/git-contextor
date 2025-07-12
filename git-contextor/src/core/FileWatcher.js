@@ -24,6 +24,14 @@ class FileWatcher {
     this.activityLog = [];
     this.maxLogSize = 50;
     this.isGitRepo = false;
+    
+    // Ensure monitoring config exists with defaults
+    if (!config.monitoring) {
+      config.monitoring = {
+        debounceMs: 500,
+        maxQueueSize: 10
+      };
+    }
   }
 
   /**
@@ -61,8 +69,21 @@ class FileWatcher {
   stop() {
     if (this.watcher) {
       this.watcher.close();
+      this.watcher = null;
       logger.info('File watcher stopped');
     }
+  }
+
+  /**
+   * Gets the status of the file watcher.
+   * @returns {object} Status object.
+   */
+  getStatus() {
+    return {
+      isWatching: this.watcher !== null,
+      queueSize: this.processingQueue.length,
+      recentActivity: this.activityLog.slice(-5) // Return last 5 activities
+    };
   }
 
   /**
@@ -148,9 +169,8 @@ class FileWatcher {
     }
 
     this.processingQueue.push({
-      event,
-      filePath,
-      timestamp: Date.now()
+      action: event, // Use 'action' instead of 'event' for consistency with tests
+      filePath
     });
 
     setTimeout(() => this.processQueue(), this.config.monitoring.debounceMs);
@@ -186,17 +206,18 @@ class FileWatcher {
   /**
    * Dispatches the file change to the indexer.
    * @param {object} item - The item from the processing queue.
-   * @param {string} item.event - The event type.
+   * @param {string} item.action - The action type.
    * @param {string} item.filePath - The file path.
    * @private
    */
-  async processFileChange({ event, filePath }) {
-    switch (event) {
+  async processFileChange({ action, filePath }) {
+    switch (action) {
       case 'add':
       case 'change':
         await this.indexer.indexFile(filePath);
         break;
       case 'delete':
+      case 'unlink':
         await this.indexer.removeFile(filePath);
         break;
     }

@@ -14,8 +14,15 @@ class VectorStore {
    */
   constructor(config) {
     this.config = config;
+    
+    // Use vectorStore config or fallback to services config for backwards compatibility
+    const qdrantConfig = config.vectorStore?.qdrant || {
+      host: config.services?.qdrantHost || 'localhost',
+      port: config.services?.qdrantPort || 6333
+    };
+    
     this.client = new QdrantClient({
-      url: `http://${config.services.qdrantHost}:${config.services.qdrantPort}`,
+      url: `http://${qdrantConfig.host}:${qdrantConfig.port}`,
     });
     
     // Create a unique, stable ID for the repository based on its absolute path
@@ -228,6 +235,43 @@ class VectorStore {
       }
       logger.error('Failed to get VectorStore status:', error);
       return { status: 'error', message: error.message };
+    }
+  }
+
+  /**
+   * Gets the count of unique files in the vector store.
+   * @returns {Promise<number>} Count of unique files.
+   */
+  async getUniqueFileCount() {
+    await this.ensureCollection();
+    try {
+      const uniqueFiles = new Set();
+      let nextOffset = null;
+      
+      do {
+        const page = await this.client.scroll(this.collectionName, {
+          offset: nextOffset,
+          limit: 1000,
+          with_payload: true,
+          with_vector: false,
+        });
+        
+        page.points.forEach(point => {
+          if (point.payload && point.payload.filePath) {
+            uniqueFiles.add(point.payload.filePath);
+          }
+        });
+        
+        nextOffset = page.next_page_offset;
+      } while (nextOffset);
+
+      return uniqueFiles.size;
+    } catch (error) {
+      if (error.status === 404) {
+        return 0;
+      }
+      logger.error('Failed to get unique file count:', error);
+      throw error;
     }
   }
 

@@ -92,6 +92,23 @@ class ConfigManager {
         concurrency: 3,
         cacheEnabled: true,
         cacheTtl: 300000
+      },
+      tunneling: {
+        provider: 'corrently', // 'corrently', 'managed', 'localtunnel', 'ngrok'
+        corrently: {
+          serverUrl: 'https://tunnel.corrently.cloud',
+          apiKey: process.env.CORRENTLY_TUNNEL_API_KEY || null,
+          description: 'Git Contextor Share'
+        },
+        managed: {
+          apiUrl: 'https://tunnel.corrently.cloud',
+          apiKey: null, // User-provided API key
+          subdomain: null, // Optional custom subdomain
+          gitContextorShare: true
+        },
+        localtunnel: {
+          subdomain: null
+        }
       }
     };
     this.config = { ...this.defaultConfig };
@@ -138,7 +155,8 @@ class ConfigManager {
   }
 
   async save() {
-    await fs.writeFile(this.configFile, JSON.stringify(this.config, null, 2));
+    const formattedConfig = JSON.stringify(this.config, null, 2);
+    await fs.writeFile(this.configFile, formattedConfig);
   }
 
   _migrateConfig(config) {
@@ -157,8 +175,32 @@ class ConfigManager {
   }
 
   async updateConfig(updates) {
+    // Validate the updates before applying
+    this._validateConfig(updates);
+    
     this.config = merge(this.config, updates);
     await this.save();
+  }
+
+  getConfig() {
+    return this.config;
+  }
+
+  _validateConfig(updates) {
+    // Validate port numbers
+    if (updates.services?.port && (typeof updates.services.port !== 'number' || updates.services.port < 1 || updates.services.port > 65535)) {
+      throw new Error('Port must be a number between 1 and 65535');
+    }
+
+    // Validate required fields only if they are being updated
+    if (updates.repository && (updates.repository.name === null || updates.repository.name === undefined)) {
+      throw new Error('Repository name is required');
+    }
+
+    // Validate array fields
+    if (updates.indexing?.includeExtensions && !Array.isArray(updates.indexing.includeExtensions)) {
+      throw new Error('includeExtensions must be an array');
+    }
   }
 
   generateApiKey() {
@@ -176,7 +218,7 @@ class ConfigManager {
       }
     } catch (error) {
       if (error.code === 'ENOENT') {
-        await fs.writeFile(gitignorePath, entry.trim() + '\n');
+        await fs.writeFile(gitignorePath, entry + '\n');
       }
     }
   }

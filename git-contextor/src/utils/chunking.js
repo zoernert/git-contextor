@@ -7,12 +7,33 @@ const logger = require('../cli/utils/logger');
 const pdf = require('pdf-parse');
 
 // More languages can be added here
+// Add support for more languages using Tree-sitter grammars
+const Java = (() => { try { return require('tree-sitter-java'); } catch { return null; } })();
+const C = (() => { try { return require('tree-sitter-c'); } catch { return null; } })();
+const CPP = (() => { try { return require('tree-sitter-cpp'); } catch { return null; } })();
+const Go = (() => { try { return require('tree-sitter-go'); } catch { return null; } })();
+const Rust = (() => { try { return require('tree-sitter-rust'); } catch { return null; } })();
+const PHP = (() => { try { return require('tree-sitter-php'); } catch { return null; } })();
+const Ruby = (() => { try { return require('tree-sitter-ruby'); } catch { return null; } })();
+const Scala = (() => { try { return require('tree-sitter-scala'); } catch { return null; } })();
+const Kotlin = (() => { try { return require('tree-sitter-kotlin'); } catch { return null; } })();
+
 const parsers = {
     '.js': JavaScript,
     '.jsx': JavaScript,
     '.ts': JavaScript,
     '.tsx': JavaScript,
     '.py': Python,
+    '.java': Java,
+    '.c': C,
+    '.cpp': CPP,
+    '.cc': CPP,
+    '.go': Go,
+    '.rs': Rust,
+    '.php': PHP,
+    '.rb': Ruby,
+    '.scala': Scala,
+    '.kt': Kotlin,
 };
 
 function getParserForFile(filePath) {
@@ -27,7 +48,14 @@ function getParserForFile(filePath) {
 
 // Generic chunker for text-based files or fallback
 function chunkText(content, relativePath, config) {
-    const { maxChunkSize, overlap } = config; // overlap is a percentage, e.g., 0.25
+    // Handle empty or whitespace-only content
+    if (!content || content.trim() === '') {
+        return [];
+    }
+    
+    // Handle both maxChunkSize and maxTokens for backward compatibility
+    const maxChunkSize = config.maxChunkSize || config.maxTokens * 4 || 1000; // Rough estimate: 1 token ≈ 4 chars
+    const overlap = config.overlap || 0; // overlap is a percentage, e.g., 0.25
     const chunks = [];
     const lines = content.split('\n');
     let currentChunkLines = [];
@@ -103,7 +131,8 @@ async function chunkPdf(filePath, relativePath, config) {
 async function chunkCode(content, relativePath, parser, config) {
     const tree = parser.parse(content);
     const chunks = [];
-    const language = parser.getLanguage();
+    // Get language from parser context or derive from extension
+    const language = parser.language || null;
 
     // Queries for functions and classes. Can be expanded.
     const ext = path.extname(relativePath);
@@ -119,42 +148,52 @@ async function chunkCode(content, relativePath, parser, config) {
             [(function_definition)] @func
             [(class_definition)] @class
         `;
-    } else {
+    }
+    
+    if (!language || !queryString) {
         logger.debug(`No specific Tree-sitter query for ${ext}, falling back to text-based chunking.`);
         return chunkText(content, relativePath, config);
     }
 
-    const query = new Parser.Query(language, queryString);
-    const matches = query.captures(tree.rootNode);
+    try {
+        const query = language.query(queryString);
+        const matches = query.captures(tree.rootNode);
 
-    const nodes = matches.map(m => m.node);
-    const sortedNodes = nodes.sort((a, b) => a.startIndex - b.startIndex);
+        const nodes = matches.map(m => m.node);
+        const sortedNodes = nodes.sort((a, b) => a.startIndex - b.startIndex);
 
-    for (const node of sortedNodes) {
-        const chunkContent = node.text;
-        if (chunkContent.length > config.maxChunkSize) {
-            const subChunks = chunkText(chunkContent, relativePath, config);
-            subChunks.forEach(sc => {
-                sc.metadata.start_line += node.startPosition.row;
-                sc.metadata.end_line += node.startPosition.row;
-            });
-            chunks.push(...subChunks);
-        } else {
-            chunks.push({
-                content: chunkContent,
-                metadata: {
-                    filePath: relativePath,
-                    start_line: node.startPosition.row + 1,
-                    end_line: node.endPosition.row + 1,
-                },
-            });
+        // Handle both maxChunkSize and maxTokens for backward compatibility
+        const maxSize = config.maxChunkSize || config.maxTokens * 4 || 1000; // Rough estimate: 1 token ≈ 4 chars
+
+        for (const node of sortedNodes) {
+            const chunkContent = node.text;
+            if (chunkContent.length > maxSize) {
+                const subChunks = chunkText(chunkContent, relativePath, { ...config, maxChunkSize: maxSize });
+                subChunks.forEach(sc => {
+                    sc.metadata.start_line += node.startPosition.row;
+                    sc.metadata.end_line += node.startPosition.row;
+                });
+                chunks.push(...subChunks);
+            } else {
+                chunks.push({
+                    content: chunkContent,
+                    metadata: {
+                        filePath: relativePath,
+                        start_line: node.startPosition.row + 1,
+                        end_line: node.endPosition.row + 1,
+                    },
+                });
+            }
         }
-    }
 
-    if (chunks.length === 0) {
+        if (chunks.length === 0) {
+            return chunkText(content, relativePath, { ...config, maxChunkSize: maxSize });
+        }
+        return chunks;
+    } catch (error) {
+        logger.debug(`Tree-sitter parsing failed for ${ext}, falling back to text-based chunking:`, error.message);
         return chunkText(content, relativePath, config);
     }
-    return chunks;
 }
 
 /**
@@ -184,7 +223,7 @@ async function chunkFile(filePath, repoPath, config) {
     } catch (error) {
         logger.error(`Error chunking file ${filePath}:`, error.message);
         logger.debug(error.stack);
-        return [];
+        throw error; // Re-throw the error instead of returning empty array
     }
 }
 

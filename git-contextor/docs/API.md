@@ -180,3 +180,20 @@ This document outlines the REST API endpoints provided by Git Contextor.
     "message": "Collection summary generation started. This may take a few minutes."
   }
   ```
+
+---
+
+## Complete API Documentation
+
+For comprehensive API documentation including:
+- All endpoints with detailed examples
+- Authentication methods
+- Error handling
+- SDK examples
+- MCP integration
+- Sharing APIs
+- File browser APIs
+
+Please see the [**Complete API Reference**](./API_REFERENCE.md).
+
+The [OpenAPI specification](./openapi.json) provides the complete technical specification for all endpoints.

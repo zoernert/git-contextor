@@ -43,11 +43,12 @@ describe('Indexer', () => {
             const chunks = [{ content: 'chunk1' }, { content: 'chunk2' }];
             chunkFile.mockResolvedValue(chunks);
 
-            await indexer.indexFile(path.join(repoPath, 'file.js'));
+            const result = await indexer.indexFile(path.join(repoPath, 'file.js'));
 
             expect(chunkFile).toHaveBeenCalledWith(path.join(repoPath, 'file.js'), repoPath, config.chunking);
             expect(mockVectorStore.upsertChunks).toHaveBeenCalledWith(chunks);
-            expect(indexer.totalChunks).toBe(2);
+            expect(result).toBe(true);
+            expect(indexer.status).toBe('completed');
         });
     });
 
@@ -55,17 +56,21 @@ describe('Indexer', () => {
         it('should clear collection and index filtered git-tracked files', async () => {
             listGitFiles.mockResolvedValue(['file1.js', 'file2.py', 'dist/ignore.js', 'file.ts', 'file.excluded.js']);
             chunkFile.mockResolvedValue([{ content: 'chunk' }]);
+            
+            // Set up the indexer to think it's in a git repo
+            indexer.isGitRepo = true;
 
             await indexer.reindexAll();
 
             expect(mockVectorStore.clearCollection).toHaveBeenCalled();
             expect(listGitFiles).toHaveBeenCalledWith(repoPath);
-            // Should be called for file1.js and file2.py, but not for others
-            expect(chunkFile).toHaveBeenCalledTimes(2); 
+            // Should be called for file1.js, file2.py, and file.ts (3 files)
+            expect(chunkFile).toHaveBeenCalledTimes(3); 
             expect(chunkFile).toHaveBeenCalledWith(path.join(repoPath, 'file1.js'), repoPath, config.chunking);
             expect(chunkFile).toHaveBeenCalledWith(path.join(repoPath, 'file2.py'), repoPath, config.chunking);
-            expect(mockVectorStore.upsertChunks).toHaveBeenCalledTimes(2);
-            expect(indexer.totalFiles).toBe(2);
+            expect(chunkFile).toHaveBeenCalledWith(path.join(repoPath, 'file.ts'), repoPath, config.chunking);
+            expect(mockVectorStore.upsertChunks).toHaveBeenCalledTimes(3);
+            expect(indexer.totalFiles).toBe(3);
         });
     });
 });

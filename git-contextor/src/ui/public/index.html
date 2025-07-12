@@ -77,15 +77,6 @@
                         </div>
                     </div>
                 </section>
-                <section id="summary-panel" class="card">
-                    <div class="panel-header">
-                        <h2>Collection Summary</h2>
-                        <button id="update-summary-btn" class="button">Update Summary</button>
-                    </div>
-                    <div class="panel-content">
-                        <div id="summary-content" class="docs-content">Loading...</div>
-                    </div>
-                </section>
                 <section id="chat-interface" class="card full-width">
                     <h2>AI Chat</h2>
                     <form id="chat-form">
@@ -108,6 +99,16 @@
                         </div>
                     </div>
                 </section>
+
+                <section id="summary-panel"  class="card full-width">
+                    <div class="panel-header">
+                        <h2>Collection Summary</h2>
+                        <button id="update-summary-btn" class="button">Update Summary</button>
+                    </div>
+                    <div class="panel-content">
+                        <div id="summary-content" class="docs-content">Loading...</div>
+                    </div>
+                </section>                
             </div>
         </div>
 
@@ -184,10 +185,25 @@
                         <div class="form-group">
                             <label for="tunnel-service">Service:</label>
                             <select id="tunnel-service">
-                                <option value="localtunnel" selected>localtunnel (recommended)</option>
+                                <option value="localtunnel" selected>localtunnel (free)</option>
+                                <option value="managed">Managed Tunneling (professional)</option>
                                 <option value="ngrok" disabled>ngrok (coming soon)</option>
                                 <option value="serveo" disabled>serveo (coming soon)</option>
                             </select>
+                        </div>
+                        <div id="managed-tunnel-options" style="display:none;">
+                            <div class="form-group">
+                                <label for="tunnel-subdomain">Custom Subdomain (optional):</label>
+                                <input type="text" id="tunnel-subdomain" placeholder="my-project">
+                            </div>
+                            <div class="form-group">
+                                <label for="tunnel-description">Description:</label>
+                                <input type="text" id="tunnel-description" placeholder="Git Contextor Share">
+                            </div>
+                            <div class="managed-tunnel-status">
+                                <p><strong>Status:</strong> <span id="managed-tunnel-auth-status">Not authenticated</span></p>
+                                <button id="managed-tunnel-login-btn" style="display:none;">Login to Managed Service</button>
+                            </div>
                         </div>
                         <button id="tunnel-toggle-btn">Start Tunnel</button>
                     </div>

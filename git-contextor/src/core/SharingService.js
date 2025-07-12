@@ -2,6 +2,8 @@ const crypto = require('crypto');
 const fs = require('fs').promises;
 const path = require('path');
 const { spawn } = require('child_process');
+const ManagedTunnelingProvider = require('../tunneling/ManagedTunnelingProvider');
+const CorrentlyTunnelProvider = require('../tunneling/CorrentlyTunnelProvider');
 
 function parseDuration(duration) {
     // Already in milliseconds
@@ -39,6 +41,16 @@ class SharingService {
         this.tunnelStatus = 'stopped'; // stopped, starting, running, error
         this.tunnelPassword = null;
         this.apiKeyStore = new Map(); // In-memory store for apiKey -> shareId mapping
+        
+        // Initialize tunnel providers
+        this.managedTunnelingProvider = null;
+        this.correntlyTunnelProvider = null;
+        
+        if (config.tunneling && config.tunneling.provider === 'managed') {
+            this.managedTunnelingProvider = new ManagedTunnelingProvider(config.tunneling.managed);
+        } else if (config.tunneling && config.tunneling.provider === 'corrently') {
+            this.correntlyTunnelProvider = new CorrentlyTunnelProvider(config.tunneling.corrently);
+        }
     }
 
     async init() {
@@ -201,6 +213,14 @@ class SharingService {
     }
 
     getTunnelStatus() {
+        if (this.tunnelService === 'managed' && this.managedTunnelingProvider) {
+            return this.managedTunnelingProvider.getTunnelStatus();
+        }
+        
+        if (this.tunnelService === 'corrently' && this.correntlyTunnelProvider) {
+            return this.correntlyTunnelProvider.getTunnelStatus();
+        }
+        
         return {
             status: this.tunnelStatus,
             url: this.tunnelUrl,
@@ -210,11 +230,24 @@ class SharingService {
     }
 
     async stopTunnel() {
-        return new Promise((resolve) => {
-            if (this.tunnelProcess) {
+        return new Promise(async (resolve) => {
+            if (this.tunnelService === 'managed' && this.managedTunnelingProvider) {
+                try {
+                    await this.managedTunnelingProvider.stopTunnel();
+                } catch (error) {
+                    console.error('Error stopping managed tunnel:', error);
+                }
+            } else if (this.tunnelService === 'corrently' && this.correntlyTunnelProvider) {
+                try {
+                    await this.correntlyTunnelProvider.stopTunnel();
+                } catch (error) {
+                    console.error('Error stopping corrently tunnel:', error);
+                }
+            } else if (this.tunnelProcess) {
                 this.tunnelProcess.kill();
                 // The 'exit' event handler will clean up state.
             }
+            
             // Reset state immediately for snappy UI
             this.tunnelProcess = null;
             this.tunnelUrl = null;
@@ -225,7 +258,7 @@ class SharingService {
         });
     }
 
-    async startTunnel(service) {
+    async startTunnel(service, options = {}) {
         if (this.tunnelStatus !== 'stopped' && this.tunnelStatus !== 'error') {
             throw new Error(`Tunnel is already active with status: ${this.tunnelStatus}`);
         }
@@ -236,16 +269,116 @@ class SharingService {
         this.tunnelPassword = null;
 
         const port = this.config.services.port;
-        let command, args;
 
-        // For now, only localtunnel is supported programmatically
-        if (service === 'localtunnel') {
-            command = 'npx';
-            args = ['localtunnel', '--port', port];
+        if (service === 'managed') {
+            return this.startManagedTunnel(port, options);
+        } else if (service === 'corrently') {
+            return this.startCorrentlyTunnel(port, options);
+        } else if (service === 'localtunnel') {
+            return this.startLocalTunnel(port, options);
         } else {
             this.tunnelStatus = 'error';
-            throw new Error(`Unsupported tunnel service for UI control: ${service}`);
+            throw new Error(`Unsupported tunnel service: ${service}`);
         }
+    }
+
+    async startManagedTunnel(port, options = {}) {
+        if (!this.managedTunnelingProvider) {
+            throw new Error('Managed tunneling provider not configured');
+        }
+
+        if (!this.config.tunneling.managed.apiKey) {
+            throw new Error('API key required for managed tunneling');
+        }
+
+        try {
+            const tunnelData = await this.managedTunnelingProvider.createTunnel({
+                localPort: port,
+                subdomain: options.subdomain || this.config.tunneling.managed.subdomain,
+                description: options.description || 'Git Contextor Share'
+            });
+
+            this.tunnelUrl = tunnelData.url;
+            this.tunnelStatus = 'running';
+
+            // Set up event listeners
+            this.managedTunnelingProvider.on('tunnel-error', (error) => {
+                console.error('Managed tunnel error:', error);
+                this.tunnelStatus = 'error';
+            });
+
+            this.managedTunnelingProvider.on('tunnel-disconnected', () => {
+                console.log('Managed tunnel disconnected');
+                this.tunnelStatus = 'error';
+            });
+
+            this.managedTunnelingProvider.on('tunnel-stopped', () => {
+                console.log('Managed tunnel stopped');
+                this.tunnelStatus = 'stopped';
+                this.tunnelUrl = null;
+            });
+
+            return tunnelData;
+
+        } catch (error) {
+            this.tunnelStatus = 'error';
+            throw error;
+        }
+    }
+
+    async startCorrentlyTunnel(port, options = {}) {
+        if (!this.correntlyTunnelProvider) {
+            throw new Error('Corrently tunnel provider not configured');
+        }
+
+        if (!this.config.tunneling.corrently.apiKey) {
+            throw new Error('API key required for tunnel.corrently.cloud service. Please set CORRENTLY_TUNNEL_API_KEY environment variable or configure it in your config.');
+        }
+
+        try {
+            const tunnelData = await this.correntlyTunnelProvider.createTunnel({
+                localPort: port,
+                tunnelPath: options.tunnelPath || `git-contextor-${Date.now()}`,
+                description: options.description || this.config.tunneling.corrently.description || 'Git Contextor Share'
+            });
+
+            this.tunnelUrl = tunnelData.url;
+            this.tunnelStatus = 'running';
+
+            // Set up event listeners
+            this.correntlyTunnelProvider.on('tunnel-error', (error) => {
+                console.error('Corrently tunnel error:', error);
+                this.tunnelStatus = 'error';
+            });
+
+            this.correntlyTunnelProvider.on('tunnel-disconnected', () => {
+                console.log('Corrently tunnel disconnected');
+                this.tunnelStatus = 'error';
+            });
+
+            this.correntlyTunnelProvider.on('tunnel-stopped', () => {
+                console.log('Corrently tunnel stopped');
+                this.tunnelStatus = 'stopped';
+                this.tunnelUrl = null;
+            });
+
+            this.correntlyTunnelProvider.on('tunnel-created', (data) => {
+                console.log('Corrently tunnel created:', data.url);
+            });
+
+            return tunnelData;
+
+        } catch (error) {
+            this.tunnelStatus = 'error';
+            throw error;
+        }
+    }
+
+    async startLocalTunnel(port, options = {}) {
+        let command, args;
+
+        command = 'npx';
+        args = ['localtunnel', '--port', port];
         
         this.tunnelProcess = spawn(command, args);
 

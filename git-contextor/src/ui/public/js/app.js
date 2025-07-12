@@ -85,6 +85,13 @@ function initDashboard(API_BASE_URL) {
     const tunnelHint = document.getElementById('tunnel-hint');
     const watcherToggle = document.getElementById('watcher-toggle');
     
+    // Managed tunneling elements
+    const managedTunnelOptions = document.getElementById('managed-tunnel-options');
+    const tunnelSubdomain = document.getElementById('tunnel-subdomain');
+    const tunnelDescription = document.getElementById('tunnel-description');
+    const managedTunnelAuthStatus = document.getElementById('managed-tunnel-auth-status');
+    const managedTunnelLoginBtn = document.getElementById('managed-tunnel-login-btn');
+    
     async function fetchStatus() {
         try {
             const response = await fetch(`${API_BASE_URL}/status`, { headers: { 'x-api-key': apiKey } });
@@ -506,6 +513,23 @@ else:
         updateSummaryBtn.addEventListener('click', triggerSummaryUpdate);
     }
     tunnelToggleBtn.addEventListener('click', toggleTunnel);
+    
+    // Managed tunneling event listeners
+    tunnelServiceSelect.addEventListener('change', (e) => {
+        if (e.target.value === 'managed') {
+            managedTunnelOptions.style.display = 'block';
+            checkManagedTunnelAuth();
+        } else {
+            managedTunnelOptions.style.display = 'none';
+        }
+    });
+    
+    if (managedTunnelLoginBtn) {
+        managedTunnelLoginBtn.addEventListener('click', () => {
+            // Redirect to account management or show login modal
+            alert('Please use the CLI to authenticate: git-contextor account login');
+        });
+    }
 
     async function toggleWatcher(event) {
         const isEnabled = event.target.checked;
@@ -543,9 +567,35 @@ else:
     }
 
     // --- Tunnel Functions ---
+    async function checkManagedTunnelAuth() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/config`, { 
+                headers: { 'x-api-key': apiKey } 
+            });
+            if (!response.ok) throw new Error('Failed to fetch config');
+            
+            const config = await response.json();
+            const hasApiKey = config.tunneling?.managed?.apiKey;
+            
+            if (hasApiKey) {
+                managedTunnelAuthStatus.textContent = 'Authenticated';
+                managedTunnelAuthStatus.style.color = 'green';
+                managedTunnelLoginBtn.style.display = 'none';
+            } else {
+                managedTunnelAuthStatus.textContent = 'Not authenticated';
+                managedTunnelAuthStatus.style.color = 'red';
+                managedTunnelLoginBtn.style.display = 'inline-block';
+            }
+        } catch (error) {
+            console.error('Error checking managed tunnel auth:', error);
+            managedTunnelAuthStatus.textContent = 'Error checking authentication';
+            managedTunnelAuthStatus.style.color = 'red';
+        }
+    }
+    
     async function getTunnelStatus() {
         try {
-            const response = await fetch(`${API_BASE_URL}/share/tunnel`, { headers: { 'x-api-key': apiKey } });
+            const response = await fetch(`${API_BASE_URL}/tunnel`, { headers: { 'x-api-key': apiKey } });
             if (!response.ok) {
                 if (response.status === 404) { // Endpoint might not exist if API is old/down
                     updateTunnelUI({ status: 'stopped', url: null, service: null });
@@ -582,6 +632,13 @@ else:
             tunnelServiceSelect.disabled = true;
             if (data.service) {
                 tunnelServiceSelect.value = data.service;
+                // Show/hide managed tunnel options based on service
+                if (data.service === 'managed') {
+                    managedTunnelOptions.style.display = 'block';
+                    checkManagedTunnelAuth();
+                } else {
+                    managedTunnelOptions.style.display = 'none';
+                }
             }
 
             // Show password if available
@@ -619,10 +676,22 @@ else:
             if (currentStatus === 'stopped' || currentStatus.startsWith('Error')) {
                 // Start the tunnel
                 const service = tunnelServiceSelect.value;
-                const response = await fetch(`${API_BASE_URL}/share/tunnel`, {
+                const requestBody = { service };
+                
+                // Add managed tunnel specific options
+                if (service === 'managed') {
+                    if (tunnelSubdomain.value) {
+                        requestBody.subdomain = tunnelSubdomain.value;
+                    }
+                    if (tunnelDescription.value) {
+                        requestBody.description = tunnelDescription.value;
+                    }
+                }
+                
+                const response = await fetch(`${API_BASE_URL}/tunnel`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
-                    body: JSON.stringify({ service })
+                    body: JSON.stringify(requestBody)
                 });
                 if (!response.ok) {
                     const err = await response.json();
@@ -630,7 +699,7 @@ else:
                 }
             } else {
                 // Stop the tunnel
-                await fetch(`${API_BASE_URL}/share/tunnel`, {
+                await fetch(`${API_BASE_URL}/tunnel`, {
                     method: 'DELETE',
                     headers: { 'x-api-key': apiKey }
                 });
@@ -727,13 +796,15 @@ else:
     switchView(window.location.hash);
 }
 
-
 function initConfigPage(API_BASE_URL) {
     const configForm = document.getElementById('config-form');
     const configTextarea = document.getElementById('config-textarea');
     const configStatus = document.getElementById('config-status');
     const configError = document.getElementById('config-error');
     const apiKey = sessionStorage.getItem('gctx_apiKey');
+
+    // Initialize tunnel configuration
+    initTunnelConfig(API_BASE_URL, apiKey);
 
     async function fetchConfig() {
         if (!configForm) return; // Exit if elements are not on the page
@@ -1073,4 +1144,171 @@ async function fetchAndShowFile(filePath) {
         fileViewerContent.innerHTML = `<p class="error">Could not load file: ${error.message}</p>`;
         console.error(`Error fetching file ${filePath}:`, error);
     }
+}
+
+function initTunnelConfig(API_BASE_URL, apiKey) {
+    const tunnelForm = document.getElementById('tunnel-form');
+    const tunnelProvider = document.getElementById('tunnel-provider');
+    const correntlyApiKey = document.getElementById('corrently-api-key');
+    const tunnelDescription = document.getElementById('tunnel-description');
+    const testConnectionButton = document.getElementById('test-tunnel-connection');
+    const tunnelTestStatus = document.getElementById('tunnel-test-status');
+    const tunnelStatus = document.getElementById('tunnel-status');
+    const tunnelError = document.getElementById('tunnel-error');
+
+    if (!tunnelForm) return; // Exit if elements are not on the page
+
+    // Load current tunnel configuration
+    loadTunnelConfig();
+    // Show Corrently help text if provider is selected
+    document.getElementById('tunnel-provider').addEventListener('change', () => {
+        const provider = document.getElementById('tunnel-provider').value;
+        if (provider === 'corrently') {
+            document.getElementById('corrently-config').querySelector('.help-text').style.display = 'block';
+        } else {
+            document.getElementById('corrently-config').querySelector('.help-text').style.display = 'none';
+        }
+    });
+
+    async function loadTunnelConfig() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/config`, { headers: { 'x-api-key': apiKey } });
+            if (!response.ok) throw new Error('Failed to load configuration');
+            
+            const config = await response.json();
+            
+            if (config.tunneling) {
+                tunnelProvider.value = config.tunneling.provider || 'corrently';
+                
+                if (config.tunneling.corrently) {
+                    correntlyApiKey.value = config.tunneling.corrently.apiKey || '';
+                    tunnelDescription.value = config.tunneling.corrently.description || 'Git Contextor Share';
+                }
+            }
+            
+            showProviderConfig();
+        } catch (error) {
+            console.error('Error loading tunnel config:', error);
+            tunnelError.textContent = `Error loading tunnel configuration: ${error.message}`;
+            tunnelError.style.display = 'block';
+        }
+    }
+
+    function showProviderConfig() {
+        const correntlyConfig = document.getElementById('corrently-config');
+        const provider = tunnelProvider.value;
+        
+        // Show/hide provider-specific configuration
+        if (provider === 'corrently') {
+            correntlyConfig.style.display = 'block';
+        } else {
+            correntlyConfig.style.display = 'none';
+        }
+    }
+
+    // Event listeners
+    tunnelProvider.addEventListener('change', showProviderConfig);
+
+    testConnectionButton.addEventListener('click', async () => {
+        if (!correntlyApiKey.value) {
+            tunnelTestStatus.textContent = 'Please enter an API key first. You can get one from https://tunnel.corrently.cloud/ (see guide above).';
+            tunnelTestStatus.className = 'status-message error';
+            return;
+        }
+
+        tunnelTestStatus.textContent = 'Testing connection...';
+        tunnelTestStatus.className = 'status-message';
+        testConnectionButton.disabled = true;
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/tunnel/test`, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'x-api-key': apiKey 
+                },
+                body: JSON.stringify({
+                    provider: 'corrently',
+                    apiKey: correntlyApiKey.value
+                })
+            });
+
+            const result = await response.json();
+            
+            if (response.ok) {
+                tunnelTestStatus.textContent = `✅ Connection successful! User: ${result.user || 'Unknown'}`;
+                tunnelTestStatus.className = 'status-message success';
+            } else {
+                tunnelTestStatus.textContent = `❌ Connection failed: ${result.error}`;
+                tunnelTestStatus.className = 'status-message error';
+            }
+        } catch (error) {
+            tunnelTestStatus.textContent = `❌ Connection failed: ${error.message}`;
+            tunnelTestStatus.className = 'status-message error';
+        } finally {
+            testConnectionButton.disabled = false;
+        }
+    });
+
+    tunnelForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        
+        tunnelStatus.textContent = 'Saving...';
+        tunnelError.style.display = 'none';
+        
+        const saveButton = tunnelForm.querySelector('button[type="submit"]');
+        saveButton.disabled = true;
+
+        try {
+            // Get current config
+            const configResponse = await fetch(`${API_BASE_URL}/config`, { headers: { 'x-api-key': apiKey } });
+            if (!configResponse.ok) throw new Error('Failed to load current configuration');
+            
+            const config = await configResponse.json();
+            
+            // Update tunnel configuration
+            config.tunneling = {
+                provider: tunnelProvider.value,
+                [tunnelProvider.value]: {
+                    ...(config.tunneling?.[tunnelProvider.value] || {}),
+                    apiKey: correntlyApiKey.value,
+                    description: tunnelDescription.value,
+                    serverUrl: 'https://tunnel.corrently.cloud'
+                }
+            };
+
+            // Save updated config
+            const response = await fetch(`${API_BASE_URL}/config`, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'x-api-key': apiKey 
+                },
+                body: JSON.stringify(config)
+            });
+
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error || `HTTP ${response.status}`);
+            }
+
+            const result = await response.json();
+            tunnelStatus.textContent = '✅ Tunnel configuration saved successfully!';
+            tunnelStatus.className = 'status-message success';
+            
+            // Refresh the main config textarea if it exists
+            if (configTextarea) {
+                configTextarea.value = JSON.stringify(config, null, 2);
+            }
+
+        } catch (error) {
+            console.error('Error saving tunnel config:', error);
+            tunnelError.textContent = `Error saving tunnel configuration: ${error.message}`;
+            tunnelError.style.display = 'block';
+            tunnelStatus.textContent = 'Error saving configuration';
+            tunnelStatus.className = 'status-message error';
+        } finally {
+            saveButton.disabled = false;
+        }
+    });
 }

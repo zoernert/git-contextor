@@ -1,1 +1,0 @@
- Add another documentation to give the user a quick guide on how to work with the system in: n8n, node-red, langchain, kaibanjs, ... (any other system you might think of where this implementation/service makes sense). Only create the overview and empty files. We will write the invidual guides per system in a second step. 

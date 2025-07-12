@@ -1,6 +1,5 @@
 const express = require('express');
 const logger = require('../../cli/utils/logger');
-const { apiKeyAuth } = require('../../utils/security');
 
 /**
  * Creates and returns the chat router for conversational AI.
@@ -14,7 +13,7 @@ module.exports = (services) => {
     /**
      * Handles conversational queries about the repository
      */
-    router.post('/', apiKeyAuth(contextOptimizer.config), async (req, res) => {
+    router.post('/', async (req, res) => {
         const { query, context_type, include_summary } = req.body;
         
         if (!query) {

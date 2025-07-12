@@ -1,13 +1,12 @@
 const express = require('express');
 const logger = require('../../cli/utils/logger');
-const { apiKeyAuth } = require('../../utils/security');
 
 module.exports = (services) => {
     const router = express.Router();
     const { contextOptimizer } = services;
 
     // Trigger the generation of the collection summary
-    router.post('/summarize', apiKeyAuth(contextOptimizer.config), async (req, res) => {
+    router.post('/summarize', async (req, res) => {
         try {
             logger.info('API call received to summarize collection.');
             // This can be a long-running process, so we don't await it.
@@ -22,7 +21,7 @@ module.exports = (services) => {
         }
     });
 
-    router.get('/summary', apiKeyAuth(contextOptimizer.config), async (req, res) => {
+    router.get('/summary', async (req, res) => {
         try {
             logger.info('API call received to get or create collection summary.');
             const summaryContent = await contextOptimizer.getOrCreateSummary();

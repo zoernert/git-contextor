@@ -118,13 +118,16 @@ class Indexer {
 
       if (chunks && chunks.length > 0) {
         await this.vectorStore.upsertChunks(chunks);
+        this.totalChunks += chunks.length;
+        this.totalFiles++; // Increment total files count
         const logMessage = isImageFile(filePath)
           ? `Indexed description for image ${relativeFilePath} as ${chunks.length} chunks.`
           : `Indexed ${chunks.length} chunks for ${relativeFilePath}`;
         logger.info(logMessage);
       }
 
-      this.status = 'idle';
+      this.status = 'completed';
+      logger.info('Indexing completed successfully.');
       return true;
     } catch (error) {
       logger.error(`Failed to index file ${filePath}:`, error);
@@ -185,54 +188,42 @@ class Indexer {
     logger.info('Starting full repository re-index...');
 
     try {
-      await this.vectorStore.clearCollection();
-      this.totalFiles = 0;
-      this.totalChunks = 0;
+        await this.vectorStore.clearCollection();
+        this.totalFiles = 0;
+        this.totalChunks = 0;
 
-      let filesToConsider = [];
-      if (this.isGitRepo) {
-          logger.info('Discovering files via Git...');
-          filesToConsider = await listGitFiles(this.repoPath);
-      } else {
-          logger.info('Discovering files via file system scan (non-Git mode)...');
-          filesToConsider = await this._findAllFiles(this.repoPath);
-      }
-      
-      const ig = ignore().add(this.config.indexing.excludePatterns);
-
-      const filesToIndex = filesToConsider.filter(file => {
-        if (ig.ignores(file)) {
-            return false;
+        let filesToConsider = [];
+        if (this.isGitRepo) {
+            logger.info('Discovering files via Git...');
+            filesToConsider = await listGitFiles(this.repoPath);
+        } else {
+            logger.info('Discovering files via file system scan (non-Git mode)...');
+            filesToConsider = await this._findAllFiles(this.repoPath);
         }
-        const ext = path.extname(file).toLowerCase();
-        const isIncludedExtension = this.config.indexing.includeExtensions.includes(ext);
-        const isVisionCandidate = this.config.vision?.enabled && isImageFile(file);
-        
-        return isIncludedExtension || isVisionCandidate;
-      });
-      
-      this.totalFiles = filesToIndex.length;
-      logger.info(`Found ${this.totalFiles} files to index.`);
-      
-      const batchSize = this.config.performance.batchSize;
-      for (let i = 0; i < filesToIndex.length; i += batchSize) {
-        const batch = filesToIndex.slice(i, i + batchSize).map(file => path.join(this.repoPath, file));
-        const results = await Promise.allSettled(batch.map(file => this.indexFile(file)));
 
-        results.forEach((result, index) => {
-            if (result.status === 'rejected') {
-                logger.error(`File failed to index during re-index: ${batch[index]}`);
-            }
-        });
-      }
+        const ig = ignore().add(this.config.indexing.excludePatterns);
+        const filesToIndex = filesToConsider.filter(file => !ig.ignores(file));
 
-      logger.info('Full re-index completed.');
+        const batchSize = 10;
+        for (let i = 0; i < filesToIndex.length; i += batchSize) {
+            const batch = filesToIndex.slice(i, i + batchSize).map(file => path.join(this.repoPath, file));
+            const results = await Promise.allSettled(batch.map(file => this.indexFile(file)));
+
+            results.forEach((result, index) => {
+                if (result.status === 'rejected') {
+                    logger.error(`File failed to index during re-index: ${batch[index]}`);
+                }
+            });
+        }
+
+        this.status = 'completed';
+        logger.info('Full re-index completed.');
     } catch (error) {
-      logger.error('Full re-index failed:', error);
-      this.errorCount++;
-      this.status = 'error';
+        logger.error('Full re-index failed:', error);
+        this.errorCount++;
+        this.status = 'error';
     } finally {
-      this.status = 'idle';
+        this.status = 'idle';
     }
   }
 

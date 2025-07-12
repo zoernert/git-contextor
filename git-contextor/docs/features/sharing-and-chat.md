@@ -77,18 +77,42 @@ git-contextor share create --duration 7d --description "External code review for
 
 #### 2. Create a Public Tunnel
 
-To make the share accessible to someone outside your network, create a tunnel.
+To make the share accessible to someone outside your network, create a tunnel. Git Contextor now uses **tunnel.corrently.cloud** as the default tunnel service, which provides enterprise-grade, secure tunneling.
 
 ```bash
-# Create a share and immediately open a public tunnel with localtunnel
-git-contextor share create --duration 1h --tunnel localtunnel
+# Create a share and immediately open a public tunnel with tunnel.corrently.cloud
+git-contextor share create --duration 1h --tunnel
 
 # 🚇 Creating tunnel...
-# 🌍 Public URL: https://some-random-name.loca.lt
+# 🌍 Public URL: https://tunnel.corrently.cloud/tunnel/git-contextor-12345
 ```
-Provide your collaborator with the **full share URL** and the **API key**. The full share URL is the public tunnel URL combined with the share path (e.g., `https://some-random-name.loca.lt/shared/2a9b...`).
 
-**Important Security Note:** The main tunnel URL (e.g., `https://some-random-name.loca.lt`) only displays a public landing page. Your Git Contextor admin dashboard and private APIs are **not** exposed to the internet. Only the specific `/shared/{shareId}` endpoints are accessible publicly with the correct share key.
+**Setting up tunnel.corrently.cloud:**
+
+1. Get your API key from tunnel.corrently.cloud
+2. Set it as an environment variable:
+   ```bash
+   export CORRENTLY_TUNNEL_API_KEY=your_api_key_here
+   ```
+3. Test the connection:
+   ```bash
+   git-contextor tunnel test
+   ```
+
+**Alternative tunnel services:**
+
+You can also use other tunnel services if needed:
+
+```bash
+# Use localtunnel (no API key required)
+git-contextor share create --duration 1h --tunnel localtunnel
+
+# Use ngrok (requires ngrok installation)
+git-contextor share create --duration 1h --tunnel ngrok
+```
+Provide your collaborator with the **full share URL** and the **API key**. The full share URL is the public tunnel URL combined with the share path (e.g., `https://tunnel.corrently.cloud/tunnel/git-contextor-12345/shared/2a9b...`).
+
+**Important Security Note:** The main tunnel URL (e.g., `https://tunnel.corrently.cloud/tunnel/git-contextor-12345`) only displays a public landing page. Your Git Contextor admin dashboard and private APIs are **not** exposed to the internet. Only the specific `/shared/{shareId}` endpoints are accessible publicly with the correct share key.
 
 #### 3. List Active Shares
 
@@ -103,7 +127,7 @@ The external user can now access the shared context via its full URL. They get t
 
 ```bash
 # External user queries the public URL
-curl -X POST "https://some-random-name.loca.lt/shared/2a9b.../chat" \
+curl -X POST "https://tunnel.corrently.cloud/tunnel/git-contextor-12345/shared/2a9b.../chat" \
   -H "x-share-key: 8f3c..." \
   -H "Content-Type: application/json" \
   -d '{"query": "What is the main authentication pattern used here?"}'

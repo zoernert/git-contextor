@@ -105,6 +105,27 @@ async function createTunnel(port, options = {}) {
         let tunnelUrl;
         
         switch (service) {
+            case 'managed':
+                console.log(chalk.yellow('🚇 Creating managed tunnel...'));
+                const response = await fetch(`http://localhost:${port}/api/tunnel`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': options.apiKey || ''
+                    },
+                    body: JSON.stringify({
+                        service: 'managed'
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to create managed tunnel: ${response.statusText}`);
+                }
+                
+                const tunnelData = await response.json();
+                console.log(chalk.green('🌍 Managed tunnel created:'), tunnelData.url);
+                break;
+                
             case 'ngrok':
                 execSync(`ngrok http ${port}`, { stdio: 'inherit' });
                 break;
@@ -120,12 +141,13 @@ async function createTunnel(port, options = {}) {
                 break;
                 
             default:
-                logger.error('Unsupported tunnel service. Use: ngrok, localtunnel, or serveo');
+                logger.error('Unsupported tunnel service. Use: managed, ngrok, localtunnel, or serveo');
         }
         
     } catch (error) {
         logger.error('Tunnel creation failed:', error.message);
-        console.log(chalk.yellow('\n💡 Alternative tunnel options:'));
+        console.log(chalk.yellow('\n💡 Tunnel options:'));
+        console.log('- Use managed tunneling: --tunnel managed (requires API key)');
         console.log('- Install ngrok: https://ngrok.com/download');
         console.log('- Use localtunnel: npx localtunnel --port', port);
         console.log('- Try serveo: ssh -R 80:localhost:' + port + ' serveo.net');

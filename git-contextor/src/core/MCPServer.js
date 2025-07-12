@@ -440,7 +440,7 @@ class MCPServer {
   }
 
   // Start MCP server with stdio transport (for VS Code)
-  async startStdio() {
+  async start() {
     if (!this.server) {
       this.createServer();
     }
@@ -448,6 +448,11 @@ class MCPServer {
     this.transport = new StdioServerTransport();
     await this.server.connect(this.transport);
     logger.info('MCP server started with stdio transport');
+  }
+
+  // Start MCP server with stdio transport (for VS Code)
+  async startStdio() {
+    return this.start();
   }
 
   async stop() {

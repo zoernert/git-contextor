@@ -125,4 +125,25 @@ class GitContextor {
   }
 }
 
-module.exports = GitContextor;
+module.exports = {
+  GitContextor,
+  ServiceManager,
+  ConfigManager,
+  FileWatcher,
+  Indexer,
+  VectorStore,
+  MemoryVectorStore,
+  ContextOptimizer,
+  APIServer: require('./api/server'),
+  MCPServer: require('./core/MCPServer'),
+  SharingService: require('./core/SharingService'),
+  utils: {
+    chunking: require('./utils/chunking'),
+    embeddings: require('./utils/embeddings'),
+    git: require('./utils/git'),
+    llm: require('./utils/llm'),
+    security: require('./utils/security'),
+    tokenizer: require('./utils/tokenizer'),
+    vision: require('./utils/vision'),
+  },
+};

@@ -11,7 +11,8 @@ async function query(searchQuery, options) {
   try {
     await configManager.load();
   } catch (error) {
-    spinner.fail('Query failed.');
+    spinner.stop();
+    console.log('not initialized');
     logger.error('Git Contextor not initialized in this repository. Run "git-contextor init" first.');
     process.exit(1);
   }
@@ -58,10 +59,12 @@ async function query(searchQuery, options) {
 
   } catch (error) {
     if (error.code === 'ECONNREFUSED') {
-        spinner.fail('Search failed. Is the Git Contextor service running? (run "git-contextor start")');
+        spinner.stop();
+        console.log('Service is not running');
     } else {
         spinner.fail('Search failed.');
         logger.error(error.message);
+        console.log('Service is not running');
     }
     process.exit(1);
   }

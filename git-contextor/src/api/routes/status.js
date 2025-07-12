@@ -15,8 +15,9 @@ module.exports = (serviceManager) => {
         try {
             // Note: This endpoint provides status of an already running service.
             // Some info like repo path and ports are from config, but we get live data here.
-            const { indexer, fileWatcher } = serviceManager.services;
+            const { indexer, fileWatcher, vectorStore } = serviceManager.services;
             const indexerStatus = await indexer.getStatus();
+            const vectorStoreStatus = await vectorStore.getStatus();
             
             res.json({
                 status: 'running', // If this endpoint is reachable, it's running.
@@ -25,6 +26,7 @@ module.exports = (serviceManager) => {
                     path: indexer.config.repository.path,
                 },
                 indexer: indexerStatus,
+                vectorStore: vectorStoreStatus,
                 watcher: {
                     status: serviceManager.config.monitoring.watchEnabled ? 'enabled' : 'disabled',
                 },

@@ -38,6 +38,8 @@ const reindexCommand = require('../src/cli/commands/reindex');
 const chatCommand = require('../src/cli/commands/chat');
 const shareCommand = require('../src/cli/commands/share');
 const mcpCommand = require('../src/cli/commands/mcp');
+const tunnelCommand = require('../src/cli/commands/tunnel');
+const accountCommand = require('../src/cli/commands/account');
 
 program
   .name('git-contextor')
@@ -70,18 +72,35 @@ program
   .description('Show service status and repository info')
   .action(statusCommand);
 
-program
+const config = program
   .command('config')
-  .description('Manage configuration')
-  .option('--embedding-provider <provider>', 'Set embedding provider (gemini|openai|local)')
-  .option('--embedding-model <model>', 'Set embedding model name')
-  .option('--embedding-dimensions <dim>', 'Set embedding dimensions', parseInt)
-  .option('--api-key <key>', 'Set API key for embedding provider')
-  .option('--exclude-pattern <pattern>', 'Add exclude pattern')
-  .option('--max-chunk-size <size>', 'Set maximum chunk size', parseInt)
-  .option('--chunk-overlap <percentage>', 'Set chunk overlap percentage (0-1)', parseFloat)
-  .option('--show', 'Show current configuration')
-  .action(configCommand);
+  .description('Manage configuration (show, get, set)')
+  .action(() => configCommand({ show: true }));
+
+config
+  .command('show')
+  .description('Show the current configuration')
+  .action(() => configCommand({ show: true }));
+
+config
+  .command('get <key>')
+  .description('Get a specific configuration value (e.g., services.port)')
+  .action((key) => configCommand({ get: key }));
+
+config
+  .command('set <key=value>')
+  .description('Set a specific configuration value (e.g., services.port=4000)')
+  .action((kv) => configCommand({ set: kv }));
+
+// Add specific tunneling configuration options
+config
+  .command('tunneling')
+  .description('Configure tunneling settings')
+  .option('--provider <provider>', 'Set tunneling provider (corrently|managed|localtunnel)')
+  .option('--api-key <key>', 'Set managed tunneling API key')
+  .option('--api-url <url>', 'Set managed tunneling API URL')
+  .option('--subdomain <subdomain>', 'Set custom subdomain')
+  .action((options) => configCommand({ tunneling: options }));
 
 program
   .command('query <searchQuery>')
@@ -110,8 +129,25 @@ program
   .option('-s, --scope <scope>', 'Access scope (general,architecture,security)')
   .option('--description <desc>', 'Share description')
   .option('--max-queries <num>', 'Maximum queries allowed', '100')
-  .option('-t, --tunnel [service]', 'Create public tunnel (ngrok|localtunnel|serveo)')
+  .option('-t, --tunnel [service]', 'Create public tunnel (corrently|managed|ngrok|localtunnel|serveo)')
   .action(shareCommand);
+
+program
+  .command('tunnel <action>')
+  .description('Manage tunnels (start|stop|status|list|test)')
+  .option('-s, --service <service>', 'Tunnel service (corrently|managed|localtunnel|ngrok)', 'corrently')
+  .option('--subdomain <subdomain>', 'Custom subdomain')
+  .option('--description <desc>', 'Tunnel description')
+  .option('--api-key <key>', 'API key for managed tunneling')
+  .action(tunnelCommand);
+
+program
+  .command('account <action>')
+  .description('Manage tunneling account (login|register|status|logout|plans)')
+  .option('-e, --email <email>', 'Email address')
+  .option('-p, --password <password>', 'Password')
+  .option('-n, --name <name>', 'Full name (for registration)')
+  .action(accountCommand);
 
 program
   .command('mcp')
