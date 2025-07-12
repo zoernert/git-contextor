@@ -74,6 +74,12 @@ class ServiceManager {
             logger.info('File watcher is disabled by configuration.');
         }
 
+        const servicesForApi = {
+            ...this.services,
+            sharingService: this.sharingService
+        };
+        await apiServer.start({ config: this.config, services: servicesForApi });
+
         logger.success('Git Contextor services started successfully.');
 
         // Start the idle summary updater
